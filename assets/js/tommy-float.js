@@ -124,52 +124,25 @@
     drawHelmet(64,21+bob);
   }
 
-  // ── Behaviour state machine ───────────────────────────────────────────────
-  const BHVR = {STAND:'stand',WALK_L:'walkL',WALK_R:'walkR',TIRED:'tired',SAD:'sad',STRETCH:'stretch'};
-  const TRANS = {
-    stand  :[[BHVR.WALK_L,18],[BHVR.WALK_R,18],[BHVR.TIRED,24],[BHVR.SAD,16],[BHVR.STRETCH,24]],
-    walkL  :[[BHVR.STAND,55],[BHVR.TIRED,25],[BHVR.SAD,20]],
-    walkR  :[[BHVR.STAND,55],[BHVR.TIRED,25],[BHVR.SAD,20]],
-    tired  :[[BHVR.STAND,45],[BHVR.SAD,30],[BHVR.STRETCH,25]],
-    sad    :[[BHVR.STAND,55],[BHVR.TIRED,18],[BHVR.WALK_L,14],[BHVR.WALK_R,13]],
-    stretch:[[BHVR.STAND,65],[BHVR.WALK_L,18],[BHVR.WALK_R,17]],
-  };
-  const DUR = {
-    stand:[1000,3000],walkL:[2000,5000],walkR:[2000,5000],
-    tired:[2500,5500],sad:[2000,5000],stretch:[1200,3000],
-  };
-  function pickNext(cur){
-    const opts=TRANS[cur],tot=opts.reduce((s,[,w])=>s+w,0);
-    let r=Math.random()*tot;
-    for(const[next,w]of opts){r-=w;if(r<=0)return next;}
-    return opts[0][0];
-  }
-  let behavior=BHVR.STAND, behaviorEnd=0;
-  function startBehavior(b){
-    behavior=b;
-    const[mn,mx]=DUR[b];
-    behaviorEnd=performance.now()+mn+Math.random()*(mx-mn);
-  }
-  function updateBehavior(now){
-    if(now>=behaviorEnd) startBehavior(pickNext(behavior));
-  }
+  // ── Expression states ─────────────────────────────────────────────────────
+  const STANCES = ['stand','tired','sad','stretch'];
+  let behavior = 'stand';
+  function startBehavior(b){ behavior = b; }
 
-  // ── Viewport position ─────────────────────────────────────────────────────
-  const SPEED = 1.5;
+  // ── Viewport position — diagonal bounce ───────────────────────────────────
   let px = window.innerWidth  - SZ - 24;
   let py = window.innerHeight - SZ - 24;
+  let vx = -(0.5 + Math.random() * 0.4);
+  let vy = -(0.3 + Math.random() * 0.25);
   function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
   function updatePosition(){
-    if(behavior===BHVR.WALK_L) px-=SPEED;
-    else if(behavior===BHVR.WALK_R) px+=SPEED;
-    if(behavior===BHVR.TIRED) py+=SPEED*0.4;
-    else if(behavior===BHVR.STRETCH) py-=SPEED*0.4;
-    const maxX=window.innerWidth-SZ, maxY=window.innerHeight-SZ;
-    if(px<=0){px=0;if(behavior===BHVR.WALK_L)startBehavior(BHVR.WALK_R);}
-    if(px>=maxX){px=maxX;if(behavior===BHVR.WALK_R)startBehavior(BHVR.WALK_L);}
-    py=clamp(py,0,maxY);
-    canvas.style.left=px+'px';
-    canvas.style.top =py+'px';
+    const maxX = window.innerWidth  - SZ;
+    const maxY = window.innerHeight - SZ;
+    px += vx; py += vy;
+    if (px <= 0)    { px = 0;    vx =  Math.abs(vx); }
+    if (px >= maxX) { px = maxX; vx = -Math.abs(vx); }
+    if (py <= 0)    { py = 0;    vy =  Math.abs(vy); }
+    if (py >= maxY) { py = maxY; vy = -Math.abs(vy); }
   }
 
   // ── Chirps ────────────────────────────────────────────────────────────────
@@ -192,18 +165,34 @@
     bubble.style.left = clamp(px - 60, 4, window.innerWidth - 200) + 'px';
     bubble.style.top  = clamp(py - 40, 4, window.innerHeight - 80) + 'px';
     clearTimeout(chirpTimer);
-    chirpTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 3200);
+    chirpTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 2200);
   });
 
+  // ── Periodic chirp ────────────────────────────────────────────────────────
+  function autoChirp() {
+    if (Math.random() < 0.5) startBehavior(STANCES[Math.floor(Math.random() * STANCES.length)]);
+    const text = CHIRPS[Math.floor(Math.random() * CHIRPS.length)];
+    bubble.textContent = '"' + text + '"';
+    bubble.style.opacity = '1';
+    bubble.style.left = clamp(px - 60, 4, window.innerWidth - 200) + 'px';
+    bubble.style.top  = clamp(py - 40, 4, window.innerHeight - 80) + 'px';
+    clearTimeout(chirpTimer);
+    chirpTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 2200);
+    setTimeout(autoChirp, 4000 + Math.random() * 4000);
+  }
+
   // ── Render loop ───────────────────────────────────────────────────────────
-  let idleBob=0, idleTick=0;
+  let floatAngle = Math.random() * Math.PI * 2;
   function render(){
-    const now=performance.now();
-    updateBehavior(now);
     updatePosition();
-    if(++idleTick>=28){idleTick=0;idleBob=1-idleBob;}
-    const expr = behavior===BHVR.TIRED?'tired':behavior===BHVR.SAD?'sad':behavior===BHVR.STRETCH?'happy':'normal';
-    drawTommy(expr,idleBob);
+    floatAngle += 0.006;
+    const fX = Math.sin(floatAngle) * 6;
+    const fY = Math.cos(floatAngle) * 3;
+    canvas.style.left = (px + fX) + 'px';
+    canvas.style.top  = (py + fY) + 'px';
+    const bob = Math.round(Math.sin(floatAngle * 0.5) * 1.5);
+    const expr = behavior==='tired'?'tired':behavior==='sad'?'sad':behavior==='stretch'?'happy':'normal';
+    drawTommy(expr, bob);
     requestAnimationFrame(render);
   }
 
@@ -211,8 +200,6 @@
     try{sessionStorage.setItem('tommy-float-pos',JSON.stringify({x:px,y:py}));}catch(e){}
   });
 
-  startBehavior(BHVR.STAND);
-  canvas.style.left = px + 'px';
-  canvas.style.top  = py + 'px';
+  setTimeout(autoChirp, 4000 + Math.random() * 4000);
   render();
 })();
