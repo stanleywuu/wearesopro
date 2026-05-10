@@ -1,0 +1,7 @@
+/* Page-specific styles for the Chirp game */
+.hero--text{ grid-template-columns:1fr; }
+.chirp-box{ margin:1rem 0; }
+.chirp-text{ font-size:1.1rem; font-weight:600; }
+.chirp-actions{ display:flex; gap:.5rem; margin:.5rem 0 0; }
+.chirp-result{ margin-top:1rem; font-weight:700; }
+.hidden{ display:none; }

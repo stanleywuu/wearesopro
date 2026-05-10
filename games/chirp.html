@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta data-include="/partials/title.html">
+  <link rel="preload" href="/assets/css/style.css?v=14" as="style" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/css/critical.css?v=1">
+<link rel="stylesheet" href="/assets/css/style.css?v=14">
+  <link rel="stylesheet" href="/games/assets/css/chirp.css?v=1">
+  <script defer src="/assets/js/main.js"></script>
+  <script defer src="/games/assets/js/chirp.js?v=1"></script>
+  <script defer src="/assets/js/tommy-float.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a></div>
+    <div data-include="/partials/nav.html"></div>
+  </header>
+
+  <main class="layout">
+    <div data-include="/partials/sidebar.html"></div>
+
+    <section class="content">
+      <section class="article">
+        <div>
+          <h1>Did Stanley Say It At Work? Or On Ice?</h1>
+          <p class="muted">A quick guessing game. No tracking, no login, pure fun and craziness.</p>
+        </div>
+      </section>
+
+      <div id="chirp-box" class="chirp-box card">
+        <p id="chirp-text" class="chirp-text">Click a button to start!</p>
+      </div>
+
+      <div class="chirp-actions">
+        <button id="chirp-dog" class="button">At Work 🐶</button>
+        <button id="chirp-mate" class="button">On Ice 🏒</button>
+        <button id="chirp-both" class="button">Both</button>
+      </div>
+
+      <p id="chirp-result" class="chirp-result hidden"></p>
+      <button id="chirp-next" class="button hidden">Next Quote</button>
+    </section>
+  </main>
+
+  <div data-include="/partials/footer.html"></div>
+</body>
+</html>

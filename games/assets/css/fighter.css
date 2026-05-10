@@ -1,0 +1,198 @@
+.fighter-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+#fighter-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  width: min(640px, 100%);
+  height: auto;
+  border-radius: 8px;
+}
+
+.fighter-chirp {
+  position: fixed;
+  font-style: italic;
+  font-size: .95rem;
+  color: #444;
+  text-align: center;
+  background: #fff;
+  border: 2px solid #c8dce8;
+  border-radius: 14px;
+  padding: .55rem 1.1rem;
+  max-width: 240px;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+  z-index: 100;
+}
+.fighter-chirp::before {
+  content: '';
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #c8dce8;
+}
+.fighter-chirp::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #fff;
+}
+.fighter-chirp.show { opacity: 1; }
+.fighter-chirp.fade { opacity: 0; }
+
+.fighter-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .8rem;
+  width: 100%;
+}
+
+.fighter-ui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+}
+
+.fighter-move-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  width: 100%;
+  max-width: 520px;
+}
+
+.fighter-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 2.6rem);
+  grid-template-rows: repeat(3, 2.6rem);
+  gap: .15rem;
+  flex-shrink: 0;
+}
+
+.fighter-dir {
+  width: 100%;
+  height: 100%;
+  font-size: 1rem;
+  padding: 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.fighter-moves {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: .4rem;
+}
+
+.fighter-moves .button {
+  font-size: .85rem;
+  padding: .5rem .2rem;
+}
+
+.fighter-hud {
+  display: flex;
+  gap: 1.4rem;
+  font-size: .95rem;
+  font-weight: 600;
+}
+
+.fighter-hud-item {
+  color: #3a5878;
+}
+
+.fighter-end {
+  background: none;
+  border: none;
+  font-size: .8rem;
+  color: #999;
+  cursor: pointer;
+  padding: .25rem .5rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fighter-end:hover { color: #555; }
+
+.hidden { display: none; }
+
+.fighter-modal {
+  border: 2px solid #c8dce8;
+  border-radius: 14px;
+  padding: 2rem 2.5rem;
+  max-width: 360px;
+  width: 90%;
+  text-align: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.fighter-modal[open] { display: flex; }
+.fighter-modal::backdrop { background: rgba(0,0,0,0.45); }
+
+.fighter-modal-close {
+  background: none;
+  border: none;
+  font-size: .8rem;
+  color: #999;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0;
+}
+.fighter-modal-close:hover { color: #555; }
+.fighter-modal-title { font-size: 1.3rem; margin: 0; }
+.fighter-modal-body  { font-size: 0.95rem; color: #444; margin: 0; line-height: 1.6; }
+
+/* HP bar */
+.fighter-hp-wrap { display: flex; align-items: center; gap: .5rem; }
+.fighter-hp-label { font-size: .75rem; font-weight: 700; color: #5a7898; text-transform: uppercase; letter-spacing: .05em; }
+.fighter-hp-bar { width: 100px; height: 14px; background: #dce8f0; border: 2px solid #8aacbe; border-radius: 7px; overflow: hidden; }
+.fighter-hp-fill { height: 100%; width: 100%; background: linear-gradient(to right, #6e98b8, #bacede); border-radius: 7px; transition: width .25s ease; }
+.fighter-hp-fill[data-low="true"] { background: linear-gradient(to right, #c84040, #e07070); }
+
+/* Debug grid */
+.fighter-debug-toggle { margin-top: 1.5rem; text-align: center; }
+.fighter-debug-btn {
+  background: none;
+  border: 1px solid #c8dce8;
+  border-radius: 6px;
+  padding: .25rem .7rem;
+  font-size: .75rem;
+  font-family: monospace;
+  color: #888;
+  cursor: pointer;
+}
+.fighter-debug-btn:hover { color: #444; border-color: #8aacbe; }
+.fighter-debug {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: .8rem 1rem;
+  padding: 1.5rem 0;
+  width: 100%;
+  border-top: 1px solid #c8dce8;
+  margin-top: .5rem;
+}
+.fighter-debug-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+}
+.fighter-debug-label {
+  font-size: .72rem;
+  font-family: monospace;
+  color: #666;
+}

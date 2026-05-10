@@ -1,0 +1,104 @@
+/* v7: Desktop split columns; auto-start rounds; larger Next; no Start button */
+.hero--text{ grid-template-columns:1fr auto; align-items:center }
+.gw-header{ gap:1rem }
+.gw-streak{ font-size:1.25rem; font-weight:700; background:rgba(255,105,0,.08); border:1px solid rgba(255,105,0,.25); padding:.4rem .7rem; border-radius:999px }
+
+/* Stage uses CSS grid with three areas: left | quote | right (desktop) */
+.gw-stage{
+  display:grid;
+  grid-template-columns: 1fr minmax(320px, 1.6fr) 1fr;
+  align-items:start;
+  gap:1rem;
+}
+.gw-quote.card{ position:relative; padding:1.25rem; text-align:center }
+.gw-accent{ position:absolute; left:0; top:0; bottom:0; width:6px; background:linear-gradient(180deg,var(--accent),#5ac8fa) }
+.gw-quote blockquote{ margin:0; font-size:1.5rem; line-height:1.6; font-weight:700 }
+
+/* Choice columns (desktop) */
+.gw-choices-col{ display:grid; gap:.5rem; align-content:start }
+.choice-btn{
+  border:1px solid rgba(0,0,0,.15);
+  background:#FAFCFF;
+  border-radius:12px;
+  padding:.75rem 1rem;
+  cursor:pointer;
+  text-align:center;
+  font-weight:700;
+}
+.choice-btn:hover{ background:rgba(30,136,229,.10) }
+.choice-btn.correct{ outline:2px solid var(--accent2); outline-offset:2px }
+.choice-btn.wrong{ outline:2px solid #EF4444; outline-offset:2px }
+
+/* Everyone button (full width) */
+.gw-everyone-wrap{ margin-top:.5rem }
+.everyone-btn{
+  width:100%;
+  padding:1rem 1.25rem;
+  font-weight:900;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.15);
+  background:linear-gradient(180deg,#fff,#F3F8FF);
+  cursor:pointer;
+}
+.everyone-btn:hover{ background:linear-gradient(180deg,#fff,#E9F2FF) }
+
+.gw-result{ min-height:1.25rem; margin:.5rem 0 0 }
+.gw-controls{ display:flex; gap:.75rem; margin-top:.5rem; flex-wrap:wrap }
+.button-lg{ padding: .95rem 1.35rem; font-size:1.08rem; font-weight:800 }
+
+.gw-message{ margin-top:.75rem }
+
+/* Mobile/tablet: stack quote then a responsive grid of choices */
+@media (max-width: 900px){
+  .gw-stage{
+    grid-template-columns: 1fr;
+  }
+  #gw-choices-left, #gw-choices-right{
+    display:none;
+  }
+  .gw-stage::after{ content:""; } /* keeps layout clean */
+  /* When stacked, we render a single grid below via JS (see .gw-choices-grid) */
+}
+/* Grid used on mobile: injected container */
+.gw-choices-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.75rem; margin-top:.75rem }
+
+.hidden{ display:none }
+
+figure {
+  margin:1em;
+}
+
+/* Sticky action bar on small screens; standard on desktop */
+.gw-controls {
+  display:flex; gap:.75rem; margin-top:.75rem; flex-wrap:wrap;
+  transition: transform .25s ease, opacity .25s ease;
+}
+
+/* Larger, easy-to-tap Next */
+#gw-next.button-lg {
+  min-width: 9rem;
+  min-height: 2.75rem;
+  font-weight: 800;
+  border-width: 2px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+/* Mobile/tablet: slide-up sticky bar once ready */
+@media (max-width: 900px){
+  .gw-controls {
+    position: sticky;
+    bottom: 0;
+    padding: .75rem;
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 -6px 18px rgba(0,0,0,.06);
+    transform: translateY(110%); /* hidden until answer picked */
+    opacity: 0;
+    z-index: 50;
+  }
+  .gw-controls.show { transform: translateY(0); opacity: 1; }
+  /* add breathing room so sticky bar doesn't cover content */
+  .content.cta-active { padding-bottom: 5rem; }
+}

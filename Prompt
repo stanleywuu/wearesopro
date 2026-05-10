@@ -1,0 +1,33 @@
+Some rules:
+Keep in mind this will be a zip file I upload to netlify, I don't expect to have to use anything other than the free tier.
+
+Let's keep the output as simple as we can. We don't need to do much. 
+This is a simple static page project.
+Rules of the generated code:
+
+1. Make it simple and easy to read by humans, try to limit functions within 50 lines long (or whatever the best practice is as suggested by code complete 2)
+2. Make output concise, to save tokens
+3. Follow best practices and when applicable, follow best security practices
+
+So here's what we need to do:
+
+This is a "bonus content" site for a book.
+The book is about beer league hockey players, so let's pick a theme and css style that works for that
+
+It will contain
+Landing page will probably be a picture of the book I guess
+Some editor's notes
+- Acknowledgements
+- The pipeline to build the book
+- Random thoughts
+
+Maybe another section for some experimental pages.
+- For now, it will say "Under construction, if you would like, enter your email here and we'll notify you when this page becomes available"
+Link to amazon store and a self publishing store for custom versions as gifts
+Interactive games and quizzes
+On all of these pages, I want a side bar that allows me to add widgets for polling
+ regarding different topics in the book-- You can use placeholders, I can ask chatgpt separately for this, it's most likely going to talk to google sheets
+
+Now I still want the page to look modern, so don't do the old holy grail css setup please
+
+No need for additional interface, I will be adding new content directly 

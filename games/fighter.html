@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta data-include="/partials/title.html">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+  <link rel="preload" href="/assets/css/style.css" as="style" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/css/critical.css?v=1">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/games/assets/css/fighter.css">
+  <script defer src="/assets/js/main.js"></script>
+  <script defer src="/games/assets/js/fighter.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a></div>
+    <div data-include="/partials/nav.html"></div>
+  </header>
+  <noscript>
+    <div data-include="/partials/nav-noscript.html"></div>
+  </noscript>
+
+  <main class="layout">
+    <div data-include="/partials/sidebar.html"></div>
+
+    <section class="content">
+      <section class="article">
+        <h1>Goalie Brawl</h1>
+        <p class="muted">Enemies are charging the crease. Move with arrow keys, pick your moment, and beat them back.</p>
+      </section>
+
+      <div class="fighter-wrap">
+        <canvas id="fighter-canvas" aria-label="Side-scrolling goalie fight game"></canvas>
+
+        <p id="fighter-chirp" class="fighter-chirp" aria-live="polite"></p>
+
+        <div class="fighter-controls">
+          <button id="fighter-start" class="button">Start Brawl</button>
+
+          <div id="fighter-ui" class="fighter-ui hidden">
+            <div class="fighter-move-row">
+              <div class="fighter-dpad">
+                <div></div>
+                <button id="btn-up"    class="button fighter-dir" aria-label="Move up"    aria-keyshortcuts="ArrowUp">▲</button>
+                <div></div>
+                <button id="btn-left"  class="button fighter-dir" aria-label="Move left"  aria-keyshortcuts="ArrowLeft">◀</button>
+                <div></div>
+                <button id="btn-right" class="button fighter-dir" aria-label="Move right" aria-keyshortcuts="ArrowRight">▶</button>
+                <div></div>
+                <button id="btn-down"  class="button fighter-dir" aria-label="Move down"  aria-keyshortcuts="ArrowDown">▼</button>
+                <div></div>
+              </div>
+              <div class="fighter-moves">
+                <button id="move-kick"       class="button" aria-keyshortcuts="1">1 Kick</button>
+                <button id="move-punch"      class="button" aria-keyshortcuts="2">2 Punch</button>
+                <button id="move-stickswing" class="button" aria-keyshortcuts="3">3 Stick Swing</button>
+                <button id="move-slide"      class="button" aria-keyshortcuts="4">4 Slide</button>
+                <button id="move-jump"       class="button" aria-keyshortcuts="5">5 Jump</button>
+                <button id="move-throwstick" class="button" aria-keyshortcuts="6">6 Throw Stick</button>
+              </div>
+            </div>
+
+            <div class="fighter-hud" aria-live="polite">
+              <div class="fighter-hp-wrap fighter-hud-item">
+                <label class="fighter-hp-label">HP</label>
+                <div class="fighter-hp-bar"><div class="fighter-hp-fill" id="fighter-hp-fill"></div></div>
+              </div>
+              <span id="fighter-wave"  class="fighter-hud-item"></span>
+              <span id="fighter-score" class="fighter-hud-item"></span>
+            </div>
+
+            <button id="fighter-end" class="fighter-end">End brawl</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <dialog id="fighter-modal" class="fighter-modal" aria-labelledby="fighter-modal-title">
+    <h2 id="fighter-modal-title" class="fighter-modal-title"></h2>
+    <p  id="fighter-modal-body"  class="fighter-modal-body"></p>
+    <button id="fighter-replay" class="button">Try Again</button>
+    <button id="fighter-modal-close" class="fighter-modal-close">Close</button>
+  </dialog>
+
+  <div data-include="/partials/footer.html"></div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta data-include="/partials/title.html">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+  <link rel="preload" href="/assets/css/style.css" as="style" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/css/critical.css?v=1">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/games/assets/css/whowas.css">
+  <script defer src="/assets/js/main.js"></script>
+  <script defer src="/games/assets/js/whowas.js"></script>
+  <script defer src="/assets/js/tommy-float.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a></div>
+    <div data-include="/partials/nav.html"></div>
+  </header>
+  <noscript>
+    <div data-include="/partials/nav-noscript.html"></div>
+  </noscript>
+
+  <main class="layout">
+    <div data-include="/partials/sidebar.html"></div>
+
+    <section class="content">
+      <section class="article">
+        <h1>Who's this Early Bird?</h1>
+        <p class="muted">Quick facts about the characters. Take a guess — you can keep trying until you get it right.</p>
+      </section>
+
+      <div id="whowas-box" class="card">
+        <p id="whowas-question" class="whowas-question"></p>
+        <div id="whowas-choices" class="whowas-choices"></div>
+        <p id="whowas-result" class="whowas-result hidden"></p>
+      </div>
+
+      <button id="whowas-next" class="button hidden">Next Question</button>
+    </section>
+  </main>
+
+  <div data-include="/partials/footer.html"></div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<nav class="site-nav" aria-label="Primary">
+  <a class="nav-home" href="/index.html">Home</a>
+  <a href="/teamupdates.html">Team Updates</a>
+
+  <div class="dropdown">
+    <a href="/notes.html" class="top-link">Editor’s Notes</a>
+    <button class="drop-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-notes" aria-label="Open Editor’s Notes menu">▾</button>
+    <ul id="menu-notes" class="dropdown-menu" role="menu" aria-label="Editor’s Notes">
+      <li><a role="menuitem" href="/notes/pipeline.html">The pipeline that built everything</a></li>
+      <li><a role="menuitem" href="/notes/spreadsheet.html">The infamous Spreadsheet</a></li>
+      <li><a role="menuitem" href="/notes/faqs.html">Frequently Asked Questions</a></li>
+    </ul>
+  </div>
+
+  <!--<a href="/experiments.html">Experiments</a>-->
+
+  <div class="dropdown">
+    <a href="/games.html" class="top-link">Games &amp; Quizzes</a>
+    <button class="drop-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-games" aria-label="Open Games & Quizzes menu">▾</button>
+    <ul id="menu-games" class="dropdown-menu" role="menu" aria-label="Games &amp; Quizzes">
+      <li><a role="menuitem" href="/games/chirp.html">Teammate or Coworker</a></li>
+      <li><a role="menuitem" href="/games/quotes.html">Who said what?</a></li>
+      <li><a role="menuitem" href="/games/whowas.html">Who's this Early Bird?</a></li>
+      <li><a role="menuitem" href="/games/adopt.html">Tommy The Goalie</a></li>
+      <li><a role="menuitem" href="/games/fighter.html">Goalie Brawl</a></li>
+    </ul>
+  </div>
+
+  <a href="https://www.amazon.com/dp/B0G2FLQ76Z" class="amazon-btn">Buy on Amazon</a>
+</nav>
+
+<button class="mobile-menu-toggle" aria-label="Open menu" aria-controls="mobile-drawer" aria-expanded="false">Menu ☰</button>
+
+<!-- Mobile Drawer -->
+<div id="mobile-drawer" class="drawer" hidden>
+  <div class="drawer-backdrop" data-close></div>
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+    <header class="drawer-header">
+      <h2 id="drawer-title">Menu</h2>
+      <button class="drawer-close" aria-label="Close" data-close>✕</button>
+    </header>
+    <nav class="drawer-nav" aria-label="Mobile">
+      <a href="/index.html">Home</a>
+      <a href="/teamupdates.html">Team Updates</a>
+      <details>
+        <summary>Editor’s Notes</summary>
+        <ul>
+          <li><a role="menuitem" href="/notes/pipeline.html">The pipeline that built everything</a></li>
+          <li><a role="menuitem" href="/notes/spreadsheet.html">The infamous Spreadsheet</a></li>
+          <li><a role="menuitem" href="/notes/faqs.html">Frequently Asked Questions</a></li>
+        </ul>
+      </details>
+      <!--<a href="/experiments.html">Experiments</a>-->
+      <details>
+        <summary>Games &amp; Quizzes</summary>
+        <ul>
+          <li><a role="menuitem" href="/games/chirp.html">Teammate or Coworker</a></li>
+          <li><a role="menuitem" href="/games/quotes.html">Who said what?</a></li>
+          <li><a role="menuitem" href="/games/whowas.html">Who's this Early Bird?</a></li>
+          <li><a role="menuitem" href="/games/adopt.html">Tommy The Goalie</a></li>
+          <li><a role="menuitem" href="/games/fighter.html">Goalie Brawl</a></li>
+        </ul>
+      </details>
+      <a href="https://www.amazon.com/dp/B0G2FLQ76Z" class="amazon-btn">Buy on Amazon</a>
+
+      <hr style="border:none;border-top:1px solid rgba(0,0,0,.1);margin:1rem 0">
+      <section class="drawer-polls">
+        <h3 class="muted drawer-polls-title">Polls</h3>
+        <p class="muted drawer-polls-text">Coming soon</p>
+        <a href="https://forms.gle/i3od22Sokxh4K8gw5">Contact Us</a>
+      </section>
+    </nav>
+  </aside>
+</div>

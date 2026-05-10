@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta data-include="/partials/title.html">
+  <link rel="preload" href="/assets/css/style.css?v=14" as="style" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/css/critical.css?v=1">
+<link rel="stylesheet" href="/assets/css/style.css?v=14">
+  <link rel="stylesheet" href="/games/assets/css/quotes.css?v=7">
+  <script defer src="/assets/js/main.js"></script>
+  <script defer src="/games/assets/js/quotes.data.js?v=1"></script>
+  <script defer src="/games/assets/js/quotes.js?v=7"></script>
+  <script defer src="/assets/js/tommy-float.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a></div>
+    <div data-include="/partials/nav.html"></div>
+  </header>
+
+  <main class="layout">
+    <div data-include="/partials/sidebar.html"></div>
+
+    <section class="content content--centre">
+      <section class="hero hero--text gw-header">
+        <div class="gw-title">
+          <h1>Who Said What</h1>
+          <p class="muted">Below, we will display a list of quotes, pick who you think said it.</p>
+          <p class="muted">Points don't matter, it's just for fun and add some flavor to the characters.</p>
+          <p class="muted">Five quotes per round. Keep the streak alive.</p>
+        </div>
+        <div class="gw-streak" aria-live="polite" title="Current streak">
+          🔥 <strong id="gw-streak">0</strong>
+        </div>
+      </section>
+
+      <!-- Desktop split layout: left/right choices around quote -->
+      <section id="gw-stage" class="gw-stage">
+        <div id="gw-choices-left" class="gw-choices-col" aria-label="Choose the speaker (left)"></div>
+
+        <figure class="gw-quote card" aria-live="polite">
+          <div class="gw-accent"></div>
+          <blockquote tabindex="-1" id="gw-text">Loading…</blockquote>
+        </figure>
+
+        <div id="gw-choices-right" class="gw-choices-col" aria-label="Choose the speaker (right)"></div>
+      </section>
+
+      <!-- Everyone button (full-width if present) -->
+      <div class="gw-everyone-wrap hidden">
+        <button id="gw-everyone" class="everyone-btn" data-char="everyone" aria-keyshortcuts="0">EVERYONE</button>
+      </div>
+
+      <!-- Result + Controls -->
+      <p id="gw-result" class="gw-result muted" aria-live="polite"></p>
+      <div class="gw-controls">
+        <button id="gw-next" class="button button-lg" disabled>Next</button>
+      </div>
+
+      <!-- Optional message for the current quote -->
+      <p id="gw-message" class="gw-message muted"></p>
+    </section>
+  </main>
+
+  <div data-include="/partials/footer.html"></div>
+</body>
+</html>

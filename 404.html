@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta data-include="/partials/title.html">
+<meta name="description" content="Bonus content for a beer league hockey book: notes, experiments, games, and links.">
+<link rel="icon" href="/assets/img/book-placeholder.png">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+
+<link rel="preload" href="/assets/css/style.css" as="style" fetchpriority="high">
+<link rel="stylesheet" href="/assets/css/critical.css?v=1">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script defer src="/assets/js/main.js"></script>
+
+  <script defer src="/assets/js/tommy-float.js"></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="brand">
+    <a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a>
+  </div>
+  <div data-include="/partials/nav.html"></div>
+</header>
+<noscript>
+  <div data-include="/partials/nav-noscript.html"></div>
+</noscript>
+
+<main class="layout">
+  <div data-include="/partials/sidebar.html"></div>
+  <section class="content">
+    <h1>Oops</h1>
+    <p>This is still under construction. If you’d like a ping when things go live, drop your email:</p>
+
+    <form id="emailForm" class="stack" name="notify" method="POST">
+      <input type="hidden" name="form-name" value="notify">
+      <p class="sr-only"><label>Leave this empty: <input name="field"></label></p>
+      <label>Email
+        <input id="email" name="email" type="email" required maxlength="120" autocomplete="email" placeholder="you@example.com">
+      </label>
+      <button type="submit">Notify Me</button>
+    </form>
+
+    <p class="muted">No spam. I don't expect to do anything consistently (because I'm lazy). 
+      You may get an email from me once or a twice a quarter regarding news, updates, or opportunities regarding related to Early Birds Hockey.</p>
+    <p class="muted"></p>
+  </section>
+</main>
+<div data-include="/partials/footer.html"></div>
+</body>
+
+
+<script>
+document.getElementById('emailForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  // bot trap
+  const honeypot = e.target.querySelector('input[name="field"]').value;
+  if (honeypot) {
+    return; // silently ignore bots
+  }
+
+  const email = document.getElementById('email').value;
+  const res = await fetch("https://script.google.com/macros/s/AKfycbx5GueBGP-BLIEqBXOHVFXJ7Ut8ng3tacH6QEloyypcPvCtKVEISIeiavLKMhi8_eqUTQ/exec", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+  if(res.ok){
+    window.location.href="/thanks.html"
+    e.target.reset();
+  } else {
+    document.getElementById('status').textContent = "⚠️ Something went wrong, try again later.";
+  }
+});
+</script>
+</html>

@@ -1,0 +1,5 @@
+.whowas-question { font-size:1.1rem; font-weight:600; margin-bottom:1rem; }
+.whowas-choices  { display:grid; gap:.5rem; }
+.whowas-choices button:disabled { opacity:.35; text-decoration:line-through; cursor:not-allowed; }
+.whowas-result   { margin-top:1rem; font-weight:700; line-height:1.4; }
+.hidden          { display:none; }

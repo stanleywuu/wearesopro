@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta data-include="/partials/title.html">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+  <link rel="preload" href="/assets/css/style.css" as="style" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/css/critical.css?v=1">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/games/assets/css/adopt.css">
+  <script defer src="/assets/js/main.js"></script>
+  <script defer src="/games/assets/js/adopt.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a></div>
+    <div data-include="/partials/nav.html"></div>
+  </header>
+  <noscript>
+    <div data-include="/partials/nav-noscript.html"></div>
+  </noscript>
+
+  <main class="layout">
+    <div data-include="/partials/sidebar.html"></div>
+
+    <section class="content">
+      <section class="article">
+        <h1>Meet Tommy</h1>
+        <p class="muted">Adopt Tommy The Goalie. Click him for wisdom. Put him through his paces in training.</p>
+      </section>
+
+      <div class="adopt-wrap">
+        <canvas id="adopt-canvas" aria-label="Tommy the otter goalie pixel art sprite"></canvas>
+
+        <p id="adopt-chirp" class="adopt-chirp" aria-live="polite"></p>
+
+        <div class="adopt-controls">
+          <button id="adopt-train" class="button">Train Tommy</button>
+
+          <div id="adopt-zones" class="adopt-zones hidden">
+            <button id="zone-left"   class="button" aria-keyshortcuts="ArrowLeft">◀ Left</button>
+            <button id="zone-center" class="button" aria-keyshortcuts="ArrowDown">▼ Five-hole</button>
+            <button id="zone-right"  class="button" aria-keyshortcuts="ArrowRight">Right ▶</button>
+          </div>
+
+          <p id="adopt-score" class="adopt-score hidden" aria-live="polite"></p>
+          <button id="adopt-end" class="adopt-end hidden">End training</button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <dialog id="adopt-modal" class="adopt-modal" aria-labelledby="adopt-modal-title">
+    <h2 id="adopt-modal-title" class="adopt-modal-title"></h2>
+    <p  id="adopt-modal-body"  class="adopt-modal-body"></p>
+    <button id="adopt-replay" class="button">Try Again</button>
+    <button id="adopt-modal-close" class="adopt-modal-close">Close</button>
+  </dialog>
+
+  <div data-include="/partials/footer.html"></div>
+</body>
+</html>
