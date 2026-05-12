@@ -1,0 +1,9 @@
+{
+  "routes": [
+    {
+      "route": "/intermission",
+      "redirect": "/games.html",
+      "statusCode": 301
+    }
+  ]
+}
