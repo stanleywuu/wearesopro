@@ -159,14 +159,7 @@
     'Goalies run this team. Don’t @ me.',
   ];
   let chirpTimer = null;
-  canvas.addEventListener('click', () => {
-    bubble.textContent = '”' + CHIRPS[Math.floor(Math.random()*CHIRPS.length)] + '”';
-    bubble.style.opacity = '1';
-    bubble.style.left = clamp(px - 60, 4, window.innerWidth - 200) + 'px';
-    bubble.style.top  = clamp(py - 40, 4, window.innerHeight - 80) + 'px';
-    clearTimeout(chirpTimer);
-    chirpTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 2200);
-  });
+  canvas.addEventListener('click', () => { location.href = '/games/adopt.html'; });
 
   // ── Periodic chirp ────────────────────────────────────────────────────────
   function autoChirp() {
