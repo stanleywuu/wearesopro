@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const TX = 16;  // x-shift to centre Tommy in the wider canvas
 
   // ── Palette ───────────────────────────────────────────────────────────────
-  const COL = {
+  const COL_DEFAULTS = {
     padWhite : "#f2f0ec",
     padHi    : "#ffffff",
     padShd   : "#ccc8be",
@@ -28,11 +28,15 @@ document.addEventListener("DOMContentLoaded", () => {
     navy     : "#182048",
     black    : "#101008",
     white    : "#ffffff",
-    iceFloor : "#cce8f4",
-    iceBg    : "#dceef8",
-    crease   : "#b8def0",
-    shadow   : "rgba(40,70,100,0.18)",
+    iceFloor    : "#cce8f4",
+    iceBg       : "#dceef8",
+    crease      : "#b8def0",
+    shadow      : "rgba(40,70,100,0.18)",
+    helmetShell : "#f2f0ec",
+    stickTape   : "#2e7a2e",
   };
+  let COL = Object.assign({}, COL_DEFAULTS);
+  function applyCustomColors(overrides) { COL = Object.assign({}, COL_DEFAULTS, overrides || {}); }
 
   // ── Body part dimensions (logical pixels) ────────────────────────────────
   const PAD_W = 36, PAD_H = 46, PAD_R = 6;              // upright pad: width, height, corner-radius
@@ -126,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.beginPath(); ctx.moveTo(p(tx), p(ty)); ctx.lineTo(p(mx), p(my)); ctx.stroke();
     ctx.lineWidth = p(7);
     ctx.beginPath(); ctx.moveTo(p(mx), p(my)); ctx.lineTo(p(bx), p(by)); ctx.stroke();
-    ctx.strokeStyle = '#2e7a2e'; ctx.lineWidth = p(9);
+    ctx.strokeStyle = COL.stickTape; ctx.lineWidth = p(9);
     ctx.beginPath(); ctx.moveTo(p(bx), p(by)); ctx.lineTo(p(bx + BLADE_LEN), p(by)); ctx.stroke();
     ctx.lineCap = 'round';
   }
@@ -212,11 +216,14 @@ document.addEventListener("DOMContentLoaded", () => {
       C(cx + 6, cy - 3, 3, COL.brown);
       L(cx - 10, cy - 8, cx - 3, cy - 6, COL.brown, 1.5);
       L(cx + 3,  cy - 6, cx + 10, cy - 8, COL.brown, 1.5);
+      E(cx - 6, cy + 3, 1.5, 2.5, '#6aace8');
     } else if (expr === "tired") {
       C(cx - 6, cy - 3, 3, COL.brown);
       C(cx + 6, cy - 3, 3, COL.brown);
       R(cx - 10, cy - 6, 8, 4, COL.cream);
       R(cx + 2,  cy - 6, 8, 4, COL.cream);
+      E(cx - 6, cy + 3, 1.5, 2.5, '#6aace8');
+      E(cx + 6, cy + 3, 1.5, 2.5, '#6aace8');
     } else {
       C(cx - 6, cy - 3, 3, COL.brown);
       C(cx + 6, cy - 3, 3, COL.brown);
@@ -226,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawHelmet(cx, cy) {
-    E(cx, cy, 22, 22, COL.padWhite);
+    E(cx, cy, 22, 22, COL.helmetShell);
     [[cx-9, cy-14],[cx, cy-16],[cx+9, cy-14],
      [cx-13, cy-8],[cx+13, cy-8],
      [cx-8,  cy-2],[cx+8,  cy-2]].forEach(([hx, hy]) => C(hx, hy, 2.2, COL.gray));
@@ -561,13 +568,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function drawIdleFrame() {
+    const expr = adoptState ? getMoodExpr(adoptState.mood) : 'normal';
     switch (behavior) {
-      case BHVR.WALK_L:     drawReady(idleBob, tommyX, "normal", -1); break;
-      case BHVR.WALK_R:     drawReady(idleBob, tommyX, "normal",  1); break;
-      case BHVR.STRETCH:    drawStretchPose(tommyX);                   break;
-      case BHVR.BUTTERFLY:  drawButterfly(tommyX);                     break;
-      case BHVR.SLIDE:      drawPadSlide(tommyX, slideDir === -1);      break;
-      default:              drawReady(idleBob, tommyX, "normal", 0);   break;
+      case BHVR.WALK_L:     drawReady(idleBob, tommyX, expr, -1); break;
+      case BHVR.WALK_R:     drawReady(idleBob, tommyX, expr,  1); break;
+      case BHVR.STRETCH:    drawStretchPose(tommyX);               break;
+      case BHVR.BUTTERFLY:  drawButterfly(tommyX);                 break;
+      case BHVR.SLIDE:      drawPadSlide(tommyX, slideDir === -1); break;
+      default:              drawReady(idleBob, tommyX, expr, 0);   break;
     }
   }
 
@@ -630,6 +638,24 @@ document.addEventListener("DOMContentLoaded", () => {
     "Did you see that?",
   ];
 
+  const SAD_CHIRPS = [
+    "I thought you'd never come back...",
+    "Nobody even shoots on me anymore.",
+    "Is this what retirement feels like?",
+    "My pads are gathering dust.",
+    "I stopped zero shots today. Because nobody came.",
+    "Five-hole... five-hole everywhere...",
+  ];
+
+  const TIRED_CHIRPS = [
+    "I can't even butterfly.",
+    "Tell my pads I loved them.",
+    "zzz...",
+    "Someone. Please. Shoot on me.",
+    "My stick is heavier than usual.",
+    "....",
+  ];
+
   const chirpEl  = document.getElementById("adopt-chirp");
   let chirpTimer     = null;
   let idleChirpTimer = null;
@@ -657,10 +683,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
+  function moodChirps() {
+    if (!adoptState) return CHIRPS;
+    if (adoptState.mood < 20) return TIRED_CHIRPS;
+    if (adoptState.mood < 45) return SAD_CHIRPS;
+    return CHIRPS;
+  }
+
   function scheduleIdleChirp() {
     clearTimeout(idleChirpTimer);
     idleChirpTimer = setTimeout(() => {
-      if (state === "idle") showChirp(randomFrom(CHIRPS));
+      if (state === "idle") showChirp(randomFrom(moodChirps()));
       scheduleIdleChirp();
     }, 20000 + Math.random() * 25000);  // 20–45 s between chirps (~5 s quiet after fade)
   }
@@ -671,12 +704,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const r  = canvas.getBoundingClientRect();
     const cx = (e.clientX - r.left) / r.width;
     const cy = (e.clientY - r.top)  / r.height;
-    if (cx > 0.1 && cx < 0.9 && cy > 0.05 && cy < 0.95) showChirp(randomFrom(CHIRPS));
+    if (cx > 0.1 && cx < 0.9 && cy > 0.05 && cy < 0.95) showChirp(randomFrom(moodChirps()));
   });
 
   // ── Game state ────────────────────────────────────────────────────────────
   let state = "idle";
   let frozenPoseFn = null; // when set, render loop holds this pose instead of animating
+  let adoptState = null;
 
   let idleBob  = 0;
   let idleTick = 0;
@@ -684,7 +718,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const SHOTS_PER_LEVEL    = 8;
   const MIN_SAVES_PASS     = 4;
-  const MAX_LEVEL          = 5;
+  const MAX_LEVEL          = 10;
   const START_MS           = 1000;
   const SPEED_STEP_MS      = 40;
   const LEVEL_BASE_DROP_MS = 150;
@@ -809,8 +843,232 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.showModal();
     state = "idle";   // Tommy goes back to idle animation
 
+    if (adoptState) {
+      adoptState.totalSaves  += totalSaves;
+      adoptState.totalGoals  += totalMisses;
+      adoptState.xp          += totalSaves * XP_PER_SAVE + (won ? XP_WIN_BONUS : 0);
+      adoptState.mood         = Math.max(0, adoptState.mood + (won ? -5 : -15));
+      adoptState.lastTrained  = Date.now();
+      const prevLevel = adoptState.level;
+      checkLevelUp(adoptState);
+      if (adoptState.level > prevLevel) {
+        adoptState.mood = Math.min(100, adoptState.mood + 40);
+        showChirp("Level " + adoptState.level + "! Let's go!", true);
+      }
+      saveAdoptState(adoptState);
+      updateStatsUI(adoptState);
+    }
+
     const best = parseInt(localStorage.getItem("tommy-best") || "0", 10);
     if (totalSaves > best) localStorage.setItem("tommy-best", String(totalSaves));
+  }
+
+  // ── Adoption / Tamagotchi ─────────────────────────────────────────────────
+
+  const LEVEL_XP   = [50, 150, 350, 700, 1200, 1900, 2800, 3900, 5200]; // XP to reach levels 2–10
+  const MOOD_DECAY = [15, 11, 8, 5, 3, 2, 2, 1, 1, 1];                 // decay per day, levels 1–10
+  const XP_PER_SAVE  = 5;
+  const XP_WIN_BONUS = 15;
+
+  function loadAdoptState() {
+    if (localStorage.getItem('tommy-adopted') !== 'true') return null;
+    const s = {
+      adopted     : true,
+      adoptedDate : parseInt(localStorage.getItem('tommy-adopted-date') || '0', 10),
+      level       : parseInt(localStorage.getItem('tommy-level')        || '1', 10),
+      xp          : parseInt(localStorage.getItem('tommy-xp')           || '0', 10),
+      totalSaves  : parseInt(localStorage.getItem('tommy-total-saves')  || '0', 10),
+      totalGoals  : parseInt(localStorage.getItem('tommy-total-goals')  || '0', 10),
+      lastTrained : parseInt(localStorage.getItem('tommy-last-trained') || '0', 10),
+      mood        : parseInt(localStorage.getItem('tommy-mood')         || '80', 10),
+    };
+    if (s.lastTrained) {
+      const daysSince = (Date.now() - s.lastTrained) / 86400000;
+      let mood = s.mood - MOOD_DECAY[s.level - 1] * daysSince;
+      if (mood < 0 && s.level > 1) {
+        const daysOverZero = Math.abs(mood) / MOOD_DECAY[s.level - 1];
+        const levelDrop = Math.min(s.level - 1, Math.floor(daysOverZero / 2));
+        if (levelDrop > 0) {
+          s.level = Math.max(1, s.level - levelDrop);
+          s.xp    = Math.min(s.xp, LEVEL_XP[s.level - 1] - 1);
+          mood    = 20;
+        }
+      }
+      s.mood = Math.max(0, Math.round(mood));
+    }
+    return s;
+  }
+
+  function saveAdoptState(s) {
+    localStorage.setItem('tommy-adopted',      'true');
+    localStorage.setItem('tommy-adopted-date', String(s.adoptedDate));
+    localStorage.setItem('tommy-level',        String(s.level));
+    localStorage.setItem('tommy-xp',           String(s.xp));
+    localStorage.setItem('tommy-total-saves',  String(s.totalSaves));
+    localStorage.setItem('tommy-total-goals',  String(s.totalGoals));
+    localStorage.setItem('tommy-last-trained', String(s.lastTrained));
+    localStorage.setItem('tommy-mood',         String(s.mood));
+  }
+
+  function getMoodExpr(mood) {
+    if (mood >= 75) return 'happy';
+    if (mood >= 45) return 'normal';
+    if (mood >= 20) return 'sad';
+    return 'tired';
+  }
+
+  function getMoodLabel(mood) {
+    if (mood >= 75) return 'Happy';
+    if (mood >= 45) return 'Content';
+    if (mood >= 20) return 'Sad';
+    return 'Exhausted';
+  }
+
+  function xpInLevel(s) {
+    return s.level <= 1 ? s.xp : s.xp - LEVEL_XP[s.level - 2];
+  }
+
+  function xpToNext(s) {
+    if (s.level >= MAX_LEVEL) return null;
+    const prev = s.level <= 1 ? 0 : LEVEL_XP[s.level - 2];
+    return LEVEL_XP[s.level - 1] - prev;
+  }
+
+  function checkLevelUp(s) {
+    while (s.level < MAX_LEVEL && s.xp >= LEVEL_XP[s.level - 1]) s.level++;
+  }
+
+  function updateStatsUI(s) {
+    document.getElementById('stat-level').textContent = s.level;
+    const next = xpToNext(s);
+    document.getElementById('stat-xp-text').textContent =
+      s.level >= MAX_LEVEL ? 'Max level' : xpInLevel(s) + ' / ' + next + ' XP';
+    const xpPct = s.level >= MAX_LEVEL ? 100 : (xpInLevel(s) / next * 100).toFixed(1);
+    document.getElementById('stat-xp-bar').style.width = xpPct + '%';
+    const moodBar = document.getElementById('stat-mood-bar');
+    moodBar.style.width = s.mood + '%';
+    const moodColors = ['#e53935','#ff7043','#ffb300','#4caf50'];
+    const ci = s.mood >= 75 ? 3 : s.mood >= 45 ? 2 : s.mood >= 20 ? 1 : 0;
+    moodBar.style.background = moodColors[ci];
+    document.getElementById('stat-mood-text').textContent = getMoodLabel(s.mood);
+    document.getElementById('stat-saves').textContent = s.totalSaves + ' career saves';
+    document.getElementById('stat-goals').textContent = s.totalGoals + ' goals against';
+    const days = Math.floor((Date.now() - s.adoptedDate) / 86400000);
+    document.getElementById('stat-days').textContent =
+      days === 0 ? 'Adopted today' : 'Adopted ' + days + ' day' + (days === 1 ? '' : 's') + ' ago';
+    renderCustomizePanel(s);
+  }
+
+  function activateAdoption(s) {
+    adoptState = s;
+    document.getElementById('adopt-pre').classList.add('hidden');
+    document.getElementById('adopt-stats').classList.remove('hidden');
+    trainBtn.classList.remove('hidden');
+    updateStatsUI(s);
+  }
+
+  // ── Customization ─────────────────────────────────────────────────────────
+
+  const CUST_PRESETS = {
+    padColor: [
+      { label: 'Classic',    padWhite: '#f2f0ec', padShd: '#ccc8be' },
+      { label: 'Blue',       padWhite: '#c0d8f0', padShd: '#90b0d8' },
+      { label: 'Gold',       padWhite: '#f0d880', padShd: '#c8a828' },
+      { label: 'Black',      padWhite: '#2a2820', padShd: '#1a1810' },
+    ],
+    helmetColor: [
+      { label: 'Classic',    helmetShell: '#f2f0ec' },
+      { label: 'Red',        helmetShell: '#d83030' },
+      { label: 'Navy',       helmetShell: '#182048' },
+      { label: 'Orange',     helmetShell: '#e87020' },
+    ],
+    tapeColor: [
+      { label: 'Green',      stickTape: '#2e7a2e' },
+      { label: 'Black',      stickTape: '#181818' },
+      { label: 'White',      stickTape: '#e8e4e0' },
+      { label: 'Red',        stickTape: '#c82020' },
+    ],
+    jerseyColor: [
+      { label: 'Blue',       blueLt: '#bacede', blueMd: '#6e98b8' },
+      { label: 'Red',        blueLt: '#f08080', blueMd: '#c83030' },
+      { label: 'Green',      blueLt: '#80c890', blueMd: '#2e7a2e' },
+      { label: 'Purple',     blueLt: '#c8a0e0', blueMd: '#7040a8' },
+    ],
+  };
+
+  const CUST_UNLOCK = { padColor: 2, helmetColor: 4, tapeColor: 6, jerseyColor: 8, character: 10 };
+  const CUST_LABELS = { padColor: 'Pad color', helmetColor: 'Helmet', tapeColor: 'Stick tape', jerseyColor: 'Jersey', character: 'Character' };
+  const CUST_SWATCH_KEY = { padColor: 'padWhite', helmetColor: 'helmetShell', tapeColor: 'stickTape', jerseyColor: 'blueMd' };
+
+  let customState = {};
+
+  function loadCustomColors() {
+    try {
+      const raw = localStorage.getItem('tommy-custom');
+      if (!raw) return {};
+      const saved = JSON.parse(raw);
+      const overrides = {};
+      for (const [slot, idx] of Object.entries(saved)) {
+        if (idx === null || idx === undefined) continue;
+        const presets = CUST_PRESETS[slot];
+        if (!presets) continue;
+        const preset = presets[parseInt(idx, 10)];
+        if (preset) Object.assign(overrides, preset);
+      }
+      return overrides;
+    } catch (e) { return {}; }
+  }
+
+  function saveCustomColors() {
+    localStorage.setItem('tommy-custom', JSON.stringify(customState));
+  }
+
+  function buildSwatches(container, slotKey, presets) {
+    container.innerHTML = '';
+    const current = customState[slotKey];
+    presets.forEach((preset, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'adopt-cust-swatch' + (String(i) === String(current) ? ' active' : '');
+      btn.style.background = preset[CUST_SWATCH_KEY[slotKey]];
+      btn.title = preset.label;
+      btn.addEventListener('click', () => {
+        customState[slotKey] = String(i);
+        saveCustomColors();
+        applyCustomColors(loadCustomColors());
+        container.querySelectorAll('.adopt-cust-swatch').forEach((b, j) =>
+          b.classList.toggle('active', j === i));
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function renderCustomizePanel(s) {
+    const panel = document.getElementById('adopt-customize');
+    if (!panel) return;
+    panel.classList.toggle('hidden', !s);
+    if (!s) return;
+    for (const [slot, unlockLevel] of Object.entries(CUST_UNLOCK)) {
+      const swatchWrap = panel.querySelector('[data-slot="' + slot + '"]');
+      if (!swatchWrap) continue;
+      swatchWrap.innerHTML = '';
+      if (s.level < unlockLevel) {
+        swatchWrap.innerHTML = '<span class="adopt-cust-locked">🔒 Unlock at level ' + unlockLevel + '</span>';
+      } else if (slot === 'character') {
+        swatchWrap.innerHTML = '<span class="adopt-cust-coming-soon">More characters coming soon…</span>';
+      } else {
+        buildSwatches(swatchWrap, slot, CUST_PRESETS[slot]);
+      }
+    }
+  }
+
+  function adoptTommy() {
+    const s = {
+      adopted: true, adoptedDate: Date.now(), level: 1, xp: 0,
+      totalSaves: 0, totalGoals: 0, lastTrained: 0, mood: 80,
+    };
+    saveAdoptState(s);
+    activateAdoption(s);
+    showChirp("Finally! A real coach.", true);
   }
 
   // ── Render loop ───────────────────────────────────────────────────────────
@@ -963,10 +1221,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Boot ──────────────────────────────────────────────────────────────────
+  adoptState = loadAdoptState();
+  try { customState = JSON.parse(localStorage.getItem('tommy-custom') || '{}'); } catch (e) { customState = {}; }
+  applyCustomColors(loadCustomColors());
+  if (adoptState) {
+    activateAdoption(adoptState);
+  }
+  document.getElementById('adopt-btn').addEventListener('click', adoptTommy);
+
   startBehavior(BHVR.STAND);
   scheduleIdleChirp();
   showTrainingUI(false);
   if (debugEnabled) buildDebugGrid();
-  drawReady(0, 0, "normal", 0);
+  drawReady(0, 0, adoptState ? getMoodExpr(adoptState.mood) : "normal", 0);
   requestAnimationFrame(render);
 });

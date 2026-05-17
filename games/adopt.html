@@ -36,7 +36,51 @@
         <p id="adopt-chirp" class="adopt-chirp" aria-live="polite"></p>
 
         <div class="adopt-controls">
-          <button id="adopt-train" class="button">Train Tommy</button>
+          <div id="adopt-pre">
+            <p class="muted">Tommy needs a home. Will you be his coach?</p>
+            <button id="adopt-btn" class="button">Adopt Tommy</button>
+          </div>
+
+          <div id="adopt-stats" class="adopt-stats hidden">
+            <div class="adopt-stat-row">
+              <span>Level <strong id="stat-level">1</strong></span>
+              <span id="stat-xp-text"></span>
+            </div>
+            <div class="adopt-bar-track"><div id="stat-xp-bar" class="adopt-bar-fill adopt-bar-xp"></div></div>
+            <div class="adopt-stat-row">
+              <span>Mood</span>
+              <span id="stat-mood-text"></span>
+            </div>
+            <div class="adopt-bar-track"><div id="stat-mood-bar" class="adopt-bar-fill adopt-bar-mood"></div></div>
+            <p class="adopt-career"><span id="stat-saves"></span> · <span id="stat-goals"></span></p>
+            <p id="stat-days" class="adopt-days"></p>
+          </div>
+
+          <div id="adopt-customize" class="adopt-customize hidden">
+            <h3 class="adopt-customize-heading">Customize Tommy</h3>
+            <div class="adopt-cust-slot">
+              <span class="adopt-cust-label">Pad color</span>
+              <div class="adopt-cust-swatches" data-slot="padColor"></div>
+            </div>
+            <div class="adopt-cust-slot">
+              <span class="adopt-cust-label">Helmet</span>
+              <div class="adopt-cust-swatches" data-slot="helmetColor"></div>
+            </div>
+            <div class="adopt-cust-slot">
+              <span class="adopt-cust-label">Stick tape</span>
+              <div class="adopt-cust-swatches" data-slot="tapeColor"></div>
+            </div>
+            <div class="adopt-cust-slot">
+              <span class="adopt-cust-label">Jersey</span>
+              <div class="adopt-cust-swatches" data-slot="jerseyColor"></div>
+            </div>
+            <div class="adopt-cust-slot">
+              <span class="adopt-cust-label">Character</span>
+              <div class="adopt-cust-swatches" data-slot="character"></div>
+            </div>
+          </div>
+
+          <button id="adopt-train" class="button hidden">Train Tommy</button>
 
           <div id="adopt-zones" class="adopt-zones hidden">
             <button id="zone-left"   class="button" aria-keyshortcuts="ArrowLeft">◀ Left</button>

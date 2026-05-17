@@ -92,6 +92,60 @@
 
 .hidden { display: none; }
 
+#adopt-pre {
+  text-align: center;
+}
+
+#adopt-pre .muted {
+  margin-bottom: .8rem;
+}
+
+.adopt-stats {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: .8rem 0;
+}
+
+.adopt-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: .9rem;
+}
+
+.adopt-bar-track {
+  height: 8px;
+  background: #e8f0f8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.adopt-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .4s ease, background .4s ease;
+}
+
+.adopt-bar-xp { background: #6e98b8; }
+.adopt-bar-mood { background: #4caf50; }
+
+.adopt-career {
+  font-size: .85rem;
+  color: #666;
+  text-align: center;
+  margin: .2rem 0 0;
+}
+
+.adopt-days {
+  font-size: .78rem;
+  color: #999;
+  text-align: center;
+  margin: 0;
+}
+
 .adopt-modal {
   border: 2px solid #c8dce8;
   border-radius: 14px;
@@ -132,6 +186,67 @@
   color: #444;
   margin: 0;
   line-height: 1.6;
+}
+
+.adopt-customize {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  padding: .8rem 0;
+  border-top: 1px solid #c8dce8;
+}
+
+.adopt-customize-heading {
+  font-size: .9rem;
+  font-weight: 600;
+  color: #3a5878;
+  margin: 0 0 .2rem;
+  text-align: center;
+}
+
+.adopt-cust-slot {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.adopt-cust-label {
+  font-size: .82rem;
+  color: #666;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.adopt-cust-swatches {
+  display: flex;
+  gap: .35rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.adopt-cust-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color .15s, transform .1s;
+}
+.adopt-cust-swatch:hover  { transform: scale(1.12); }
+.adopt-cust-swatch.active { border-color: #3a5878; }
+
+.adopt-cust-locked {
+  font-size: .78rem;
+  color: #aaa;
+}
+
+.adopt-cust-coming-soon {
+  font-size: .82rem;
+  color: #6e98b8;
+  font-style: italic;
 }
 
 .adopt-debug-toggle {

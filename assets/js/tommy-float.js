@@ -28,13 +28,36 @@
   document.body.appendChild(bubble);
 
   // ── Palette ───────────────────────────────────────────────────────────────
-  const COL = {
+  const COL_DEFAULTS = {
     padWhite:'#f2f0ec', padHi:'#ffffff', padShd:'#ccc8be', padDk:'#a09890',
     blueLt:'#bacede', blueMd:'#6e98b8', blueDk:'#3a5878',
     cream:'#ede0c0', tan:'#c8a060', brown:'#3a1808',
     gray:'#8a8880', grayDk:'#3a3830', gold:'#c89828', navy:'#182048',
     black:'#101008', white:'#ffffff',
+    helmetShell:'#f2f0ec', stickTape:'#2e7a2e',
   };
+  let COL = Object.assign({}, COL_DEFAULTS);
+
+  const FLOAT_PRESETS = {
+    padColor:    [{ padWhite:'#f2f0ec',padShd:'#ccc8be'},{padWhite:'#c0d8f0',padShd:'#90b0d8'},{padWhite:'#f0d880',padShd:'#c8a828'},{padWhite:'#2a2820',padShd:'#1a1810'}],
+    helmetColor: [{ helmetShell:'#f2f0ec'},{helmetShell:'#d83030'},{helmetShell:'#182048'},{helmetShell:'#e87020'}],
+    tapeColor:   [{ stickTape:'#2e7a2e'},{stickTape:'#181818'},{stickTape:'#e8e4e0'},{stickTape:'#c82020'}],
+    jerseyColor: [{ blueLt:'#bacede',blueMd:'#6e98b8'},{blueLt:'#f08080',blueMd:'#c83030'},{blueLt:'#80c890',blueMd:'#2e7a2e'},{blueLt:'#c8a0e0',blueMd:'#7040a8'}],
+  };
+  function loadFloatCustomColors() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('tommy-custom') || '{}');
+      const overrides = {};
+      for (const [slot, idx] of Object.entries(saved)) {
+        const presets = FLOAT_PRESETS[slot];
+        if (!presets || idx === null) continue;
+        const preset = presets[parseInt(idx, 10)];
+        if (preset) Object.assign(overrides, preset);
+      }
+      return overrides;
+    } catch (e) { return {}; }
+  }
+  COL = Object.assign({}, COL_DEFAULTS, loadFloatCustomColors());
 
   // ── Primitives ────────────────────────────────────────────────────────────
   function R(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(p(x),p(y),p(w),p(h));}
@@ -54,7 +77,7 @@
     ctx.beginPath(); ctx.moveTo(p(tx),p(ty)); ctx.lineTo(p(mx),p(my)); ctx.stroke();
     ctx.lineWidth=p(7);
     ctx.beginPath(); ctx.moveTo(p(mx),p(my)); ctx.lineTo(p(bx),p(by)); ctx.stroke();
-    ctx.strokeStyle='#2e7a2e'; ctx.lineWidth=p(9);
+    ctx.strokeStyle=COL.stickTape; ctx.lineWidth=p(9);
     ctx.beginPath(); ctx.moveTo(p(bx),p(by)); ctx.lineTo(p(bx+20),p(by)); ctx.stroke();
     ctx.lineCap='round';
   }
@@ -92,16 +115,18 @@
       C(cx-6,cy-3,3,COL.brown); C(cx+6,cy-3,3,COL.brown);
       L(cx-10,cy-8,cx-3,cy-6,COL.brown,1.5);
       L(cx+3,cy-6,cx+10,cy-8,COL.brown,1.5);
+      E(cx-6,cy+3,1.5,2.5,'#6aace8');
     } else if(expr==='tired'){
       C(cx-6,cy-3,3,COL.brown); C(cx+6,cy-3,3,COL.brown);
       R(cx-10,cy-6,8,4,COL.cream); R(cx+2,cy-6,8,4,COL.cream);
+      E(cx-6,cy+3,1.5,2.5,'#6aace8'); E(cx+6,cy+3,1.5,2.5,'#6aace8');
     } else {
       C(cx-6,cy-3,3,COL.brown); C(cx+6,cy-3,3,COL.brown);
     }
     C(cx,cy+3,2,COL.brown);
   }
   function drawHelmet(cx,cy){
-    E(cx,cy,22,22,COL.padWhite);
+    E(cx,cy,22,22,COL.helmetShell);
     [[cx-9,cy-14],[cx,cy-16],[cx+9,cy-14],[cx-13,cy-8],[cx+13,cy-8],[cx-8,cy-2],[cx+8,cy-2]]
       .forEach(([hx,hy])=>C(hx,hy,2.2,COL.gray));
     ctx.fillStyle=COL.blueLt+'bb';
@@ -145,33 +170,74 @@
     if (py >= maxY) { py = maxY; vy = -Math.abs(vy); }
   }
 
+  // ── Adoption state from localStorage ─────────────────────────────────────
+  function getAdoptLevel() {
+    return localStorage.getItem(‘tommy-adopted’) === ‘true’
+      ? parseInt(localStorage.getItem(‘tommy-level’) || ‘1’, 10) : 0;
+  }
+  function getAdoptMood() {
+    return localStorage.getItem(‘tommy-adopted’) === ‘true’
+      ? parseInt(localStorage.getItem(‘tommy-mood’) || ‘80’, 10) : 80;
+  }
+  function floatExpr() {
+    const mood = getAdoptMood();
+    if (mood < 20) return ‘tired’;
+    if (mood < 45) return ‘sad’;
+    return ‘normal’;
+  }
+  function chirpInterval() {
+    const level = getAdoptLevel();
+    const base = [28000, 22000, 15000, 9000, 4000];
+    const ms = base[Math.max(0, level - 1)] || base[0];
+    return ms + Math.random() * ms * 0.5;
+  }
+
   // ── Chirps ────────────────────────────────────────────────────────────────
   const CHIRPS = [
-    'I stopped 34 shots. You’re welcome.',
-    'The five-hole is a myth. For me.',
-    'Tell your wingers to backcheck.',
-    'I see everything from back here.',
-    'Another shutout? Just another Tuesday.',
-    'The butterfly doesn’t lie.',
-    'My pads have seen things. Dark things.',
-    'You call that a shot?',
-    'Sorry, the net is closed.',
-    'Goalies run this team. Don’t @ me.',
+    ‘I stopped 34 shots. You’re welcome.’,
+    ‘The five-hole is a myth. For me.’,
+    ‘Tell your wingers to backcheck.’,
+    ‘I see everything from back here.’,
+    ‘Another shutout? Just another Tuesday.’,
+    ‘The butterfly doesn’t lie.’,
+    ‘My pads have seen things. Dark things.’,
+    ‘You call that a shot?’,
+    ‘Sorry, the net is closed.’,
+    ‘Goalies run this team. Don’t @ me.’,
   ];
+  const SAD_CHIRPS = [
+    ‘I thought you’d never come back...’,
+    ‘Nobody even shoots on me anymore.’,
+    ‘Is this what retirement feels like?’,
+    ‘My pads are gathering dust.’,
+    ‘...’,
+  ];
+  const TIRED_CHIRPS = [
+    ‘I can’t even butterfly.’,
+    ‘Tell my pads I loved them.’,
+    ‘zzz...’,
+    ‘Someone. Please. Shoot on me.’,
+  ];
+  function pickChirp() {
+    const mood = getAdoptMood();
+    if (mood < 20) return TIRED_CHIRPS[Math.floor(Math.random() * TIRED_CHIRPS.length)];
+    if (mood < 45) return SAD_CHIRPS[Math.floor(Math.random() * SAD_CHIRPS.length)];
+    return CHIRPS[Math.floor(Math.random() * CHIRPS.length)];
+  }
+
   let chirpTimer = null;
-  canvas.addEventListener('click', () => { location.href = '/games/adopt.html'; });
+  canvas.addEventListener(‘click’, () => { location.href = ‘/games/adopt.html’; });
 
   // ── Periodic chirp ────────────────────────────────────────────────────────
   function autoChirp() {
     if (Math.random() < 0.5) startBehavior(STANCES[Math.floor(Math.random() * STANCES.length)]);
-    const text = CHIRPS[Math.floor(Math.random() * CHIRPS.length)];
-    bubble.textContent = '"' + text + '"';
-    bubble.style.opacity = '1';
-    bubble.style.left = clamp(px - 60, 4, window.innerWidth - 200) + 'px';
-    bubble.style.top  = clamp(py - 40, 4, window.innerHeight - 80) + 'px';
+    bubble.textContent = ‘“’ + pickChirp() + ‘”’;
+    bubble.style.opacity = ‘1’;
+    bubble.style.left = clamp(px - 60, 4, window.innerWidth - 200) + ‘px’;
+    bubble.style.top  = clamp(py - 40, 4, window.innerHeight - 80) + ‘px’;
     clearTimeout(chirpTimer);
-    chirpTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 2200);
-    setTimeout(autoChirp, 4000 + Math.random() * 4000);
+    chirpTimer = setTimeout(() => { bubble.style.opacity = ‘0’; }, 2200);
+    setTimeout(autoChirp, chirpInterval());
   }
 
   // ── Render loop ───────────────────────────────────────────────────────────
@@ -181,18 +247,18 @@
     floatAngle += 0.006;
     const fX = Math.sin(floatAngle) * 6;
     const fY = Math.cos(floatAngle) * 3;
-    canvas.style.left = (px + fX) + 'px';
-    canvas.style.top  = (py + fY) + 'px';
+    canvas.style.left = (px + fX) + ‘px’;
+    canvas.style.top  = (py + fY) + ‘px’;
     const bob = Math.round(Math.sin(floatAngle * 0.5) * 1.5);
-    const expr = behavior==='tired'?'tired':behavior==='sad'?'sad':behavior==='stretch'?'happy':'normal';
+    const expr = behavior===’tired’ ? ‘tired’ : behavior===’sad’ ? ‘sad’ : behavior===’stretch’ ? ‘happy’ : floatExpr();
     drawTommy(expr, bob);
     requestAnimationFrame(render);
   }
 
-  window.addEventListener('pagehide',()=>{
-    try{sessionStorage.setItem('tommy-float-pos',JSON.stringify({x:px,y:py}));}catch(e){}
+  window.addEventListener(‘pagehide’,()=>{
+    try{sessionStorage.setItem(‘tommy-float-pos’,JSON.stringify({x:px,y:py}));}catch(e){}
   });
 
-  setTimeout(autoChirp, 4000 + Math.random() * 4000);
+  setTimeout(autoChirp, chirpInterval());
   render();
 })();
