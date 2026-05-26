@@ -162,7 +162,7 @@
   function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
   function updatePosition(){
     const maxX = window.innerWidth  - SZ;
-    const maxY = window.innerHeight - SZ;
+    const maxY = (window.innerHeight - SZ) * 2/3;
     px += vx; py += vy;
     if (px <= 0)    { px = 0;    vx =  Math.abs(vx); }
     if (px >= maxX) { px = maxX; vx = -Math.abs(vx); }
