@@ -158,32 +158,33 @@
   let px = window.innerWidth  - SZ - 24;
   let py = window.innerHeight - SZ - 24;
   let vx = -(0.5 + Math.random() * 0.4);
-  let vy = -(0.3 + Math.random() * 0.25);
+  let vy = (0.3 + Math.random() * 0.25) * (Math.random() < 0.5 ? 1 : -1);
   function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
   function updatePosition(){
     const maxX = window.innerWidth  - SZ;
-    const maxY = (window.innerHeight - SZ) * 2/3;
+    const maxY = window.innerHeight - SZ;
+    const minY = maxY * 2/3;
     px += vx; py += vy;
     if (px <= 0)    { px = 0;    vx =  Math.abs(vx); }
     if (px >= maxX) { px = maxX; vx = -Math.abs(vx); }
-    if (py <= 0)    { py = 0;    vy =  Math.abs(vy); }
+    if (py <= minY) { py = minY; vy =  Math.abs(vy); }
     if (py >= maxY) { py = maxY; vy = -Math.abs(vy); }
   }
 
   // ── Adoption state from localStorage ─────────────────────────────────────
   function getAdoptLevel() {
-    return localStorage.getItem(‘tommy-adopted’) === ‘true’
-      ? parseInt(localStorage.getItem(‘tommy-level’) || ‘1’, 10) : 0;
+    return localStorage.getItem('tommy-adopted') === 'true'
+      ? parseInt(localStorage.getItem('tommy-level') || '1', 10) : 0;
   }
   function getAdoptMood() {
-    return localStorage.getItem(‘tommy-adopted’) === ‘true’
-      ? parseInt(localStorage.getItem(‘tommy-mood’) || ‘80’, 10) : 80;
+    return localStorage.getItem('tommy-adopted') === 'true'
+      ? parseInt(localStorage.getItem('tommy-mood') || '80', 10) : 80;
   }
   function floatExpr() {
     const mood = getAdoptMood();
-    if (mood < 20) return ‘tired’;
-    if (mood < 45) return ‘sad’;
-    return ‘normal’;
+    if (mood < 20) return 'tired';
+    if (mood < 45) return 'sad';
+    return 'normal';
   }
   function chirpInterval() {
     const level = getAdoptLevel();
@@ -194,29 +195,29 @@
 
   // ── Chirps ────────────────────────────────────────────────────────────────
   const CHIRPS = [
-    ‘I stopped 34 shots. You’re welcome.’,
-    ‘The five-hole is a myth. For me.’,
-    ‘Tell your wingers to backcheck.’,
-    ‘I see everything from back here.’,
-    ‘Another shutout? Just another Tuesday.’,
-    ‘The butterfly doesn’t lie.’,
-    ‘My pads have seen things. Dark things.’,
-    ‘You call that a shot?’,
-    ‘Sorry, the net is closed.’,
-    ‘Goalies run this team. Don’t @ me.’,
+    'I stopped 34 shots. You’re welcome.',
+    'The five-hole is a myth. For me.',
+    'Tell your wingers to backcheck.',
+    'I see everything from back here.',
+    'Another shutout? Just another Tuesday.',
+    'The butterfly doesn’t lie.',
+    'My pads have seen things. Dark things.',
+    'You call that a shot?',
+    'Sorry, the net is closed.',
+    'Goalies run this team. Don’t @ me.',
   ];
   const SAD_CHIRPS = [
-    ‘I thought you’d never come back...’,
-    ‘Nobody even shoots on me anymore.’,
-    ‘Is this what retirement feels like?’,
-    ‘My pads are gathering dust.’,
-    ‘...’,
+    'I thought you’d never come back...',
+    'Nobody even shoots on me anymore.',
+    'Is this what retirement feels like?',
+    'My pads are gathering dust.',
+    '...',
   ];
   const TIRED_CHIRPS = [
-    ‘I can’t even butterfly.’,
-    ‘Tell my pads I loved them.’,
-    ‘zzz...’,
-    ‘Someone. Please. Shoot on me.’,
+    'I can’t even butterfly.',
+    'Tell my pads I loved them.',
+    'zzz...',
+    'Someone. Please. Shoot on me.',
   ];
   function pickChirp() {
     const mood = getAdoptMood();
@@ -226,17 +227,17 @@
   }
 
   let chirpTimer = null;
-  canvas.addEventListener(‘click’, () => { location.href = ‘/games/adopt.html’; });
+  canvas.addEventListener('click', () => { location.href = '/games/adopt.html'; });
 
   // ── Periodic chirp ────────────────────────────────────────────────────────
   function autoChirp() {
     if (Math.random() < 0.5) startBehavior(STANCES[Math.floor(Math.random() * STANCES.length)]);
-    bubble.textContent = ‘“’ + pickChirp() + ‘”’;
-    bubble.style.opacity = ‘1’;
-    bubble.style.left = clamp(px - 60, 4, window.innerWidth - 200) + ‘px’;
-    bubble.style.top  = clamp(py - 40, 4, window.innerHeight - 80) + ‘px’;
+    bubble.textContent = '“' + pickChirp() + '”';
+    bubble.style.opacity = '1';
+    bubble.style.left = clamp(px - 60, 4, window.innerWidth - 200) + 'px';
+    bubble.style.top  = clamp(py - 40, 4, window.innerHeight - 80) + 'px';
     clearTimeout(chirpTimer);
-    chirpTimer = setTimeout(() => { bubble.style.opacity = ‘0’; }, 2200);
+    chirpTimer = setTimeout(() => { bubble.style.opacity = '0'; }, 2200);
     setTimeout(autoChirp, chirpInterval());
   }
 
@@ -247,16 +248,16 @@
     floatAngle += 0.006;
     const fX = Math.sin(floatAngle) * 6;
     const fY = Math.cos(floatAngle) * 3;
-    canvas.style.left = (px + fX) + ‘px’;
-    canvas.style.top  = (py + fY) + ‘px’;
+    canvas.style.left = (px + fX) + 'px';
+    canvas.style.top  = (py + fY) + 'px';
     const bob = Math.round(Math.sin(floatAngle * 0.5) * 1.5);
-    const expr = behavior===’tired’ ? ‘tired’ : behavior===’sad’ ? ‘sad’ : behavior===’stretch’ ? ‘happy’ : floatExpr();
+    const expr = behavior==='tired' ? 'tired' : behavior==='sad' ? 'sad' : behavior==='stretch' ? 'happy' : floatExpr();
     drawTommy(expr, bob);
     requestAnimationFrame(render);
   }
 
-  window.addEventListener(‘pagehide’,()=>{
-    try{sessionStorage.setItem(‘tommy-float-pos’,JSON.stringify({x:px,y:py}));}catch(e){}
+  window.addEventListener('pagehide',()=>{
+    try{sessionStorage.setItem('tommy-float-pos',JSON.stringify({x:px,y:py}));}catch(e){}
   });
 
   setTimeout(autoChirp, chirpInterval());
