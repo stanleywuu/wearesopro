@@ -40,6 +40,16 @@
             <p class="muted">Tommy needs a home. Will you be his coach?</p>
             <button id="adopt-btn" class="button">Adopt Tommy</button>
           </div>
+          <button id="adopt-train" class="button hidden">Train Tommy</button>
+
+          <div id="adopt-zones" class="adopt-zones hidden">
+            <button id="zone-left"   class="button" aria-keyshortcuts="ArrowLeft">◀ Left</button>
+            <button id="zone-center" class="button" aria-keyshortcuts="ArrowDown">▼ Five-hole</button>
+            <button id="zone-right"  class="button" aria-keyshortcuts="ArrowRight">Right ▶</button>
+          </div>
+
+          <p id="adopt-score" class="adopt-score hidden" aria-live="polite"></p>
+          <button id="adopt-end" class="adopt-end hidden">End training</button>
 
           <div id="adopt-stats" class="adopt-stats hidden">
             <div class="adopt-stat-row">
@@ -78,18 +88,7 @@
               <span class="adopt-cust-label">Character</span>
               <div class="adopt-cust-swatches" data-slot="character"></div>
             </div>
-          </div>
-
-          <button id="adopt-train" class="button hidden">Train Tommy</button>
-
-          <div id="adopt-zones" class="adopt-zones hidden">
-            <button id="zone-left"   class="button" aria-keyshortcuts="ArrowLeft">◀ Left</button>
-            <button id="zone-center" class="button" aria-keyshortcuts="ArrowDown">▼ Five-hole</button>
-            <button id="zone-right"  class="button" aria-keyshortcuts="ArrowRight">Right ▶</button>
-          </div>
-
-          <p id="adopt-score" class="adopt-score hidden" aria-live="polite"></p>
-          <button id="adopt-end" class="adopt-end hidden">End training</button>
+          </div> 
         </div>
       </div>
 
