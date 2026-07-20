@@ -614,6 +614,26 @@ document.addEventListener("DOMContentLoaded", () => {
     "I let that one in on purpose. Team morale.",
   ];
 
+  const STRUGGLING_CHIRPS = [
+    "Not my net.",
+    "Coach!",
+    "My pads lied.",
+    "I blame the ice.",
+    "That's not happening again.",
+    "...okay.",
+    "Fine. FINE.",
+    "I had that.",
+  ];
+
+  const HOT_STREAK_CHIRPS = [
+    "Try harder.",
+    "That's all?",
+    "Boring.",
+    "Next.",
+    "Too easy.",
+    "Embarrassing.",
+  ];
+
   const BUTTERFLY_CHIRPS = [
     "Butterfly!",
     "Five-hole? Sealed.",
@@ -727,11 +747,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let level      = 1;
   let levelShots = 0;
   let levelSaves = 0;
+  let levelMisses = 0;
   let totalSaves = 0;
   let travelMs   = START_MS;
-  let puck       = null;
-  let answered   = false;
+  let pucks      = [];
   let shotTimer  = null;
+
+  function isDualShot() { return level >= 5; }
 
   const ZONES = ["left", "center", "right"];
 
@@ -775,49 +797,73 @@ document.addEventListener("DOMContentLoaded", () => {
       if (level >= MAX_LEVEL)          { endRound(true);  return; }
       levelUp(); return;
     }
-    answered = false;
+    pucks = [];
     setZonesEnabled(true);
-    const zone = ZONES[Math.floor(Math.random() * ZONES.length)];
-    const tx = zoneX(zone);
-    const ty = p(88);
-    const sx = tx + (Math.random() - 0.5) * p(50);
-    puck = { x: sx, y: p(2), tx, ty, startTime: performance.now(), zone };
+    const numPucks = isDualShot() ? 2 : 1;
+    const shuffled = [...ZONES].sort(() => Math.random() - 0.5);
+    const now = performance.now();
+    shuffled.slice(0, numPucks).forEach(zone => {
+      const tx = zoneX(zone);
+      const ty = p(88);
+      const sx = tx + (Math.random() - 0.5) * p(50);
+      pucks.push({ x: sx, y: p(2), tx, ty, startTime: now, zone, answered: false });
+    });
     clearTimeout(shotTimer);
-    shotTimer = setTimeout(() => { if (!answered) resolveShot(null); }, travelMs);
+    shotTimer = setTimeout(() => {
+      pucks.filter(pk => !pk.answered).forEach(pk => resolvePuck(pk, null));
+    }, travelMs);
+  }
+
+  function resolvePuck(pk, playerZone) {
+    if (pk.answered) return;
+    pk.answered = true;
+    levelShots++;
+    travelMs = Math.max(MIN_MS, START_MS - (level - 1) * LEVEL_BASE_DROP_MS - levelShots * SPEED_STEP_MS);
+
+    const saved = playerZone !== null && playerZone === pk.zone;
+    if (saved) {
+      levelSaves++;
+      totalSaves++;
+      levelMisses = 0;
+      if (pk.zone === "left")       drawSaveLeft();
+      else if (pk.zone === "right") drawSaveRight();
+      else                          drawSaveCenter();
+      const savePool = levelSaves >= 4 ? HOT_STREAK_CHIRPS : SAVE_CHIRPS;
+      showChirp(randomFrom(savePool), true);
+    } else {
+      levelMisses++;
+      drawGoalScored();
+      const missPool = levelMisses >= 3 ? STRUGGLING_CHIRPS : MISS_CHIRPS;
+      showChirp(randomFrom(missPool), true);
+    }
+    updateScore();
+
+    const allAnswered = pucks.every(p => p.answered);
+    if (allAnswered) {
+      pucks = [];
+      clearTimeout(shotTimer);
+      setZonesEnabled(false);
+      setTimeout(launchShot, 950);
+    }
   }
 
   function levelUp() {
     level++;
-    levelShots = 0;
-    levelSaves = 0;
-    travelMs   = Math.max(MIN_MS, START_MS - (level - 1) * LEVEL_BASE_DROP_MS);
+    levelShots  = 0;
+    levelSaves  = 0;
+    levelMisses = 0;
+    travelMs    = Math.max(MIN_MS, START_MS - (level - 1) * LEVEL_BASE_DROP_MS);
     showChirp("Level " + level + "! Pick it up!", true);
     updateScore();
     setTimeout(launchShot, 1600);
   }
 
   function resolveShot(playerZone) {
-    if (answered) return;
-    answered = true;
-    clearTimeout(shotTimer);
-    setZonesEnabled(false);
-    levelShots++;
-    travelMs = Math.max(MIN_MS, START_MS - (level - 1) * LEVEL_BASE_DROP_MS - levelShots * SPEED_STEP_MS);
-
-    if (playerZone === puck.zone) {
-      levelSaves++;
-      totalSaves++;
-      if (puck.zone === "left")        drawSaveLeft();
-      else if (puck.zone === "right")  drawSaveRight();
-      else                             drawSaveCenter();
-      showChirp(randomFrom(SAVE_CHIRPS), true);
-    } else {
-      drawGoalScored();
-      showChirp(randomFrom(MISS_CHIRPS), true);
-    }
-    puck = null;
-    updateScore();
-    setTimeout(launchShot, 950);
+    const unanswered = pucks.filter(pk => !pk.answered);
+    if (unanswered.length === 0) return;
+    // Find a puck going to the chosen zone; if none, resolve the first unanswered as a miss
+    const match = unanswered.find(pk => pk.zone === playerZone) || unanswered[0];
+    resolvePuck(match, playerZone);
   }
 
   function endRound(won) {
@@ -1089,20 +1135,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (state === "training" && puck) {
-      const progress = Math.min(1, (now - puck.startTime) / travelMs);
-      const px2 = puck.x + (puck.tx - puck.x) * progress;
-      const py2 = puck.y + (puck.ty - puck.y) * progress;
+    if (state === "training" && pucks.length > 0) {
       drawReady(idleBob, 0, "normal", 0);
-      ctx.fillStyle = COL.black;
-      ctx.beginPath();
-      ctx.arc(px2, py2, p(4), 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = COL.gray;
-      ctx.lineWidth = p(0.5);
-      ctx.beginPath();
-      ctx.arc(px2, py2, p(4), 0, Math.PI * 2);
-      ctx.stroke();
+      pucks.forEach(pk => {
+        if (pk.answered) return;
+        const progress = Math.min(1, (now - pk.startTime) / travelMs);
+        const px2 = pk.x + (pk.tx - pk.x) * progress;
+        const py2 = pk.y + (pk.ty - pk.y) * progress;
+        ctx.fillStyle = COL.black;
+        ctx.beginPath();
+        ctx.arc(px2, py2, p(4), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = COL.gray;
+        ctx.lineWidth = p(0.5);
+        ctx.beginPath();
+        ctx.arc(px2, py2, p(4), 0, Math.PI * 2);
+        ctx.stroke();
+      });
     }
 
     requestAnimationFrame(render);
@@ -1110,13 +1159,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Controls ──────────────────────────────────────────────────────────────
   function startTraining() {
-    state      = "training";
-    level      = 1;
-    levelShots = 0;
-    levelSaves = 0;
-    totalSaves = 0;
-    travelMs   = START_MS;
-    puck       = null;
+    state       = "training";
+    level       = 1;
+    levelShots  = 0;
+    levelSaves  = 0;
+    levelMisses = 0;
+    totalSaves  = 0;
+    travelMs    = START_MS;
+    pucks       = [];
     modal.close();
     trainBtn.classList.add("hidden");
     showTrainingUI(true);
@@ -1134,9 +1184,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.addEventListener("keydown", (e) => {
     if (state !== "training") return;
-    if (e.key === "ArrowLeft")  resolveShot("left");
-    if (e.key === "ArrowRight") resolveShot("right");
-    if (e.key === "ArrowDown")  resolveShot("center");
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      if (e.key === "ArrowLeft")  resolveShot("left");
+      if (e.key === "ArrowRight") resolveShot("right");
+      if (e.key === "ArrowDown")  resolveShot("center");
+    }
   });
 
   // ── Debug grid (add ?debug to URL to enable) ─────────────────────────────
