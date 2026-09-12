@@ -39,39 +39,55 @@
         </div>
 
         <div class="cap-controls">
-          <fieldset class="cap-group">
-            <legend>Player</legend>
-            <label class="cap-slot"><span>Name</span><input type="text" id="cap-name" maxlength="14" autocomplete="off"></label>
-            <label class="cap-slot"><span>Number</span><input type="text" id="cap-number" maxlength="2" inputmode="numeric" autocomplete="off"></label>
-            <label class="cap-slot"><span>Position</span><select id="cap-position"></select></label>
-            <div class="cap-slot"><span>Shoots</span><div class="cap-opts" data-options="handedness" data-list="handedness"></div></div>
-          </fieldset>
+          <div class="cap-tabs" role="tablist" aria-label="Player options">
+            <button class="cap-tab" role="tab" id="tab-shape" aria-controls="panel-shape" data-tab="shape">Shape</button>
+            <button class="cap-tab" role="tab" id="tab-kit" aria-controls="panel-kit" data-tab="kit">Kit</button>
+            <button class="cap-tab" role="tab" id="tab-info" aria-controls="panel-info" data-tab="info">Info</button>
+          </div>
 
-          <fieldset class="cap-group">
-            <legend>Kit</legend>
-            <div class="cap-slot"><span>Jersey</span><div class="cap-swatches" data-swatch="jerseyColor" data-palette="jerseyColors"></div></div>
-            <div class="cap-slot"><span>Gloves</span><div class="cap-swatches" data-swatch="trimColor" data-palette="trimColors"></div></div>
-            <div class="cap-slot"><span>Socks</span><div class="cap-swatches" data-swatch="sockColor" data-palette="jerseyColors"></div></div>
-            <div class="cap-slot"><span>Helmet</span><div class="cap-swatches" data-swatch="helmetColor" data-palette="helmetColors"></div></div>
-            <div class="cap-slot"><span>Skin</span><div class="cap-swatches" data-swatch="skinColor" data-palette="skinColors"></div></div>
-            <div class="cap-slot"><span>Cage</span><div class="cap-opts" data-options="helmetStyle" data-list="helmets"></div></div>
-          </fieldset>
+          <div class="cap-panel" id="panel-shape" role="tabpanel" aria-labelledby="tab-shape" data-panel="shape">
+            <fieldset class="cap-group">
+              <legend>Body</legend>
+              <div class="cap-opts" data-options="bodyShape" data-list="shapes"></div>
+              <label class="cap-slot"><span>Width</span><input type="range" data-param="bodyWidth"></label>
+              <label class="cap-slot"><span>Height</span><input type="range" data-param="bodyHeight"></label>
+              <label class="cap-slot"><span>Contour</span><input type="range" data-param="bodyContour"></label>
+            </fieldset>
 
-          <fieldset class="cap-group">
-            <legend>Body</legend>
-            <div class="cap-opts" data-options="bodyShape" data-list="shapes"></div>
-            <label class="cap-slot"><span>Width</span><input type="range" data-param="bodyWidth"></label>
-            <label class="cap-slot"><span>Height</span><input type="range" data-param="bodyHeight"></label>
-            <label class="cap-slot"><span>Contour</span><input type="range" data-param="bodyContour"></label>
-          </fieldset>
+            <fieldset class="cap-group">
+              <legend>Head</legend>
+              <div class="cap-opts" data-options="headShape" data-list="shapes"></div>
+              <label class="cap-slot"><span>Width</span><input type="range" data-param="headWidth"></label>
+              <label class="cap-slot"><span>Height</span><input type="range" data-param="headHeight"></label>
+              <label class="cap-slot"><span>Contour</span><input type="range" data-param="headContour"></label>
+            </fieldset>
+          </div>
 
-          <fieldset class="cap-group">
-            <legend>Head</legend>
-            <div class="cap-opts" data-options="headShape" data-list="shapes"></div>
-            <label class="cap-slot"><span>Width</span><input type="range" data-param="headWidth"></label>
-            <label class="cap-slot"><span>Height</span><input type="range" data-param="headHeight"></label>
-            <label class="cap-slot"><span>Contour</span><input type="range" data-param="headContour"></label>
-          </fieldset>
+          <div class="cap-panel" id="panel-kit" role="tabpanel" aria-labelledby="tab-kit" data-panel="kit">
+            <fieldset class="cap-group">
+              <legend>Colours</legend>
+              <div class="cap-slot"><span>Jersey</span><div class="cap-swatches" data-swatch="jerseyColor" data-palette="jerseyColors"></div></div>
+              <div class="cap-slot"><span>Lettering</span><div class="cap-swatches" data-swatch="trimColor" data-palette="trimColors"></div></div>
+              <div class="cap-slot"><span>Socks</span><div class="cap-swatches" data-swatch="sockColor" data-palette="jerseyColors"></div></div>
+              <div class="cap-slot"><span>Skin</span><div class="cap-swatches" data-swatch="skinColor" data-palette="skinColors"></div></div>
+            </fieldset>
+
+            <fieldset class="cap-group">
+              <legend>Helmet</legend>
+              <div class="cap-slot"><span>Colour</span><div class="cap-swatches" data-swatch="helmetColor" data-palette="helmetColors"></div></div>
+              <div class="cap-slot"><span>Face</span><div class="cap-opts" data-options="helmetStyle" data-list="helmets"></div></div>
+            </fieldset>
+          </div>
+
+          <div class="cap-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" data-panel="info">
+            <fieldset class="cap-group">
+              <legend>Player</legend>
+              <label class="cap-slot"><span>Name</span><input type="text" id="cap-name" maxlength="14" autocomplete="off"></label>
+              <label class="cap-slot"><span>Number</span><input type="text" id="cap-number" maxlength="2" inputmode="numeric" autocomplete="off"></label>
+              <label class="cap-slot"><span>Position</span><select id="cap-position"></select></label>
+              <div class="cap-slot"><span>Shoots</span><div class="cap-opts" data-options="handedness" data-list="handedness"></div></div>
+            </fieldset>
+          </div>
         </div>
       </div>
 

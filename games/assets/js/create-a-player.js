@@ -41,6 +41,23 @@
 
   // ---- controls ---------------------------------------------------------
 
+  function buildTabs() {
+    const tabs = document.querySelectorAll(".cap-tab");
+    tabs.forEach(tab => tab.addEventListener("click", () => selectTab(tab.dataset.tab)));
+    selectTab(tabs[0].dataset.tab);
+  }
+
+  function selectTab(name) {
+    document.querySelectorAll(".cap-tab").forEach(tab => {
+      const on = tab.dataset.tab === name;
+      tab.classList.toggle("active", on);
+      tab.setAttribute("aria-selected", on);
+    });
+    document.querySelectorAll(".cap-panel").forEach(panel => {
+      panel.hidden = panel.dataset.panel !== name;
+    });
+  }
+
   function buildOptionPickers() {
     document.querySelectorAll("[data-options]").forEach(box => {
       const key = box.dataset.options;
@@ -184,6 +201,7 @@
   canvas.addEventListener("pointercancel", endDrag);
   canvas.addEventListener("keydown", onKey);
 
+  buildTabs();
   buildOptionPickers();
   buildSwatches();
   buildSliders();
