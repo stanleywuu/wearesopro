@@ -226,14 +226,19 @@
     return location.origin + location.pathname + "?" + SHARE_KEY + "=" + toBase64Url(JSON.stringify(params));
   }
 
-  // Native share sheet where the device has one. Otherwise the page reloads
-  // onto its own share link, so the address bar holds something the user can
-  // copy or bookmark — a silent clipboard write gave no sign it had worked.
+  // The phone's own share sheet. navigator.share only exists in a secure
+  // context, so over plain http — a LAN IP while testing — there is no sheet
+  // and the link goes into the address bar instead.
   function share() {
     const url = shareUrl();
-    const caption = params.name ? params.name + ", my beer leaguer" : "My beer leaguer";
-    if (!navigator.share) return location.assign(url);
-    navigator.share({ title: "Create A Player", text: caption, url: url })
+    if (!navigator.share) {
+      if (!window.isSecureContext) status("Share sheet needs https - opening the link instead.");
+      location.assign(url);
+      return;
+    }
+    // Only title and url: some share targets use `text` and drop the url,
+    // which would lose the player.
+    navigator.share({ title: "Create A Player", url: url })
       .catch(err => { if (err && err.name !== "AbortError") location.assign(url); });
   }
 
