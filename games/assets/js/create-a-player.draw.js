@@ -7,12 +7,18 @@
 (function () {
 
   // Logical canvas grid, scaled up by S for a crisp bitmap (same idea as adopt.js).
-  const LW = 180, LH = 220, S = 4;
+  const LW = 180, LH = 200, S = 4;
   const p = n => n * S;
 
   // Camera: yaw only, with a fixed downward tilt so we look slightly onto the player.
   const CX = LW / 2;        // logical x of the player's centre line
-  const GROUND = LH - 26;   // logical y of the ice under the skates
+  const GROUND = LH - 22;   // logical y of the ice under the skates
+  const TOP_MARGIN = 15;    // logical gap wanted above the helmet
+
+  // Uniform zoom so short and tall builds both fill the frame. Set once per
+  // render from the figure's height; capped so a tiny build does not blow up
+  // far enough to push the stick blade out of the canvas when turned sideways.
+  let FIT = 1;
   const TILT = 0.16;        // how much +z (towards viewer) drops on screen
   const PERSP = 0.0028;     // weak perspective: growth per unit of +z
   const LIGHT_YAW = -0.6;   // light direction, radians
@@ -51,9 +57,10 @@
   }
 
   // Body space: x right, y up from the ice, z towards the viewer.
+  // k carries the fit zoom, so anything sized by it scales with the figure.
   function project(x, y, z) {
-    const k = scaleAt(z);
-    return { sx: CX + x * k, sy: GROUND - y * k + z * TILT, d: z, k: k };
+    const k = scaleAt(z) * FIT;
+    return { sx: CX + x * k, sy: GROUND - y * k + z * TILT * FIT, d: z, k: k };
   }
 
   // Half-width of a part once it has turned by yaw.
@@ -179,10 +186,13 @@
     head.rz = head.rx * 0.8;
     head.y = torso.y + torso.ry + head.ry * 0.8;
 
-    const shoulderY = torso.y + torso.ry * 0.55;
+    // Kept inboard of the silhouette: an arm rooted at the torso's full width
+    // leaves a rounded nub poking out above the shoulder.
+    const shoulderY = torso.y + torso.ry * 0.45;
     return {
       torso: torso,
       head: head,
+      topY: head.y + head.ry * 1.12,
       shoulderY: shoulderY,
       legX: Math.max(6, torso.rx * 0.42),
       bodyStyle: shapeStyle(params.bodyShape, params.bodyContour / 100),
@@ -241,9 +251,10 @@
   // Helmet shell: a squashed cap sitting over the top of the head.
   function helmetPart(ctx, dims, params, yaw) {
     const head = dims.head;
+    // Sits on the crown, clear of the eyes — any lower and it swallows the face.
     const o = {
-      x: 0, y: head.y + head.ry * 0.34, z: 0,
-      rx: head.rx * 1.1, ry: head.ry * 0.66, rz: head.rz * 1.1,
+      x: 0, y: head.y + head.ry * 0.52, z: 0,
+      rx: head.rx * 1.1, ry: head.ry * 0.56, rz: head.rz * 1.1,
       style: { id: "capsule", taper: 0.92, round: 1, boxy: 0 },
       color: params.helmetColor
     };
@@ -257,10 +268,12 @@
     const facing = Math.cos(yaw);
     if (facing < 0.15) return;
     const head = dims.head;
-    const c = project(0, head.y - head.ry * 0.1, head.rz * facing);
-    const hw = head.rx * 0.8 * facing * c.k, hh = head.ry * 0.55 * c.k;
-    for (let i = -1; i <= 1; i++) L(ctx, c.sx + hw * i * 0.7, c.sy - hh, c.sx + hw * i * 0.7, c.sy + hh, "#3D4A57", 1);
-    L(ctx, c.sx - hw, c.sy, c.sx + hw, c.sy, "#3D4A57", 1);
+    // Sits over the lower face only. Bars across the eyes turn to scribble at
+    // this size and cost more than the realism is worth.
+    const c = project(0, head.y - head.ry * 0.48, head.rz * facing);
+    const hw = head.rx * 0.72 * facing * c.k, hh = head.ry * 0.26 * c.k;
+    for (let i = -1; i <= 1; i++) L(ctx, c.sx + hw * i * 0.62, c.sy - hh, c.sx + hw * i * 0.62, c.sy + hh, "#5A6875", 0.7);
+    L(ctx, c.sx - hw, c.sy, c.sx + hw, c.sy, "#5A6875", 0.7);
   }
 
   // Eyes and mouth live on the front of the head, so they vanish as it turns away.
@@ -271,14 +284,14 @@
       draw: () => {
         const facing = Math.cos(yaw);
         if (facing < 0.2) return;
-        const eyeY = head.y + head.ry * 0.02;
+        const eyeY = head.y - head.ry * 0.16;
         [-1, 1].forEach(s => {
           const r = rotY(s * head.rx * 0.36, head.rz * 0.8, yaw);
           const c = project(r.x, eyeY, r.z);
           E(ctx, c.sx, c.sy, 1.7 * c.k, 2.1 * c.k, OUTLINE);
         });
         const m = rotY(0, head.rz * 0.85, yaw);
-        const mc = project(m.x, head.y - head.ry * 0.42, m.z);
+        const mc = project(m.x, head.y - head.ry * 0.56, m.z);
         L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
       }
     };
@@ -384,15 +397,15 @@
   function elbowFor(shoulder, grip) {
     const out = shoulder.x >= 0 ? 1 : -1;
     return {
-      x: (shoulder.x + grip.x) / 2 + out * 8,
-      y: (shoulder.y + grip.y) / 2 - 3,
-      z: (shoulder.z + grip.z) / 2 - 3
+      x: (shoulder.x + grip.x) / 2 + out * 5,
+      y: (shoulder.y + grip.y) / 2 - 8,
+      z: (shoulder.z + grip.z) / 2 - 2
     };
   }
 
   function drawGlove(ctx, c, color) {
     ctx.beginPath();
-    ctx.ellipse(p(c.sx), p(c.sy), p(5 * c.k), p(5.4 * c.k), 0, 0, Math.PI * 2);
+    ctx.ellipse(p(c.sx), p(c.sy), p(4.2 * c.k), p(4.6 * c.k), 0, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
     ctx.strokeStyle = OUTLINE;
@@ -405,7 +418,10 @@
   // other way round leaves one arm a stub and the other stretched across the body.
   function armParts(ctx, dims, params, yaw) {
     const s = stickPoints(dims, params);
-    const shoulderX = dims.torso.rx * 0.95;
+    const shoulderX = dims.torso.rx * 0.70;
+    // Gloves take a darker shade of the jersey rather than the lettering
+    // colour — white lettering is right on a jersey, wrong on a glove.
+    const gloveColor = shade(params.jerseyColor, -0.4);
     return [
       { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.lowHand },
       { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand }
@@ -417,7 +433,7 @@
         d: (a.d + b.d) / 2 + 3,
         draw: () => {
           drawArm(ctx, a, e, b, 5, params.jerseyColor);
-          drawGlove(ctx, b, params.trimColor);
+          drawGlove(ctx, b, gloveColor);
         }
       };
     });
@@ -463,6 +479,7 @@
 
   function render(ctx, params, yaw) {
     const dims = computeDims(params);
+    FIT = Math.min(1.45, (GROUND - TOP_MARGIN) / dims.topY);
     ctx.clearRect(0, 0, p(LW), p(LH));
     drawIce(ctx);
     drawShadow(ctx, dims);
