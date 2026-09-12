@@ -14,7 +14,9 @@
   border: 1px solid rgba(30, 136, 229, .25);
   background: var(--surface);
   cursor: grab;
-  touch-action: none;
+  /* Horizontal drags rotate the player; vertical ones still scroll the page,
+     so the canvas does not trap scrolling on a phone. */
+  touch-action: pan-y;
 }
 #cap-canvas:active { cursor: grabbing; }
 #cap-canvas:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -237,58 +239,6 @@
   border: 2px solid var(--surface);
 }
 
-.cap-modal {
-  border: 1px solid rgba(30, 136, 229, .30);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  padding: 1.6rem;
-  max-width: 420px;
-  width: 90%;
-  text-align: center;
-}
-.cap-modal[open] {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .8rem;
-}
-.cap-modal::backdrop { background: rgba(12, 27, 42, .45); }
-
-.cap-modal-title {
-  margin: 0;
-  font-size: 1.15rem;
-}
-
-.cap-modal-body {
-  margin: 0;
-  font-size: .9rem;
-  color: var(--muted);
-}
-
-.cap-share-url {
-  width: 100%;
-  font: inherit;
-  font-size: .8rem;
-  padding: .45rem .6rem;
-  border-radius: 8px;
-  border: 1px solid rgba(30, 136, 229, .35);
-  background: var(--bg);
-  color: var(--text);
-}
-
-.cap-modal-close {
-  background: none;
-  border: none;
-  font-size: .8rem;
-  color: var(--muted);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  padding: 0;
-}
-.cap-modal-close:hover { color: var(--text); }
-
 .cap-debug {
   flex-basis: 100%;
   display: grid;
@@ -305,4 +255,13 @@
 @media (max-width: 620px) {
   .cap-wrap { gap: 1rem; }
   .cap-controls { max-width: 100%; }
+  .cap-debug { grid-template-columns: repeat(2, 1fr); }
+
+  /* Bigger tap targets on touch screens. */
+  .cap-swatch { width: 30px; height: 30px; }
+  .cap-opt, .cap-tab { padding: .55rem .2rem; }
+  .cap-actions .button { padding: .5rem .9rem; }
+  .cap-slot input[type="range"] { height: 10px; }
+  .cap-slot input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; }
+  .cap-slot input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; }
 }
