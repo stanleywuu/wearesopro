@@ -30,6 +30,27 @@
   gap: 1rem;
 }
 
+/* Collapsed, the column should not still reserve the editor's width. */
+.cap-controls.collapsed {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.cap-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cap-editor[hidden] { display: none; }
+
+.cap-edit {
+  align-self: center;
+  font-weight: 600;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cap-edit[hidden] { display: none; }
+
 .cap-tabs {
   display: flex;
   gap: .3rem;

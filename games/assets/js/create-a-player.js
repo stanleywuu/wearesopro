@@ -252,12 +252,30 @@
 
   function loadShared() {
     const code = new URLSearchParams(location.search).get(SHARE_KEY);
-    if (!code) return;
+    if (!code) return false;
     try {
       Object.assign(params, sanitizeShared(JSON.parse(fromBase64Url(code))));
+      return true;
     } catch (e) {
-      // A mangled link just leaves the defaults in place.
+      return false;   // a mangled link just leaves the defaults in place
     }
+  }
+
+  // Someone arriving on a shared link came to see a player, not a control
+  // panel, so the editor starts collapsed behind a button.
+  function collapseEditor() {
+    const controls = document.getElementById("cap-controls");
+    const editor = document.getElementById("cap-editor");
+    const button = document.getElementById("cap-edit");
+    editor.hidden = true;
+    controls.classList.add("collapsed");
+    button.hidden = false;
+    button.addEventListener("click", () => {
+      editor.hidden = false;
+      controls.classList.remove("collapsed");
+      button.hidden = true;
+      button.setAttribute("aria-expanded", "true");
+    });
   }
 
   // A shared link is untrusted input, so every field is whitelisted: ids and
@@ -470,13 +488,14 @@
   document.getElementById("cap-share").addEventListener("click", share);
 
   loadSaved();
-  loadShared();
+  const fromLink = loadShared();
   buildTabs();
   buildOptionPickers();
   buildSwatches();
   buildSliders();
   buildIdentity();
   syncControls();
+  if (fromLink) collapseEditor();
   buildDebugGrid();
   touch();
   requestAnimationFrame(frame);

@@ -45,7 +45,10 @@
           <p id="cap-status" class="cap-status" aria-live="polite"></p>
         </div>
 
-        <div class="cap-controls">
+        <div class="cap-controls" id="cap-controls">
+          <button type="button" id="cap-edit" class="button cap-edit" hidden aria-expanded="false" aria-controls="cap-editor">Make it your own</button>
+
+          <div id="cap-editor" class="cap-editor">
           <div class="cap-tabs" role="tablist" aria-label="Player options">
             <button class="cap-tab" role="tab" id="tab-shape" aria-controls="panel-shape" data-tab="shape">Shape</button>
             <button class="cap-tab" role="tab" id="tab-kit" aria-controls="panel-kit" data-tab="kit">Kit</button>
@@ -100,6 +103,7 @@
               <label class="cap-slot"><span>Says</span><input type="text" id="cap-phrase" maxlength="48" autocomplete="off" placeholder="What do they always say?"></label>
               <label class="cap-slot"><span>Or pick</span><select id="cap-phrase-preset"></select></label>
             </fieldset>
+          </div>
           </div>
         </div>
       </div>
