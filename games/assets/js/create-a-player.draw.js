@@ -184,8 +184,6 @@
       torso: torso,
       head: head,
       shoulderY: shoulderY,
-      armX: torso.rx + 4,
-      gloveY: shoulderY - 26,
       legX: Math.max(6, torso.rx * 0.42),
       bodyStyle: shapeStyle(params.bodyShape, params.bodyContour / 100),
       headStyle: shapeStyle(params.headShape, params.headContour / 100),
@@ -217,12 +215,9 @@
   }
 
   function bodyParts(ctx, dims, params, yaw) {
-    const jersey = params.jerseyColor, trim = params.trimColor;
-    const arms = [-1, 1].map(s => limb(ctx, yaw, s * dims.armX, dims.shoulderY - 13, 2, 4.5, 13, dims.limbStyle, jersey));
-    const gloves = [-1, 1].map(s => limb(ctx, yaw, s * (dims.armX + 1), dims.gloveY, 4, 5.5, 5.5, dims.limbStyle, trim));
     const legs = [-1, 1].map(s => limb(ctx, yaw, s * dims.legX, (HIP_Y + SKATE_Y) / 2, 1, 5.5, (HIP_Y - SKATE_Y) / 2, dims.limbStyle, params.sockColor));
     const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
-    return arms.concat(gloves, legs, skates);
+    return legs.concat(skates);
   }
 
   function skatePart(ctx, yaw, x) {
@@ -341,27 +336,84 @@
     };
   }
 
-  // ---- stick ------------------------------------------------------------
+  // ---- arms and stick ---------------------------------------------------
 
-  // Shaft runs from the top glove down to a blade flat on the ice. Handedness
-  // only flips which side the blade sits on — never mirror the whole canvas,
-  // or the jersey number would come out backwards.
-  function stickPart(ctx, dims, params, yaw) {
+  function proj3(pt, yaw) {
+    const r = rotY(pt.x, pt.z, yaw);
+    return project(r.x, pt.y, r.z);
+  }
+
+  // The stick geometry drives the arms too, so both are derived from here.
+  // Handedness only flips which side it all sits on — never mirror the whole
+  // canvas, or the jersey number would come out backwards.
+  function stickPoints(dims, params) {
     const hand = params.handedness === "left" ? -1 : 1;
-    // The shaft descends inward from the glove; the blade must carry on in that
-    // same direction at a shallow lie. Kicking it back outward reads as a golf club.
-    const grip = rotY(hand * (dims.armX + 1), 4, yaw);
-    const heel = rotY(hand * 17, 22, yaw);
-    const toe = rotY(hand * 1, 27, yaw);
-    const g = project(grip.x, dims.gloveY, grip.z);
-    const h = project(heel.x, 2.5, heel.z);
-    const t = project(toe.x, 2.5, toe.z);
+    const butt = { x: hand * 30, y: dims.shoulderY + 5, z: 2 };
+    const heel = { x: hand * 12, y: 2.5, z: 26 };
+    // The blade carries on in the shaft's direction at a shallow lie. Kicking
+    // it back the other way reads as a golf club.
+    const toe = { x: hand * -7, y: 2.5, z: 31 };
+    const along = t => ({
+      x: butt.x + (heel.x - butt.x) * t,
+      y: butt.y + (heel.y - butt.y) * t,
+      z: butt.z + (heel.z - butt.z) * t
+    });
+    return { hand: hand, butt: butt, heel: heel, toe: toe, topHand: along(0.16), lowHand: along(0.48) };
+  }
+
+  // A rounded capsule between two projected points: dark stroke first, colour
+  // over it, so every limb keeps a cartoon outline.
+  function drawLimbLine(ctx, a, b, width, color) {
+    ctx.lineCap = "round";
+    L(ctx, a.sx, a.sy, b.sx, b.sy, OUTLINE, width + 1.8);
+    L(ctx, a.sx, a.sy, b.sx, b.sy, color, width);
+    ctx.lineCap = "butt";
+  }
+
+  function drawGlove(ctx, c, color) {
+    ctx.beginPath();
+    ctx.ellipse(p(c.sx), p(c.sy), p(5 * c.k), p(5.4 * c.k), 0, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(OUTLINE_W);
+    ctx.stroke();
+  }
+
+  // Each arm runs from a shoulder to its hand on the shaft. The far shoulder
+  // takes the lower hand, so the arms spread out across the body.
+  function armParts(ctx, dims, params, yaw) {
+    const s = stickPoints(dims, params);
+    const shoulderX = dims.torso.rx * 0.95;
+    return [
+      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand },
+      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.lowHand }
+    ].map(pair => {
+      const a = proj3(pair.shoulder, yaw);
+      const b = proj3(pair.grip, yaw);
+      return {
+        d: (a.d + b.d) / 2 + 3,
+        draw: () => {
+          drawLimbLine(ctx, a, b, 5, params.jerseyColor);
+          drawGlove(ctx, b, params.trimColor);
+        }
+      };
+    });
+  }
+
+  function stickPart(ctx, dims, params, yaw) {
+    const s = stickPoints(dims, params);
+    const b = proj3(s.butt, yaw);
+    const h = proj3(s.heel, yaw);
+    const t = proj3(s.toe, yaw);
     return {
-      d: Math.max(grip.z, heel.z),
+      d: (s.butt.z + s.heel.z) / 2,
       draw: () => {
-        L(ctx, g.sx, g.sy, h.sx, h.sy, "#C9A227", 2.4);
-        L(ctx, g.sx, g.sy, h.sx, h.sy, OUTLINE, 0.5);
-        L(ctx, h.sx, h.sy, t.sx, t.sy, OUTLINE, 3.4);
+        ctx.lineCap = "round";
+        L(ctx, b.sx, b.sy, h.sx, h.sy, OUTLINE, 3.6);
+        L(ctx, b.sx, b.sy, h.sx, h.sy, "#C9A227", 2.2);
+        L(ctx, h.sx, h.sy, t.sx, t.sy, OUTLINE, 4.2);
+        ctx.lineCap = "butt";
       }
     };
   }
@@ -400,7 +452,7 @@
       helmetPart(ctx, dims, params, yaw),
       facePart(ctx, dims, yaw),
       stickPart(ctx, dims, params, yaw)
-    ]);
+    ]).concat(armParts(ctx, dims, params, yaw));
     depthSort(parts);
     parts.forEach(part => part.draw());
   }
