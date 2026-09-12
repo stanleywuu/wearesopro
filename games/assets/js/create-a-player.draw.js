@@ -348,7 +348,7 @@
   // canvas, or the jersey number would come out backwards.
   function stickPoints(dims, params) {
     const hand = params.handedness === "left" ? -1 : 1;
-    const butt = { x: hand * 30, y: dims.shoulderY + 5, z: 2 };
+    const butt = { x: hand * 20, y: dims.shoulderY + 5, z: 2 };
     const heel = { x: hand * 12, y: 2.5, z: 26 };
     // The blade carries on in the shaft's direction at a shallow lie. Kicking
     // it back the other way reads as a golf club.
@@ -380,14 +380,15 @@
     ctx.stroke();
   }
 
-  // Each arm runs from a shoulder to its hand on the shaft. The far shoulder
-  // takes the lower hand, so the arms spread out across the body.
+  // Each arm runs from a shoulder to its hand on the shaft. The near shoulder
+  // takes the LOWER hand and the far one reaches across to the top hand — the
+  // other way round leaves one arm a stub and the other stretched across the body.
   function armParts(ctx, dims, params, yaw) {
     const s = stickPoints(dims, params);
     const shoulderX = dims.torso.rx * 0.95;
     return [
-      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand },
-      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.lowHand }
+      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.lowHand },
+      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand }
     ].map(pair => {
       const a = proj3(pair.shoulder, yaw);
       const b = proj3(pair.grip, yaw);
