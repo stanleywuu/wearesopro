@@ -13,6 +13,7 @@
   const SPIN_SPEED = 0.35;     // radians per second when idle
   const IDLE_DELAY = 2500;     // ms of no interaction before the idle spin resumes
   const STORE_KEY = "cap-player";
+  const SHARE_KEY = "p";
 
   const params = {
     bodyShape: "ellipsoid",
@@ -35,6 +36,16 @@
     position: D.positions[0],
     phrase: ""
   };
+
+  // Which palette each colour field must come from, used when validating a
+  // shared link.
+  const PALETTES = [
+    ["skinColor", D.skinColors],
+    ["jerseyColor", D.jerseyColors],
+    ["trimColor", D.trimColors],
+    ["sockColor", D.jerseyColors],
+    ["helmetColor", D.helmetColors]
+  ];
 
   let yaw = 0.5;
   let lastInput = 0;
@@ -197,6 +208,70 @@
     }
   }
 
+  // ---- share links ------------------------------------------------------
+
+  function toBase64Url(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = "";
+    bytes.forEach(b => { bin += String.fromCharCode(b); });
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function fromBase64Url(code) {
+    const bin = atob(code.replace(/-/g, "+").replace(/_/g, "/"));
+    return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
+  }
+
+  function share() {
+    const url = location.origin + location.pathname + "?" + SHARE_KEY + "=" + toBase64Url(JSON.stringify(params));
+    if (!navigator.clipboard) return status(url);
+    navigator.clipboard.writeText(url).then(
+      () => status("Link copied to clipboard."),
+      () => status(url)
+    );
+  }
+
+  function loadShared() {
+    const code = new URLSearchParams(location.search).get(SHARE_KEY);
+    if (!code) return;
+    try {
+      Object.assign(params, sanitizeShared(JSON.parse(fromBase64Url(code))));
+    } catch (e) {
+      // A mangled link just leaves the defaults in place.
+    }
+  }
+
+  // A shared link is untrusted input, so every field is whitelisted: ids and
+  // colours must come from the data file, numbers are clamped to their slider
+  // range, and free text is length-capped.
+  function sanitizeShared(raw) {
+    if (!raw || typeof raw !== "object") return {};
+    const out = {};
+    const option = (key, list) => {
+      if (list.some(o => o.id === raw[key])) out[key] = raw[key];
+    };
+    option("bodyShape", D.shapes);
+    option("headShape", D.shapes);
+    option("helmetStyle", D.helmets);
+    option("handedness", D.handedness);
+    Object.keys(D.sliders).forEach(key => {
+      const spec = D.sliders[key], value = Number(raw[key]);
+      if (Number.isFinite(value)) out[key] = Math.min(spec.max, Math.max(spec.min, Math.round(value)));
+    });
+    PALETTES.forEach(entry => {
+      if (entry[1].indexOf(raw[entry[0]]) >= 0) out[entry[0]] = raw[entry[0]];
+    });
+    if (D.positions.indexOf(raw.position) >= 0) out.position = raw.position;
+    out.name = capText(raw.name, 14);
+    out.phrase = capText(raw.phrase, 48);
+    out.number = capText(raw.number, 2).replace(/[^0-9]/g, "");
+    return out;
+  }
+
+  function capText(value, max) {
+    return typeof value === "string" ? value.slice(0, max) : "";
+  }
+
   function randomize() {
     const pick = list => list[Math.floor(Math.random() * list.length)];
     params.bodyShape = pick(D.shapes).id;
@@ -346,8 +421,10 @@
   document.getElementById("cap-random").addEventListener("click", randomize);
   document.getElementById("cap-save").addEventListener("click", save);
   document.getElementById("cap-export").addEventListener("click", exportPng);
+  document.getElementById("cap-share").addEventListener("click", share);
 
   loadSaved();
+  loadShared();
   buildTabs();
   buildOptionPickers();
   buildSwatches();
