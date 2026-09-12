@@ -34,6 +34,7 @@
 
       <div class="cap-wrap">
         <div class="cap-stage">
+          <p id="cap-bubble" class="cap-bubble" hidden></p>
           <canvas id="cap-canvas" tabindex="0" aria-label="Your created hockey player, drag to rotate"></canvas>
           <p id="cap-caption" class="cap-caption" aria-live="polite"></p>
         </div>
@@ -86,6 +87,12 @@
               <label class="cap-slot"><span>Number</span><input type="text" id="cap-number" maxlength="2" inputmode="numeric" autocomplete="off"></label>
               <label class="cap-slot"><span>Position</span><select id="cap-position"></select></label>
               <div class="cap-slot"><span>Shoots</span><div class="cap-opts" data-options="handedness" data-list="handedness"></div></div>
+            </fieldset>
+
+            <fieldset class="cap-group">
+              <legend>Catch-phrase</legend>
+              <label class="cap-slot"><span>Says</span><input type="text" id="cap-phrase" maxlength="48" autocomplete="off" placeholder="What do they always say?"></label>
+              <label class="cap-slot"><span>Or pick</span><select id="cap-phrase-preset"></select></label>
             </fieldset>
           </div>
         </div>

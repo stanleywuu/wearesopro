@@ -140,6 +140,37 @@
   gap: .5rem;
 }
 
+.cap-bubble {
+  position: relative;
+  margin: 0;
+  max-width: 260px;
+  padding: .55rem 1rem;
+  font-style: italic;
+  font-size: .9rem;
+  color: var(--text);
+  text-align: center;
+  background: var(--surface);
+  border: 2px solid rgba(30, 136, 229, .30);
+  border-radius: 14px;
+}
+.cap-bubble[hidden] { display: none; }
+.cap-bubble::before,
+.cap-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+}
+.cap-bubble::before {
+  bottom: -14px;
+  border-top-color: rgba(30, 136, 229, .30);
+}
+.cap-bubble::after {
+  bottom: -10px;
+  border-top-color: var(--surface);
+}
+
 .cap-caption {
   margin: 0;
   font-size: .95rem;

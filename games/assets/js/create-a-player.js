@@ -31,7 +31,8 @@
     handedness: "left",
     name: "",
     number: "",
-    position: D.positions[0]
+    position: D.positions[0],
+    phrase: ""
   };
 
   let yaw = 0.5;
@@ -116,6 +117,28 @@
     position.addEventListener("change", () => { params.position = position.value; updateCaption(); });
     bindText("cap-name", "name", v => v);
     bindText("cap-number", "number", v => v.replace(/[^0-9]/g, ""));
+    buildPhrase();
+  }
+
+  function buildPhrase() {
+    const preset = document.getElementById("cap-phrase-preset");
+    preset.add(new Option("Suggestions...", ""));
+    D.catchPhrases.forEach(text => preset.add(new Option(text, text)));
+    preset.addEventListener("change", () => {
+      if (!preset.value) return;
+      const input = document.getElementById("cap-phrase");
+      input.value = preset.value;
+      params.phrase = preset.value;
+      updateBubble();
+    });
+    bindText("cap-phrase", "phrase", v => v);
+  }
+
+  // Free user text, so textContent only.
+  function updateBubble() {
+    const bubble = document.getElementById("cap-bubble");
+    bubble.textContent = params.phrase;
+    bubble.hidden = !params.phrase;
   }
 
   function bindText(id, key, clean) {
@@ -125,6 +148,7 @@
       input.value = clean(input.value);
       params[key] = input.value;
       updateCaption();
+      updateBubble();
       touch();
     });
   }
