@@ -309,6 +309,24 @@
     touch();
   }
 
+  // ---- debug ------------------------------------------------------------
+
+  // ?debug renders the player at eight fixed angles so every side can be
+  // checked at once. Built entirely in JS - nothing debug-related in the HTML.
+  function buildDebugGrid() {
+    if (!new URLSearchParams(location.search).has("debug")) return;
+    const grid = document.createElement("div");
+    grid.className = "cap-debug";
+    for (let i = 0; i < 8; i++) {
+      const thumb = document.createElement("canvas");
+      thumb.width = DRAW.LW * DRAW.S;
+      thumb.height = DRAW.LH * DRAW.S;
+      DRAW.render(thumb.getContext("2d"), params, i * Math.PI / 4);
+      grid.appendChild(thumb);
+    }
+    document.querySelector(".cap-wrap").appendChild(grid);
+  }
+
   // ---- loop -------------------------------------------------------------
 
   function frame(now) {
@@ -336,6 +354,7 @@
   buildSliders();
   buildIdentity();
   syncControls();
+  buildDebugGrid();
   touch();
   requestAnimationFrame(frame);
 

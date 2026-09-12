@@ -237,6 +237,19 @@
   border: 2px solid var(--surface);
 }
 
+.cap-debug {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .5rem;
+}
+.cap-debug canvas {
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(30, 136, 229, .25);
+  border-radius: 8px;
+}
+
 @media (max-width: 620px) {
   .cap-wrap { gap: 1rem; }
   .cap-controls { max-width: 100%; }
