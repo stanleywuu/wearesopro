@@ -194,10 +194,9 @@
       head: head,
       topY: head.y + head.ry * 1.12,
       shoulderY: shoulderY,
-      legX: Math.max(6, torso.rx * 0.42),
+      legX: Math.max(7, torso.rx * 0.52),
       bodyStyle: shapeStyle(params.bodyShape, params.bodyContour / 100),
-      headStyle: shapeStyle(params.headShape, params.headContour / 100),
-      limbStyle: shapeStyle("capsule", 1)
+      headStyle: shapeStyle(params.headShape, params.headContour / 100)
     };
   }
 
@@ -220,14 +219,41 @@
     };
   }
 
-  function limb(ctx, yaw, x, y, z, rx, ry, style, color) {
-    return slabPart(ctx, { x: x, y: y, z: z, rx: rx, ry: ry, rz: rx, style: style, color: color }, yaw);
+  function bodyParts(ctx, dims, params, yaw) {
+    const legs = [-1, 1].map(s => legPart(ctx, dims, params, yaw, s));
+    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
+    return legs.concat(skates, [pantsPart(ctx, dims, params, yaw)]);
   }
 
-  function bodyParts(ctx, dims, params, yaw) {
-    const legs = [-1, 1].map(s => limb(ctx, yaw, s * dims.legX, (HIP_Y + SKATE_Y) / 2, 1, 5.5, (HIP_Y - SKATE_Y) / 2, dims.limbStyle, params.sockColor));
-    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
-    return legs.concat(skates);
+  // Bulky shorts over the hips, drawn after the legs so they cover the thigh
+  // tops the way real pants do.
+  function pantsPart(ctx, dims, params, yaw) {
+    const t = dims.torso;
+    const c = project(0, HIP_Y - 3, 0);
+    return {
+      d: 9,
+      draw: () => drawSlab(ctx, {
+        cx: c.sx, cy: c.sy,
+        hw: silWidth(t.rx * 0.92, t.rz * 0.92, yaw, 0) * c.k,
+        hh: 8.5 * c.k,
+        shape: "capsule", taper: 0.88, round: 1,
+        color: shade(params.jerseyColor, -0.2), yaw: yaw
+      })
+    };
+  }
+
+  // Thigh and shin meeting at a knee pushed forward, which is what makes the
+  // stance read as crouched rather than stood to attention.
+  function legPart(ctx, dims, params, yaw, side) {
+    const x = side * dims.legX;
+    const hip = { x: x, y: HIP_Y, z: 1 };
+    const knee = { x: side * (dims.legX + 1.5), y: (HIP_Y + SKATE_Y) / 2 + 1, z: 7 };
+    const ankle = { x: x, y: SKATE_Y + 3, z: 2 };
+    const a = proj3(hip, yaw), k = proj3(knee, yaw), b = proj3(ankle, yaw);
+    return {
+      d: k.d,
+      draw: () => drawArm(ctx, a, k, b, 9, params.sockColor)
+    };
   }
 
   function skatePart(ctx, yaw, x) {
@@ -248,20 +274,48 @@
 
   // ---- head details -----------------------------------------------------
 
-  // Helmet shell: a squashed cap sitting over the top of the head.
+  // Helmet: a domed shell on the crown, a darker brim along its lower edge and
+  // an ear cover on each side. The brim and ears are what stop it reading as a
+  // plain beanie.
   function helmetPart(ctx, dims, params, yaw) {
     const head = dims.head;
     // Sits on the crown, clear of the eyes — any lower and it swallows the face.
     const o = {
-      x: 0, y: head.y + head.ry * 0.52, z: 0,
-      rx: head.rx * 1.1, ry: head.ry * 0.56, rz: head.rz * 1.1,
-      style: { id: "capsule", taper: 0.92, round: 1, boxy: 0 },
+      x: 0, y: head.y + head.ry * 0.46, z: 0,
+      rx: head.rx * 1.18, ry: head.ry * 0.64, rz: head.rz * 1.18,
+      style: { id: "ellipsoid", taper: 0.86, round: 1, boxy: 0 },
       color: params.helmetColor
     };
-    const part = slabPart(ctx, o, yaw);
-    const shell = part.draw;
-    part.draw = () => { shell(); if (params.helmetStyle === "cage") drawCage(ctx, dims, yaw); };
-    return part;
+    const c = project(0, o.y, 0);
+    const hw = silWidth(o.rx, o.rz, yaw, 0) * c.k;
+    const hh = o.ry * c.k;
+    return {
+      d: 0.1,
+      draw: () => {
+        drawSlab(ctx, {
+          cx: c.sx, cy: c.sy, hw: hw, hh: hh,
+          shape: o.style.id, taper: o.style.taper, round: o.style.round,
+          color: o.color, yaw: yaw
+        });
+        drawEarLobes(ctx, c, hw, hh, params.helmetColor);
+        if (params.helmetStyle === "cage") drawCage(ctx, dims, yaw);
+      }
+    };
+  }
+
+  // Painted relative to the shell rather than anchored in body space, so they
+  // stay welded to the helmet instead of drifting across the face as it turns.
+  function drawEarLobes(ctx, c, hw, hh, helmetColor) {
+    const color = shade(helmetColor, -0.22);
+    [-1, 1].forEach(side => {
+      ctx.beginPath();
+      ctx.ellipse(p(c.sx + side * hw * 0.80), p(c.sy + hh * 0.58), p(2.8), p(3.6), 0, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = OUTLINE;
+      ctx.lineWidth = p(OUTLINE_W);
+      ctx.stroke();
+    });
   }
 
   function drawCage(ctx, dims, yaw) {
@@ -317,11 +371,15 @@
     ctx.restore();
   }
 
-  // One quad on the front or back of the torso, in body space.
+  // One quad on the front or back of the torso. Each corner sits on the barrel
+  // surface rather than a flat plane at full depth, so the lettering hugs the
+  // body instead of floating proud of it.
   function jerseyQuad(dims, yaw, side, halfW, yTop, yBot) {
-    const z = dims.torso.rz * side;
+    const t = dims.torso;
     const corner = (x, y) => {
-      const r = rotY(x * side, z, yaw);
+      const bx = x * side;
+      const inset = Math.sqrt(Math.max(0, 1 - Math.min(1, (bx / t.rx) * (bx / t.rx))));
+      const r = rotY(bx, t.rz * inset * 0.9 * side, yaw);
       return project(r.x, y, r.z);
     };
     return { tl: corner(-halfW, yTop), tr: corner(halfW, yTop), bl: corner(-halfW, yBot) };
@@ -336,14 +394,16 @@
     return {
       d: t.rz * side * facing,
       draw: () => {
-        if (Math.abs(facing) < 0.25) return;
-        if (params.number) {
-          const q = jerseyQuad(dims, yaw, side, t.rx * 0.45, t.y + t.ry * 0.18, t.y - t.ry * 0.34);
-          drawQuadText(ctx, params.number, q.tl, q.tr, q.bl, params.trimColor);
-        }
-        if (params.name && side < 0) {
-          const q = jerseyQuad(dims, yaw, side, t.rx * 0.62, t.y + t.ry * 0.62, t.y + t.ry * 0.38);
+        // Back of the jersey only, and hidden well before the torso turns
+        // edge-on so the lettering never crawls off the silhouette.
+        if (facing > -0.35) return;
+        if (params.name) {
+          const q = jerseyQuad(dims, yaw, side, t.rx * 0.56, t.y + t.ry * 0.48, t.y + t.ry * 0.30);
           drawQuadText(ctx, params.name.toUpperCase(), q.tl, q.tr, q.bl, params.trimColor);
+        }
+        if (params.number) {
+          const q = jerseyQuad(dims, yaw, side, t.rx * 0.42, t.y + t.ry * 0.14, t.y - t.ry * 0.38);
+          drawQuadText(ctx, params.number, q.tl, q.tr, q.bl, params.trimColor);
         }
       }
     };
@@ -367,8 +427,8 @@
     const hand = params.handedness === "left" ? -1 : 1;
     // The shaft leans back across the body as it descends, so the blade ends up
     // angled in front of the player rather than pointing away off to the side.
-    const topHand = { x: hand * 13, y: dims.shoulderY - 11, z: 16 };
-    const lowHand = { x: hand * 9, y: dims.shoulderY - 31, z: 22 };
+    const topHand = { x: hand * 14, y: dims.shoulderY - 15, z: 22 };
+    const lowHand = { x: hand * 10, y: dims.shoulderY - 31, z: 26 };
     const dir = { x: lowHand.x - topHand.x, y: lowHand.y - topHand.y, z: lowHand.z - topHand.z };
 
     const toIce = (lowHand.y - 2.5) / -dir.y;
@@ -405,7 +465,7 @@
 
   function drawGlove(ctx, c, color) {
     ctx.beginPath();
-    ctx.ellipse(p(c.sx), p(c.sy), p(4.2 * c.k), p(4.6 * c.k), 0, 0, Math.PI * 2);
+    ctx.ellipse(p(c.sx), p(c.sy), p(5 * c.k), p(5.4 * c.k), 0, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
     ctx.strokeStyle = OUTLINE;
@@ -413,9 +473,10 @@
     ctx.stroke();
   }
 
-  // Each arm runs from a shoulder to its hand on the shaft. The near shoulder
-  // takes the LOWER hand and the far one reaches across to the top hand — the
-  // other way round leaves one arm a stub and the other stretched across the body.
+  // Each arm runs from a shoulder to its hand on the shaft. The shoulder on the
+  // stick's side takes the TOP hand — that arm stays tucked and bent — while the
+  // far shoulder reaches across to the lower hand and extends. Swapping them
+  // puts the hands on the wrong arms.
   function armParts(ctx, dims, params, yaw) {
     const s = stickPoints(dims, params);
     const shoulderX = dims.torso.rx * 0.70;
@@ -423,8 +484,8 @@
     // colour — white lettering is right on a jersey, wrong on a glove.
     const gloveColor = shade(params.jerseyColor, -0.4);
     return [
-      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.lowHand },
-      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand }
+      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand },
+      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.lowHand }
     ].map(pair => {
       const a = proj3(pair.shoulder, yaw);
       const e = proj3(elbowFor(pair.shoulder, pair.grip), yaw);
@@ -432,7 +493,7 @@
       return {
         d: (a.d + b.d) / 2 + 3,
         draw: () => {
-          drawArm(ctx, a, e, b, 5, params.jerseyColor);
+          drawArm(ctx, a, e, b, 8, params.jerseyColor);
           drawGlove(ctx, b, gloveColor);
         }
       };
