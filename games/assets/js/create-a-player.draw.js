@@ -348,12 +348,14 @@
   // or the jersey number would come out backwards.
   function stickPart(ctx, dims, params, yaw) {
     const hand = params.handedness === "left" ? -1 : 1;
+    // The shaft descends inward from the glove; the blade must carry on in that
+    // same direction at a shallow lie. Kicking it back outward reads as a golf club.
     const grip = rotY(hand * (dims.armX + 1), 4, yaw);
-    const heel = rotY(hand * 14, 20, yaw);
-    const toe = rotY(hand * 24, 22, yaw);
+    const heel = rotY(hand * 17, 22, yaw);
+    const toe = rotY(hand * 1, 27, yaw);
     const g = project(grip.x, dims.gloveY, grip.z);
-    const h = project(heel.x, 2, heel.z);
-    const t = project(toe.x, 2, toe.z);
+    const h = project(heel.x, 2.5, heel.z);
+    const t = project(toe.x, 2.5, toe.z);
     return {
       d: Math.max(grip.z, heel.z),
       draw: () => {
