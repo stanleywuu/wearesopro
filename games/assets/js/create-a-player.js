@@ -28,7 +28,7 @@
     trimColor: D.trimColors[0],
     sockColor: D.jerseyColors[0],
     helmetColor: D.helmetColors[0],
-    helmetStyle: "cage",
+    helmetStyle: "visor",
     handedness: "left",
     name: "",
     number: "",

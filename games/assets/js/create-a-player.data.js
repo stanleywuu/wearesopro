@@ -19,8 +19,8 @@ window.CAP_DATA = {
   },
 
   helmets: [
-    { id: "bucket", label: "Bare" },
-    { id: "cage",   label: "Cage" }
+    { id: "bare",  label: "Bare" },
+    { id: "visor", label: "Visor" }
   ],
 
   handedness: [

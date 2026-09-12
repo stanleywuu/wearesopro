@@ -222,7 +222,11 @@
   function bodyParts(ctx, dims, params, yaw) {
     const legs = [-1, 1].map(s => legPart(ctx, dims, params, yaw, s));
     const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
-    return legs.concat(skates, [pantsPart(ctx, dims, params, yaw)]);
+    // The pants must stay on top of BOTH thighs. A fixed depth loses to the
+    // near leg once the player turns side-on, so it tracks the legs instead.
+    const pants = pantsPart(ctx, dims, params, yaw);
+    pants.d = Math.max(legs[0].d, legs[1].d) + 0.5;
+    return legs.concat(skates, [pants]);
   }
 
   // Bulky shorts over the hips, drawn after the legs so they cover the thigh
@@ -298,7 +302,7 @@
           color: o.color, yaw: yaw
         });
         drawEarLobes(ctx, c, hw, hh, params.helmetColor);
-        if (params.helmetStyle === "cage") drawCage(ctx, dims, yaw);
+        if (params.helmetStyle === "visor") drawVisor(ctx, dims, yaw);
       }
     };
   }
@@ -318,16 +322,28 @@
     });
   }
 
-  function drawCage(ctx, dims, yaw) {
+  // A tinted shade across the eyes, hung off the front of the shell. Drawn
+  // semi-transparent so the eyes still read through it.
+  function drawVisor(ctx, dims, yaw) {
     const facing = Math.cos(yaw);
     if (facing < 0.15) return;
     const head = dims.head;
-    // Sits over the lower face only. Bars across the eyes turn to scribble at
-    // this size and cost more than the realism is worth.
-    const c = project(0, head.y - head.ry * 0.48, head.rz * facing);
-    const hw = head.rx * 0.72 * facing * c.k, hh = head.ry * 0.26 * c.k;
-    for (let i = -1; i <= 1; i++) L(ctx, c.sx + hw * i * 0.62, c.sy - hh, c.sx + hw * i * 0.62, c.sy + hh, "#5A6875", 0.7);
-    L(ctx, c.sx - hw, c.sy, c.sx + hw, c.sy, "#5A6875", 0.7);
+    const c = project(0, head.y - head.ry * 0.13, head.rz * facing);
+    const hw = head.rx * 0.88 * facing * c.k, hh = head.ry * 0.26 * c.k;
+    ctx.save();
+    ctx.globalAlpha = 0.42;
+    pathRoundedPoly(ctx, [
+      { x: p(c.sx - hw * 0.88), y: p(c.sy - hh) },
+      { x: p(c.sx + hw * 0.88), y: p(c.sy - hh) },
+      { x: p(c.sx + hw), y: p(c.sy + hh) },
+      { x: p(c.sx - hw), y: p(c.sy + hh) }
+    ], p(hh * 0.7));
+    ctx.fillStyle = "#2C4356";
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(1);
+    ctx.stroke();
   }
 
   // Eyes and mouth live on the front of the head, so they vanish as it turns away.
@@ -337,10 +353,13 @@
       d: head.rz,
       draw: () => {
         const facing = Math.cos(yaw);
-        if (facing < 0.2) return;
+        if (facing < 0.3) return;
         const eyeY = head.y - head.ry * 0.16;
         [-1, 1].forEach(s => {
           const r = rotY(s * head.rx * 0.36, head.rz * 0.8, yaw);
+          // An eye that has rotated onto the far hemisphere would otherwise
+          // sit out at the silhouette edge, reading as detached from the head.
+          if (r.z <= 0) return;
           const c = project(r.x, eyeY, r.z);
           E(ctx, c.sx, c.sy, 1.7 * c.k, 2.1 * c.k, OUTLINE);
         });
@@ -367,7 +386,13 @@
     ctx.font = "700 " + h + "px " + FONT;
     ctx.textBaseline = "top";
     ctx.fillStyle = color;
-    ctx.fillText(text, (w - ctx.measureText(text).width) / 2, 0);
+    // Squash the glyphs into the quad as it narrows, so the lettering turns
+    // with the jersey instead of keeping its full width and sliding across it.
+    // Capped at 1 so a short number is never stretched fat when face-on.
+    const m = ctx.measureText(text).width;
+    const squash = Math.min(1, (w * 0.9) / m);
+    ctx.scale(squash, 1);
+    ctx.fillText(text, (w - m * squash) / (2 * squash), 0);
     ctx.restore();
   }
 
