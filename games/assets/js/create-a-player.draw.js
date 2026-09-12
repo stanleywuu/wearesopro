@@ -222,25 +222,44 @@
   function bodyParts(ctx, dims, params, yaw) {
     const legs = [-1, 1].map(s => legPart(ctx, dims, params, yaw, s));
     const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
-    // The pants must stay on top of BOTH thighs. A fixed depth loses to the
-    // near leg once the player turns side-on, so it tracks the legs instead.
-    const pants = pantsPart(ctx, dims, params, yaw);
-    pants.d = Math.max(legs[0].d, legs[1].d) + 0.5;
-    return legs.concat(skates, [pants]);
+    const cuffs = [-1, 1].map((s, i) => pantsCuff(ctx, dims, params, yaw, s, legs[i].d));
+    const waist = pantsWaist(ctx, dims, params, yaw);
+    // The waist must clear BOTH thighs and the torso it is worn over. A fixed
+    // depth loses to the near leg side-on, and a depth that only tracks the
+    // legs slips behind the torso when the player turns his back.
+    waist.d = Math.max(legs[0].d, legs[1].d, 0) + 0.6;
+    return legs.concat(skates, cuffs, [waist]);
   }
 
-  // Bulky shorts over the hips, drawn after the legs so they cover the thigh
-  // tops the way real pants do.
-  function pantsPart(ctx, dims, params, yaw) {
+  // Bulky shorts: one band across the hips plus a cuff wrapping the top of each
+  // thigh, so the pants read as fitting the legs rather than as a single slab.
+  function pantsWaist(ctx, dims, params, yaw) {
     const t = dims.torso;
-    const c = project(0, HIP_Y - 3, 0);
+    const c = project(0, HIP_Y - 1, 0);
     return {
-      d: 9,
+      d: 0,
       draw: () => drawSlab(ctx, {
         cx: c.sx, cy: c.sy,
         hw: silWidth(t.rx * 0.92, t.rz * 0.92, yaw, 0) * c.k,
-        hh: 8.5 * c.k,
-        shape: "capsule", taper: 0.88, round: 1,
+        hh: 7.5 * c.k,
+        shape: "capsule", taper: 0.9, round: 1,
+        color: shade(params.jerseyColor, -0.2), yaw: yaw
+      })
+    };
+  }
+
+  // Sits just above its own leg in the sort, so each cuff covers its own thigh
+  // whichever way the player is facing.
+  function pantsCuff(ctx, dims, params, yaw, side, legDepth) {
+    const r = rotY(side * (dims.legX + 0.5), 3, yaw);
+    const c = project(r.x, HIP_Y - 10, r.z);
+    return {
+      d: Math.max(legDepth, 0) + 0.3,
+      draw: () => drawSlab(ctx, {
+        cx: c.sx, cy: c.sy,
+        hw: silWidth(9, 8, yaw, 0) * c.k,
+        hh: 9.5 * c.k,
+        shape: "capsule", taper: 0.95, round: 1,
         color: shade(params.jerseyColor, -0.2), yaw: yaw
       })
     };
@@ -256,7 +275,7 @@
     const a = proj3(hip, yaw), k = proj3(knee, yaw), b = proj3(ankle, yaw);
     return {
       d: k.d,
-      draw: () => drawArm(ctx, a, k, b, 9, params.sockColor)
+      draw: () => drawArm(ctx, a, k, b, 11, params.sockColor)
     };
   }
 
