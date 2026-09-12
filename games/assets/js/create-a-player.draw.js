@@ -346,19 +346,24 @@
   // The stick geometry drives the arms too, so both are derived from here.
   // Handedness only flips which side it all sits on — never mirror the whole
   // canvas, or the jersey number would come out backwards.
+  // A real stance holds the stick OUT IN FRONT, not off to the side: both hands
+  // sit forward of the chest, the shaft angles down and away, and the blade
+  // lands on the ice well ahead of the skates. So the hands are placed first
+  // and the shaft is extended through them in both directions.
   function stickPoints(dims, params) {
     const hand = params.handedness === "left" ? -1 : 1;
-    const butt = { x: hand * 20, y: dims.shoulderY + 5, z: 2 };
-    const heel = { x: hand * 12, y: 2.5, z: 26 };
+    const topHand = { x: hand * 9, y: dims.shoulderY - 11, z: 16 };
+    const lowHand = { x: hand * 12, y: dims.shoulderY - 31, z: 22 };
+    const dir = { x: lowHand.x - topHand.x, y: lowHand.y - topHand.y, z: lowHand.z - topHand.z };
+
+    const toIce = (lowHand.y - 2.5) / -dir.y;
+    const heel = { x: lowHand.x + dir.x * toIce, y: 2.5, z: lowHand.z + dir.z * toIce };
+    const butt = { x: topHand.x - dir.x * 0.45, y: topHand.y - dir.y * 0.45, z: topHand.z - dir.z * 0.45 };
     // The blade carries on in the shaft's direction at a shallow lie. Kicking
     // it back the other way reads as a golf club.
-    const toe = { x: hand * -7, y: 2.5, z: 31 };
-    const along = t => ({
-      x: butt.x + (heel.x - butt.x) * t,
-      y: butt.y + (heel.y - butt.y) * t,
-      z: butt.z + (heel.z - butt.z) * t
-    });
-    return { hand: hand, butt: butt, heel: heel, toe: toe, topHand: along(0.16), lowHand: along(0.48) };
+    const toe = { x: heel.x + hand * 11, y: 2.5, z: heel.z + 4 };
+
+    return { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
   }
 
   // A rounded capsule between two projected points: dark stroke first, colour
@@ -407,8 +412,11 @@
     const b = proj3(s.butt, yaw);
     const h = proj3(s.heel, yaw);
     const t = proj3(s.toe, yaw);
+    // Sort by the rotated depth at the hands, just behind the arms, so the
+    // gloves read as gripping the shaft rather than the shaft crossing them.
+    const grip = rotY(s.topHand.x, s.topHand.z, yaw);
     return {
-      d: (s.butt.z + s.heel.z) / 2,
+      d: grip.z - 3,
       draw: () => {
         ctx.lineCap = "round";
         L(ctx, b.sx, b.sy, h.sx, h.sy, OUTLINE, 3.6);
