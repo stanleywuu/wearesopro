@@ -49,6 +49,8 @@
 
   let yaw = 0.5;
   let statusTimer = 0;
+  let saveTimer = 0;
+  let highlightStart = 0;
   let lastInput = 0;
   let dragging = false;
   let dragX = 0;
@@ -200,12 +202,13 @@
     }
   }
 
-  function save() {
+  // No Save button: the player is written back whenever it changes, so a
+  // reload keeps it without anyone having to remember to press anything.
+  function saveQuietly() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(params));
-      status("Saved to this browser.");
     } catch (e) {
-      status("Could not save - browser storage is unavailable.");
+      // Storage blocked or full; the player simply will not persist.
     }
   }
 
@@ -346,37 +349,12 @@
     if (message) statusTimer = setTimeout(() => status(""), 8000);
   }
 
-  function exportPng() {
-    const link = document.createElement("a");
-    link.download = (params.name || "player").toLowerCase() + "-player.png";
-    link.href = composite().toDataURL("image/png");
-    link.click();
-    status("Downloaded.");
-  }
-
-  // The bubble lives in HTML for crisp text, so the export redraws it onto
-  // a taller canvas above the player.
-  function composite() {
-    if (!params.phrase) return canvas;
-    const pad = 70;
-    const out = document.createElement("canvas");
-    out.width = canvas.width;
-    out.height = canvas.height + pad;
-    const c = out.getContext("2d");
-    c.fillStyle = "#EEF6FF";
-    c.fillRect(0, 0, out.width, out.height);
-    c.drawImage(canvas, 0, pad);
-    c.fillStyle = "#0C1B2A";
-    c.font = "italic 26px " + getComputedStyle(document.body).fontFamily;
-    c.textAlign = "center";
-    c.fillText(params.phrase, out.width / 2, pad * 0.6);
-    return out;
-  }
-
   // ---- rotation ---------------------------------------------------------
 
   function touch() {
     lastInput = performance.now();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveQuietly, 700);
   }
 
   function startDrag(e) {
@@ -426,11 +404,48 @@
 
   // ---- loop -------------------------------------------------------------
 
+  // ---- highlight reel ---------------------------------------------------
+
+  const HIGHLIGHT = { skate: 1400, wind: 1900, shot: 2100, puck: 2600, end: 3600 };
+
+  function playHighlight() {
+    highlightStart = performance.now();
+    status("");
+  }
+
+  // The whole reel as a function of elapsed time: skate in, wind up, shoot,
+  // watch the puck go in. Returns null once it has finished.
+  function highlightAt(ms) {
+    if (ms >= HIGHLIGHT.end) return null;
+    const anim = { shift: 0, stride: 0, swing: 0, puckT: null, goal: false };
+    if (ms < HIGHLIGHT.skate) {
+      const t = ms / HIGHLIGHT.skate;
+      anim.shift = -55 * (1 - t * t * (3 - 2 * t));
+      anim.stride = Math.sin(ms / 80) * (1 - t * 0.4);
+    }
+    if (ms >= HIGHLIGHT.skate && ms < HIGHLIGHT.wind) {
+      anim.swing = -1.15 * ((ms - HIGHLIGHT.skate) / (HIGHLIGHT.wind - HIGHLIGHT.skate));
+    } else if (ms >= HIGHLIGHT.wind && ms < HIGHLIGHT.shot) {
+      anim.swing = -1.15 + 2.5 * ((ms - HIGHLIGHT.wind) / (HIGHLIGHT.shot - HIGHLIGHT.wind));
+    } else if (ms >= HIGHLIGHT.shot) {
+      anim.swing = 1.35;
+    }
+    if (ms >= HIGHLIGHT.shot) {
+      anim.puckT = Math.min(1, (ms - HIGHLIGHT.shot) / (HIGHLIGHT.puck - HIGHLIGHT.shot));
+    }
+    anim.goal = ms >= HIGHLIGHT.puck;
+    return anim;
+  }
+
   function frame(now) {
-    if (!dragging && now - lastInput > IDLE_DELAY) {
+    const anim = highlightStart ? highlightAt(now - highlightStart) : null;
+    if (highlightStart && !anim) highlightStart = 0;
+    if (anim) {
+      yaw = 0.45;             // held three-quarter on to the net
+    } else if (!dragging && now - lastInput > IDLE_DELAY) {
       yaw += SPIN_SPEED / 60;
     }
-    DRAW.render(ctx, params, yaw);
+    DRAW.render(ctx, params, yaw, anim);
     requestAnimationFrame(frame);
   }
 
@@ -441,8 +456,7 @@
   canvas.addEventListener("keydown", onKey);
 
   document.getElementById("cap-random").addEventListener("click", randomize);
-  document.getElementById("cap-save").addEventListener("click", save);
-  document.getElementById("cap-export").addEventListener("click", exportPng);
+  document.getElementById("cap-highlight").addEventListener("click", playHighlight);
   document.getElementById("cap-share").addEventListener("click", share);
 
   loadSaved();

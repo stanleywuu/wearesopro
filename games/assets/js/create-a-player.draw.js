@@ -19,6 +19,12 @@
   // render from the figure's height; capped so a tiny build does not blow up
   // far enough to push the stick blade out of the canvas when turned sideways.
   let FIT = 1;
+
+  // Highlight animation state for the current frame, or null when idle. Set by
+  // render() and read by the parts that move: legs stride, the stick swings,
+  // and the whole figure slides across the ice.
+  let ANIM = null;
+  let SHIFT = 0;
   const TILT = 0.16;        // how much +z (towards viewer) drops on screen
   const PERSP = 0.0028;     // weak perspective: growth per unit of +z
   const LIGHT_YAW = -0.6;   // light direction, radians
@@ -60,7 +66,7 @@
   // k carries the fit zoom, so anything sized by it scales with the figure.
   function project(x, y, z) {
     const k = scaleAt(z) * FIT;
-    return { sx: CX + x * k, sy: GROUND - y * k + z * TILT * FIT, d: z, k: k };
+    return { sx: CX + SHIFT + x * k, sy: GROUND - y * k + z * TILT * FIT, d: z, k: k };
   }
 
   // Half-width of a part once it has turned by yaw.
@@ -221,7 +227,7 @@
 
   function bodyParts(ctx, dims, params, yaw) {
     const legs = [-1, 1].map(s => legPart(ctx, dims, params, yaw, s));
-    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
+    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX, s));
     const cuffs = [-1, 1].map((s, i) => pantsCuff(ctx, dims, params, yaw, s, legs[i].d));
     const waist = pantsWaist(ctx, dims, params, yaw);
     // The waist must clear BOTH thighs and the torso it is worn over. A fixed
@@ -267,11 +273,17 @@
 
   // Thigh and shin meeting at a knee pushed forward, which is what makes the
   // stance read as crouched rather than stood to attention.
+  // One leg's share of the skating stride: the two legs run in opposite phase.
+  function strideFor(side) {
+    return ANIM ? ANIM.stride * side : 0;
+  }
+
   function legPart(ctx, dims, params, yaw, side) {
     const x = side * dims.legX;
+    const s = strideFor(side);
     const hip = { x: x, y: HIP_Y, z: 1 };
-    const knee = { x: side * (dims.legX + 1.5), y: (HIP_Y + SKATE_Y) / 2 + 1, z: 7 };
-    const ankle = { x: x, y: SKATE_Y + 3, z: 2 };
+    const knee = { x: side * (dims.legX + 1.5), y: (HIP_Y + SKATE_Y) / 2 + 1, z: 7 + s * 6 };
+    const ankle = { x: x, y: SKATE_Y + 3 + Math.max(0, s) * 5, z: 2 + s * 11 };
     const a = proj3(hip, yaw), k = proj3(knee, yaw), b = proj3(ankle, yaw);
     return {
       d: k.d,
@@ -279,9 +291,10 @@
     };
   }
 
-  function skatePart(ctx, yaw, x) {
-    const r = rotY(x, 2, yaw);
-    const c = project(r.x, SKATE_Y, r.z);
+  function skatePart(ctx, yaw, x, side) {
+    const s = strideFor(side);
+    const r = rotY(x, 2 + s * 11, yaw);
+    const c = project(r.x, SKATE_Y + Math.max(0, s) * 5, r.z);
     return {
       d: r.z,
       draw: () => {
@@ -290,7 +303,7 @@
           cx: c.sx, cy: c.sy, hw: hw, hh: 4.5 * c.k,
           shape: "capsule", taper: 0.8, round: 1, color: "#2B2B2B", yaw: yaw
         });
-        L(ctx, c.sx - hw, GROUND - 1, c.sx + hw, GROUND - 1, "#9AA7B4", 1.6);
+        L(ctx, c.sx - hw, c.sy + 4.5 * c.k, c.sx + hw, c.sy + 4.5 * c.k, "#9AA7B4", 1.6);
       }
     };
   }
@@ -481,7 +494,22 @@
     // it back the other way reads as a golf club.
     const toe = { x: heel.x - hand * 11, y: 2.5, z: heel.z + 4 };
 
-    return { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
+    const s = { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
+    return ANIM && ANIM.swing ? swingStick(s, ANIM.swing * hand) : s;
+  }
+
+  // A shot sweeps the shaft around the top hand, so everything below the grip
+  // rotates about it while the hands stay put.
+  function swingStick(s, angle) {
+    const pivot = s.topHand;
+    const turn = pt => {
+      const r = rotY(pt.x - pivot.x, pt.z - pivot.z, angle);
+      return { x: pivot.x + r.x, y: pt.y, z: pivot.z + r.z };
+    };
+    return {
+      hand: s.hand, topHand: pivot,
+      butt: turn(s.butt), heel: turn(s.heel), toe: turn(s.toe), lowHand: turn(s.lowHand)
+    };
   }
 
   // Upper arm and forearm as two rounded capsules. Both outlines go down first,
@@ -573,6 +601,50 @@
     ctx.restore();
   }
 
+  // ---- highlight scenery ------------------------------------------------
+
+  const NET = { x: LW - 30, w: 36, h: 30 };
+
+  function drawNet(ctx) {
+    const w = NET.w * FIT, h = NET.h * FIT;
+    const base = GROUND - 1, left = NET.x - w / 2, right = NET.x + w / 2, top = base - h;
+    ctx.fillStyle = "rgba(255,255,255,.7)";
+    ctx.fillRect(p(left), p(top), p(w), p(h));
+    for (let i = 1; i < 6; i++) {
+      const x = left + w * (i / 6);
+      L(ctx, x, top, x, base, "rgba(90,104,117,.35)", 0.5);
+    }
+    for (let i = 1; i < 5; i++) {
+      const y = top + h * (i / 5);
+      L(ctx, left, y, right, y, "rgba(90,104,117,.35)", 0.5);
+    }
+    L(ctx, left, base, left, top, "#E53935", 2.4);
+    L(ctx, right, base, right, top, "#E53935", 2.4);
+    L(ctx, left, top, right, top, "#E53935", 2.4);
+  }
+
+  // Flies from wherever the blade finished its swing to the mouth of the net.
+  function drawPuck(ctx, dims, params, yaw, t) {
+    const toe = proj3(stickPoints(dims, params).toe, yaw);
+    const sx = toe.sx + (NET.x - toe.sx) * t;
+    const sy = toe.sy + (GROUND - 9 - toe.sy) * t - Math.sin(t * Math.PI) * 9;
+    E(ctx, sx, sy, 3, 2.1, "#11181F");
+  }
+
+  function drawGoalText(ctx) {
+    ctx.save();
+    ctx.font = "800 " + p(18) + "px " + FONT;
+    ctx.textAlign = "right";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = p(3);
+    ctx.strokeStyle = OUTLINE;
+    const y = GROUND - NET.h * FIT - 12;
+    ctx.strokeText("GOAL!", p(LW - 8), p(y));
+    ctx.fillStyle = "#FDD835";
+    ctx.fillText("GOAL!", p(LW - 8), p(y));
+    ctx.restore();
+  }
+
   function drawIce(ctx) {
     ctx.fillStyle = "#EEF6FF";
     ctx.fillRect(0, 0, p(LW), p(LH));
@@ -581,12 +653,15 @@
 
   // ---- entry point ------------------------------------------------------
 
-  function render(ctx, params, yaw) {
+  function render(ctx, params, yaw, anim) {
     const dims = computeDims(params);
+    ANIM = anim || null;
+    SHIFT = ANIM ? ANIM.shift : 0;
     FIT = Math.min(1.45, (GROUND - TOP_MARGIN) / dims.topY);
     ctx.clearRect(0, 0, p(LW), p(LH));
     drawIce(ctx);
     drawShadow(ctx, dims);
+    if (ANIM) drawNet(ctx);
 
     const torso = Object.assign({}, dims.torso, { style: dims.bodyStyle, color: params.jerseyColor });
     const head = Object.assign({}, dims.head, { style: dims.headStyle, color: params.skinColor });
@@ -601,6 +676,9 @@
     ]).concat(armParts(ctx, dims, params, yaw));
     depthSort(parts);
     parts.forEach(part => part.draw());
+
+    if (ANIM && ANIM.puckT !== null) drawPuck(ctx, dims, params, yaw, ANIM.puckT);
+    if (ANIM && ANIM.goal) drawGoalText(ctx);
   }
 
   window.CAP_DRAW = {
