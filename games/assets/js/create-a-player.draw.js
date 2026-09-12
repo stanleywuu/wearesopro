@@ -162,43 +162,162 @@
     return { id: "cube", taper: 0.85, round: 0.10, boxy: 1 };
   }
 
+  const HIP_Y = 48;          // where the legs meet the torso
+  const SKATE_Y = 5;         // centre height of a skate
+
   function computeDims(params) {
     const bw = params.bodyWidth / 100, bh = params.bodyHeight / 100;
     const hw = params.headWidth / 100, hh = params.headHeight / 100;
-    const torso = { rx: 22 * bw, ry: 30 * bh, y: 74 };
+
+    // The torso grows upward from the hips so the legs never end up inside it.
+    const torso = { rx: 22 * bw, ry: 26 * bh, x: 0, z: 0 };
     torso.rz = torso.rx * 0.62;
-    const head = { rx: 15 * hw, ry: 16 * hh };
+    torso.y = HIP_Y + torso.ry * 0.8;
+
+    const head = { rx: 14 * hw, ry: 15 * hh, x: 0, z: 0 };
     head.rz = head.rx * 0.8;
-    head.y = torso.y + torso.ry + head.ry * 0.85;
+    head.y = torso.y + torso.ry + head.ry * 0.8;
+
+    const shoulderY = torso.y + torso.ry * 0.55;
     return {
       torso: torso,
       head: head,
+      shoulderY: shoulderY,
+      armX: torso.rx + 4,
+      gloveY: shoulderY - 26,
+      legX: Math.max(6, torso.rx * 0.42),
       bodyStyle: shapeStyle(params.bodyShape, params.bodyContour / 100),
-      headStyle: shapeStyle(params.headShape, params.headContour / 100)
+      headStyle: shapeStyle(params.headShape, params.headContour / 100),
+      limbStyle: shapeStyle("capsule", 1)
     };
   }
 
   // ---- parts ------------------------------------------------------------
 
-  function slabPart(ctx, dims, yaw, part, style, color) {
-    const c = project(0, part.y, 0);
+  // Every part is an anchor in body space plus a slab spec. Rotating the anchor
+  // is what gives each part its depth for the painter's sort.
+  function slabPart(ctx, o, yaw) {
+    const r = rotY(o.x, o.z, yaw);
+    const c = project(r.x, o.y, r.z);
     return {
-      d: 0,
+      d: r.z,
       draw: () => drawSlab(ctx, {
         cx: c.sx, cy: c.sy,
-        hw: silWidth(part.rx, part.rz, yaw, style.boxy) * c.k,
-        hh: part.ry * c.k,
-        shape: style.id, taper: style.taper, round: style.round,
-        color: color, yaw: yaw
+        hw: silWidth(o.rx, o.rz, yaw, o.style.boxy) * c.k,
+        hh: o.ry * c.k,
+        shape: o.style.id, taper: o.style.taper, round: o.style.round,
+        color: o.color, yaw: yaw
       })
     };
   }
 
+  function limb(ctx, yaw, x, y, z, rx, ry, style, color) {
+    return slabPart(ctx, { x: x, y: y, z: z, rx: rx, ry: ry, rz: rx, style: style, color: color }, yaw);
+  }
+
+  function bodyParts(ctx, dims, params, yaw) {
+    const jersey = params.jerseyColor, trim = params.trimColor;
+    const arms = [-1, 1].map(s => limb(ctx, yaw, s * dims.armX, dims.shoulderY - 13, 2, 4.5, 13, dims.limbStyle, jersey));
+    const gloves = [-1, 1].map(s => limb(ctx, yaw, s * (dims.armX + 1), dims.gloveY, 4, 5.5, 5.5, dims.limbStyle, trim));
+    const legs = [-1, 1].map(s => limb(ctx, yaw, s * dims.legX, (HIP_Y + SKATE_Y) / 2, 1, 5.5, (HIP_Y - SKATE_Y) / 2, dims.limbStyle, params.sockColor));
+    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
+    return arms.concat(gloves, legs, skates);
+  }
+
+  function skatePart(ctx, yaw, x) {
+    const r = rotY(x, 2, yaw);
+    const c = project(r.x, SKATE_Y, r.z);
+    return {
+      d: r.z,
+      draw: () => {
+        const hw = silWidth(7, 5, yaw, 0) * c.k;
+        drawSlab(ctx, {
+          cx: c.sx, cy: c.sy, hw: hw, hh: 4.5 * c.k,
+          shape: "capsule", taper: 0.8, round: 1, color: "#2B2B2B", yaw: yaw
+        });
+        L(ctx, c.sx - hw, GROUND - 1, c.sx + hw, GROUND - 1, "#9AA7B4", 1.6);
+      }
+    };
+  }
+
+  // ---- head details -----------------------------------------------------
+
+  // Helmet shell: a squashed cap sitting over the top of the head.
+  function helmetPart(ctx, dims, params, yaw) {
+    const head = dims.head;
+    const o = {
+      x: 0, y: head.y + head.ry * 0.34, z: 0,
+      rx: head.rx * 1.1, ry: head.ry * 0.66, rz: head.rz * 1.1,
+      style: { id: "capsule", taper: 0.92, round: 1, boxy: 0 },
+      color: params.helmetColor
+    };
+    const part = slabPart(ctx, o, yaw);
+    const shell = part.draw;
+    part.draw = () => { shell(); if (params.helmetStyle === "cage") drawCage(ctx, dims, yaw); };
+    return part;
+  }
+
+  function drawCage(ctx, dims, yaw) {
+    const facing = Math.cos(yaw);
+    if (facing < 0.15) return;
+    const head = dims.head;
+    const c = project(0, head.y - head.ry * 0.1, head.rz * facing);
+    const hw = head.rx * 0.8 * facing * c.k, hh = head.ry * 0.55 * c.k;
+    for (let i = -1; i <= 1; i++) L(ctx, c.sx + hw * i * 0.7, c.sy - hh, c.sx + hw * i * 0.7, c.sy + hh, "#3D4A57", 1);
+    L(ctx, c.sx - hw, c.sy, c.sx + hw, c.sy, "#3D4A57", 1);
+  }
+
+  // Eyes and mouth live on the front of the head, so they vanish as it turns away.
+  function facePart(ctx, dims, yaw) {
+    const head = dims.head;
+    return {
+      d: head.rz,
+      draw: () => {
+        const facing = Math.cos(yaw);
+        if (facing < 0.2) return;
+        const eyeY = head.y + head.ry * 0.02;
+        [-1, 1].forEach(s => {
+          const r = rotY(s * head.rx * 0.36, head.rz * 0.8, yaw);
+          const c = project(r.x, eyeY, r.z);
+          E(ctx, c.sx, c.sy, 1.7 * c.k, 2.1 * c.k, OUTLINE);
+        });
+        const m = rotY(0, head.rz * 0.85, yaw);
+        const mc = project(m.x, head.y - head.ry * 0.42, m.z);
+        L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
+      }
+    };
+  }
+
+  // ---- stick ------------------------------------------------------------
+
+  // Shaft runs from the top glove down to a blade flat on the ice. Handedness
+  // only flips which side the blade sits on — never mirror the whole canvas,
+  // or the jersey number would come out backwards.
+  function stickPart(ctx, dims, params, yaw) {
+    const hand = params.handedness === "left" ? -1 : 1;
+    const grip = rotY(hand * (dims.armX + 1), 4, yaw);
+    const heel = rotY(hand * 14, 20, yaw);
+    const toe = rotY(hand * 24, 22, yaw);
+    const g = project(grip.x, dims.gloveY, grip.z);
+    const h = project(heel.x, 2, heel.z);
+    const t = project(toe.x, 2, toe.z);
+    return {
+      d: Math.max(grip.z, heel.z),
+      draw: () => {
+        L(ctx, g.sx, g.sy, h.sx, h.sy, "#C9A227", 2.4);
+        L(ctx, g.sx, g.sy, h.sx, h.sy, OUTLINE, 0.5);
+        L(ctx, h.sx, h.sy, t.sx, t.sy, OUTLINE, 3.4);
+      }
+    };
+  }
+
+  // ---- scene ------------------------------------------------------------
+
   function drawShadow(ctx, dims) {
-    const w = dims.torso.rx * 1.5;
+    const w = dims.torso.rx * 1.6;
     ctx.save();
     ctx.globalAlpha = 0.18;
-    E(ctx, CX, GROUND + 2, w, w * 0.28, "#0C1B2A");
+    E(ctx, CX, GROUND + 1, w, w * 0.26, "#0C1B2A");
     ctx.restore();
   }
 
@@ -216,10 +335,16 @@
     drawIce(ctx);
     drawShadow(ctx, dims);
 
-    const parts = [
-      slabPart(ctx, dims, yaw, dims.torso, dims.bodyStyle, params.jerseyColor),
-      slabPart(ctx, dims, yaw, dims.head, dims.headStyle, params.skinColor)
-    ];
+    const torso = Object.assign({}, dims.torso, { style: dims.bodyStyle, color: params.jerseyColor });
+    const head = Object.assign({}, dims.head, { style: dims.headStyle, color: params.skinColor });
+
+    const parts = bodyParts(ctx, dims, params, yaw).concat([
+      slabPart(ctx, torso, yaw),
+      slabPart(ctx, head, yaw),
+      helmetPart(ctx, dims, params, yaw),
+      facePart(ctx, dims, yaw),
+      stickPart(ctx, dims, params, yaw)
+    ]);
     depthSort(parts);
     parts.forEach(part => part.draw());
   }

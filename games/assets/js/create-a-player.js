@@ -23,7 +23,12 @@
     headHeight: D.sliders.headHeight.value,
     headContour: D.sliders.headContour.value,
     skinColor: D.skinColors[0],
-    jerseyColor: D.jerseyColors[0]
+    jerseyColor: D.jerseyColors[0],
+    trimColor: D.trimColors[0],
+    sockColor: D.jerseyColors[0],
+    helmetColor: D.helmetColors[0],
+    helmetStyle: "cage",
+    handedness: "left"
   };
 
   let yaw = 0.5;
