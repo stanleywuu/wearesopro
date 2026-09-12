@@ -406,28 +406,38 @@
 
   // ---- highlight reel ---------------------------------------------------
 
-  const HIGHLIGHT = { skate: 1400, wind: 1900, shot: 2100, puck: 2600, end: 3600 };
+  const HIGHLIGHT = { glide: 1200, wind: 1800, shot: 2000, puck: 2500, end: 3600 };
+  const SIDE_ON = Math.PI / 2;   // the reel plays side on, facing the net
 
   function playHighlight() {
     highlightStart = performance.now();
     status("");
   }
 
-  // The whole reel as a function of elapsed time: skate in, wind up, shoot,
-  // watch the puck go in. Returns null once it has finished.
+  // The whole reel as a function of elapsed time: glide in, sink into the
+  // shot, sweep through it, watch the puck go in. Returns null once finished.
   function highlightAt(ms) {
     if (ms >= HIGHLIGHT.end) return null;
-    const anim = { shift: 0, stride: 0, swing: 0, puckT: null, goal: false };
-    if (ms < HIGHLIGHT.skate) {
-      const t = ms / HIGHLIGHT.skate;
+    const anim = { shift: 0, crouch: 0, swing: 0, puckT: null, goal: false };
+    if (ms < HIGHLIGHT.glide) {
+      const t = ms / HIGHLIGHT.glide;
       anim.shift = -55 * (1 - t * t * (3 - 2 * t));
-      anim.stride = Math.sin(ms / 80) * (1 - t * 0.4);
+      anim.crouch = 0.35 * t;
+    } else {
+      anim.crouch = 0.35;
     }
-    if (ms >= HIGHLIGHT.skate && ms < HIGHLIGHT.wind) {
-      anim.swing = -1.15 * ((ms - HIGHLIGHT.skate) / (HIGHLIGHT.wind - HIGHLIGHT.skate));
+    if (ms >= HIGHLIGHT.glide && ms < HIGHLIGHT.wind) {
+      const t = (ms - HIGHLIGHT.glide) / (HIGHLIGHT.wind - HIGHLIGHT.glide);
+      anim.crouch = 0.35 + 0.65 * t;      // sink into it
+      anim.swing = -1.15 * t;
     } else if (ms >= HIGHLIGHT.wind && ms < HIGHLIGHT.shot) {
-      anim.swing = -1.15 + 2.5 * ((ms - HIGHLIGHT.wind) / (HIGHLIGHT.shot - HIGHLIGHT.wind));
+      const t = (ms - HIGHLIGHT.wind) / (HIGHLIGHT.shot - HIGHLIGHT.wind);
+      anim.crouch = 1;
+      anim.swing = -1.15 + 2.5 * t;
     } else if (ms >= HIGHLIGHT.shot) {
+      // Rise back up out of the follow-through.
+      const t = Math.min(1, (ms - HIGHLIGHT.shot) / 900);
+      anim.crouch = 1 - 0.8 * t;
       anim.swing = 1.35;
     }
     if (ms >= HIGHLIGHT.shot) {
@@ -441,7 +451,7 @@
     const anim = highlightStart ? highlightAt(now - highlightStart) : null;
     if (highlightStart && !anim) highlightStart = 0;
     if (anim) {
-      yaw = 0.45;             // held three-quarter on to the net
+      yaw = SIDE_ON;
     } else if (!dragging && now - lastInput > IDLE_DELAY) {
       yaw += SPIN_SPEED / 60;
     }

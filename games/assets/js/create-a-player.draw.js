@@ -21,8 +21,8 @@
   let FIT = 1;
 
   // Highlight animation state for the current frame, or null when idle. Set by
-  // render() and read by the parts that move: legs stride, the stick swings,
-  // and the whole figure slides across the ice.
+  // render() and read by the parts that move: the player crouches and leans,
+  // the stick sweeps, and the whole figure glides across the ice.
   let ANIM = null;
   let SHIFT = 0;
   const TILT = 0.16;        // how much +z (towards viewer) drops on screen
@@ -183,12 +183,19 @@
     const bw = params.bodyWidth / 100, bh = params.bodyHeight / 100;
     const hw = params.headWidth / 100, hh = params.headHeight / 100;
 
-    // The torso grows upward from the hips so the legs never end up inside it.
-    const torso = { rx: 22 * bw, ry: 26 * bh, x: 0, z: 0 };
-    torso.rz = torso.rx * 0.62;
-    torso.y = HIP_Y + torso.ry * 0.8;
+    // A crouch drops the hips and leans the upper body forward. Forward is +z
+    // in body space, which is what reads as "towards the net" in the side view
+    // the highlight uses.
+    const crouch = ANIM ? ANIM.crouch : 0;
+    const drop = crouch * 12;
+    const lean = crouch * 7;
+    const hipY = HIP_Y - drop;
 
-    const head = { rx: 14 * hw, ry: 15 * hh, x: 0, z: 0 };
+    const torso = { rx: 22 * bw, ry: 26 * bh, x: 0, z: lean };
+    torso.rz = torso.rx * 0.62;
+    torso.y = hipY + torso.ry * 0.8;
+
+    const head = { rx: 14 * hw, ry: 15 * hh, x: 0, z: lean * 1.5 };
     head.rz = head.rx * 0.8;
     head.y = torso.y + torso.ry + head.ry * 0.8;
 
@@ -198,7 +205,10 @@
     return {
       torso: torso,
       head: head,
-      topY: head.y + head.ry * 1.12,
+      hipY: hipY,
+      crouch: crouch,
+      // Framing is measured standing, so crouching does not zoom the figure.
+      topY: head.y + head.ry * 1.12 + drop,
       shoulderY: shoulderY,
       legX: Math.max(7, torso.rx * 0.52),
       bodyStyle: shapeStyle(params.bodyShape, params.bodyContour / 100),
@@ -227,7 +237,7 @@
 
   function bodyParts(ctx, dims, params, yaw) {
     const legs = [-1, 1].map(s => legPart(ctx, dims, params, yaw, s));
-    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX, s));
+    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
     const cuffs = [-1, 1].map((s, i) => pantsCuff(ctx, dims, params, yaw, s, legs[i].d));
     const waist = pantsWaist(ctx, dims, params, yaw);
     // The waist must clear BOTH thighs and the torso it is worn over. A fixed
@@ -241,7 +251,7 @@
   // thigh, so the pants read as fitting the legs rather than as a single slab.
   function pantsWaist(ctx, dims, params, yaw) {
     const t = dims.torso;
-    const c = project(0, HIP_Y - 1, 0);
+    const c = project(dims.torso.z, dims.hipY - 1, 0);
     return {
       d: 0,
       draw: () => drawSlab(ctx, {
@@ -258,7 +268,7 @@
   // whichever way the player is facing.
   function pantsCuff(ctx, dims, params, yaw, side, legDepth) {
     const r = rotY(side * (dims.legX + 0.5), 3, yaw);
-    const c = project(r.x, HIP_Y - 10, r.z);
+    const c = project(r.x, dims.hipY - 10, r.z);
     return {
       d: Math.max(legDepth, 0) + 0.3,
       draw: () => drawSlab(ctx, {
@@ -273,17 +283,11 @@
 
   // Thigh and shin meeting at a knee pushed forward, which is what makes the
   // stance read as crouched rather than stood to attention.
-  // One leg's share of the skating stride: the two legs run in opposite phase.
-  function strideFor(side) {
-    return ANIM ? ANIM.stride * side : 0;
-  }
-
   function legPart(ctx, dims, params, yaw, side) {
     const x = side * dims.legX;
-    const s = strideFor(side);
-    const hip = { x: x, y: HIP_Y, z: 1 };
-    const knee = { x: side * (dims.legX + 1.5), y: (HIP_Y + SKATE_Y) / 2 + 1, z: 7 + s * 6 };
-    const ankle = { x: x, y: SKATE_Y + 3 + Math.max(0, s) * 5, z: 2 + s * 11 };
+    const hip = { x: x, y: dims.hipY, z: 1 + dims.crouch * 5 };
+    const knee = { x: side * (dims.legX + 1.5), y: (dims.hipY + SKATE_Y) / 2 + 1, z: 7 + dims.crouch * 12 };
+    const ankle = { x: x, y: SKATE_Y + 3, z: 2 };
     const a = proj3(hip, yaw), k = proj3(knee, yaw), b = proj3(ankle, yaw);
     return {
       d: k.d,
@@ -291,10 +295,9 @@
     };
   }
 
-  function skatePart(ctx, yaw, x, side) {
-    const s = strideFor(side);
-    const r = rotY(x, 2 + s * 11, yaw);
-    const c = project(r.x, SKATE_Y + Math.max(0, s) * 5, r.z);
+  function skatePart(ctx, yaw, x) {
+    const r = rotY(x, 2, yaw);
+    const c = project(r.x, SKATE_Y, r.z);
     return {
       d: r.z,
       draw: () => {
@@ -317,7 +320,8 @@
   function helmetPart(ctx, dims, params, yaw) {
     const head = dims.head;
     const browY = head.y + head.ry * 0.08;
-    const c = project(0, browY, 0);
+    const hr = rotY(head.x, head.z, yaw);
+    const c = project(hr.x, browY, hr.z);
     const hw = silWidth(head.rx * 1.08, head.rz * 1.08, yaw, 0) * c.k;
     const hh = head.ry * 1.02 * c.k;
     return {
@@ -359,7 +363,8 @@
     const facing = Math.cos(yaw);
     if (facing < 0.15) return;
     const head = dims.head;
-    const c = project(0, head.y - head.ry * 0.13, head.rz * facing);
+    const hr = rotY(head.x, head.z + head.rz * facing, yaw);
+    const c = project(hr.x, head.y - head.ry * 0.13, hr.z);
     const hw = head.rx * 0.88 * facing * c.k, hh = head.ry * 0.26 * c.k;
     ctx.save();
     ctx.globalAlpha = 0.42;
@@ -387,14 +392,14 @@
         if (facing < 0.3) return;
         const eyeY = head.y - head.ry * 0.16;
         [-1, 1].forEach(s => {
-          const r = rotY(s * head.rx * 0.36, head.rz * 0.8, yaw);
+          const r = rotY(head.x + s * head.rx * 0.36, head.z + head.rz * 0.8, yaw);
           // An eye that has rotated onto the far hemisphere would otherwise
           // sit out at the silhouette edge, reading as detached from the head.
           if (r.z <= 0) return;
           const c = project(r.x, eyeY, r.z);
           E(ctx, c.sx, c.sy, 1.7 * c.k, 2.1 * c.k, OUTLINE);
         });
-        const m = rotY(0, head.rz * 0.85, yaw);
+        const m = rotY(head.x, head.z + head.rz * 0.85, yaw);
         const mc = project(m.x, head.y - head.ry * 0.56, m.z);
         L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
       }
