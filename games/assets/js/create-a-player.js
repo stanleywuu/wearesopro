@@ -12,6 +12,7 @@
 
   const SPIN_SPEED = 0.35;     // radians per second when idle
   const IDLE_DELAY = 2500;     // ms of no interaction before the idle spin resumes
+  const STORE_KEY = "cap-player";
 
   const params = {
     bodyShape: "ellipsoid",
@@ -176,6 +177,105 @@
     });
   }
 
+  // ---- save / randomize / export ----------------------------------------
+
+  function loadSaved() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) Object.assign(params, JSON.parse(raw));
+    } catch (e) {
+      // A blocked or corrupt store just means we start from the defaults.
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(params));
+      status("Saved to this browser.");
+    } catch (e) {
+      status("Could not save - browser storage is unavailable.");
+    }
+  }
+
+  function randomize() {
+    const pick = list => list[Math.floor(Math.random() * list.length)];
+    params.bodyShape = pick(D.shapes).id;
+    params.headShape = pick(D.shapes).id;
+    Object.keys(D.sliders).forEach(key => {
+      const s = D.sliders[key];
+      params[key] = Math.round(s.min + Math.random() * (s.max - s.min));
+    });
+    params.skinColor = pick(D.skinColors);
+    params.jerseyColor = pick(D.jerseyColors);
+    params.trimColor = pick(D.trimColors);
+    params.sockColor = pick(D.jerseyColors);
+    params.helmetColor = pick(D.helmetColors);
+    params.helmetStyle = pick(D.helmets).id;
+    params.handedness = pick(D.handedness).id;
+    params.name = pick(D.randomNames);
+    params.number = String(Math.floor(Math.random() * 98) + 1);
+    params.position = pick(D.positions);
+    params.phrase = pick(D.catchPhrases);
+    syncControls();
+    status("");
+    touch();
+  }
+
+  // Push the whole params object back onto the controls after a load or randomize.
+  function syncControls() {
+    document.querySelectorAll("[data-options]").forEach(box => {
+      const id = params[box.dataset.options];
+      box.querySelectorAll(".cap-opt").forEach(b => b.classList.toggle("active", b.dataset.id === id));
+      updateContourVisibility(box, id);
+    });
+    document.querySelectorAll("[data-swatch]").forEach(box => {
+      const color = params[box.dataset.swatch];
+      box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
+    });
+    document.querySelectorAll("[data-param]").forEach(i => { i.value = params[i.dataset.param]; });
+    setValue("cap-name", params.name);
+    setValue("cap-number", params.number);
+    setValue("cap-phrase", params.phrase);
+    setValue("cap-position", params.position);
+    updateCaption();
+    updateBubble();
+  }
+
+  function setValue(id, value) {
+    document.getElementById(id).value = value;
+  }
+
+  function status(message) {
+    document.getElementById("cap-status").textContent = message;
+  }
+
+  function exportPng() {
+    const link = document.createElement("a");
+    link.download = (params.name || "player").toLowerCase() + "-player.png";
+    link.href = composite().toDataURL("image/png");
+    link.click();
+    status("Downloaded.");
+  }
+
+  // The bubble lives in HTML for crisp text, so the export redraws it onto
+  // a taller canvas above the player.
+  function composite() {
+    if (!params.phrase) return canvas;
+    const pad = 70;
+    const out = document.createElement("canvas");
+    out.width = canvas.width;
+    out.height = canvas.height + pad;
+    const c = out.getContext("2d");
+    c.fillStyle = "#EEF6FF";
+    c.fillRect(0, 0, out.width, out.height);
+    c.drawImage(canvas, 0, pad);
+    c.fillStyle = "#0C1B2A";
+    c.font = "italic 26px " + getComputedStyle(document.body).fontFamily;
+    c.textAlign = "center";
+    c.fillText(params.phrase, out.width / 2, pad * 0.6);
+    return out;
+  }
+
   // ---- rotation ---------------------------------------------------------
 
   function touch() {
@@ -225,12 +325,17 @@
   canvas.addEventListener("pointercancel", endDrag);
   canvas.addEventListener("keydown", onKey);
 
+  document.getElementById("cap-random").addEventListener("click", randomize);
+  document.getElementById("cap-save").addEventListener("click", save);
+  document.getElementById("cap-export").addEventListener("click", exportPng);
+
+  loadSaved();
   buildTabs();
   buildOptionPickers();
   buildSwatches();
   buildSliders();
   buildIdentity();
-  updateCaption();
+  syncControls();
   touch();
   requestAnimationFrame(frame);
 

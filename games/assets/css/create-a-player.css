@@ -140,6 +140,22 @@
   gap: .5rem;
 }
 
+.cap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .4rem;
+}
+
+.cap-actions .button { font-size: .85rem; }
+
+.cap-status {
+  margin: 0;
+  font-size: .8rem;
+  color: var(--muted);
+  min-height: 1.1em;
+}
+
 .cap-bubble {
   position: relative;
   margin: 0;
