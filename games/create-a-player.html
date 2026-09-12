@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta data-include="/partials/title.html">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+  <link rel="preload" href="/assets/css/style.css" as="style" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/css/critical.css?v=1">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/games/assets/css/create-a-player.css">
+  <script defer src="/assets/js/main.js"></script>
+  <script defer src="/games/assets/js/create-a-player.data.js"></script>
+  <script defer src="/games/assets/js/create-a-player.draw.js"></script>
+  <script defer src="/games/assets/js/create-a-player.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a></div>
+    <div data-include="/partials/nav.html"></div>
+  </header>
+  <noscript>
+    <div data-include="/partials/nav-noscript.html"></div>
+  </noscript>
+
+  <main class="layout">
+    <div data-include="/partials/sidebar.html"></div>
+
+    <section class="content">
+      <section class="article">
+        <h1>Create A Player</h1>
+        <p class="muted">Build your own beer leaguer. Pick a shape, squash it, colour it, name it. <span class="muted">(Drag the player to spin them around)</span></p>
+      </section>
+
+      <div class="cap-wrap">
+        <canvas id="cap-canvas" tabindex="0" aria-label="Your created hockey player, drag to rotate"></canvas>
+
+        <div class="cap-controls">
+          <fieldset class="cap-group">
+            <legend>Body</legend>
+            <div class="cap-shapes" data-shapes="bodyShape"></div>
+            <label class="cap-slot"><span>Width</span><input type="range" data-param="bodyWidth"></label>
+            <label class="cap-slot"><span>Height</span><input type="range" data-param="bodyHeight"></label>
+            <label class="cap-slot"><span>Contour</span><input type="range" data-param="bodyContour"></label>
+          </fieldset>
+
+          <fieldset class="cap-group">
+            <legend>Head</legend>
+            <div class="cap-shapes" data-shapes="headShape"></div>
+            <label class="cap-slot"><span>Width</span><input type="range" data-param="headWidth"></label>
+            <label class="cap-slot"><span>Height</span><input type="range" data-param="headHeight"></label>
+            <label class="cap-slot"><span>Contour</span><input type="range" data-param="headContour"></label>
+          </fieldset>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <div data-include="/partials/footer.html"></div>
+</body>
+</html>
