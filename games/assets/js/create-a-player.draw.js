@@ -352,8 +352,10 @@
   // and the shaft is extended through them in both directions.
   function stickPoints(dims, params) {
     const hand = params.handedness === "left" ? -1 : 1;
-    const topHand = { x: hand * 9, y: dims.shoulderY - 11, z: 16 };
-    const lowHand = { x: hand * 12, y: dims.shoulderY - 31, z: 22 };
+    // The shaft leans back across the body as it descends, so the blade ends up
+    // angled in front of the player rather than pointing away off to the side.
+    const topHand = { x: hand * 13, y: dims.shoulderY - 11, z: 16 };
+    const lowHand = { x: hand * 9, y: dims.shoulderY - 31, z: 22 };
     const dir = { x: lowHand.x - topHand.x, y: lowHand.y - topHand.y, z: lowHand.z - topHand.z };
 
     const toIce = (lowHand.y - 2.5) / -dir.y;
@@ -361,18 +363,31 @@
     const butt = { x: topHand.x - dir.x * 0.45, y: topHand.y - dir.y * 0.45, z: topHand.z - dir.z * 0.45 };
     // The blade carries on in the shaft's direction at a shallow lie. Kicking
     // it back the other way reads as a golf club.
-    const toe = { x: heel.x + hand * 11, y: 2.5, z: heel.z + 4 };
+    const toe = { x: heel.x - hand * 11, y: 2.5, z: heel.z + 4 };
 
     return { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
   }
 
-  // A rounded capsule between two projected points: dark stroke first, colour
-  // over it, so every limb keeps a cartoon outline.
-  function drawLimbLine(ctx, a, b, width, color) {
+  // Upper arm and forearm as two rounded capsules. Both outlines go down first,
+  // then both fills, so the seam at the elbow does not show.
+  function drawArm(ctx, a, e, b, width, color) {
     ctx.lineCap = "round";
-    L(ctx, a.sx, a.sy, b.sx, b.sy, OUTLINE, width + 1.8);
-    L(ctx, a.sx, a.sy, b.sx, b.sy, color, width);
+    L(ctx, a.sx, a.sy, e.sx, e.sy, OUTLINE, width + 1.8);
+    L(ctx, e.sx, e.sy, b.sx, b.sy, OUTLINE, width + 1.8);
+    L(ctx, a.sx, a.sy, e.sx, e.sy, color, width);
+    L(ctx, e.sx, e.sy, b.sx, b.sy, color, width);
     ctx.lineCap = "butt";
+  }
+
+  // Elbows sit outboard of the straight shoulder-to-hand line and a little low,
+  // which is what gives the stance its hockey silhouette.
+  function elbowFor(shoulder, grip) {
+    const out = shoulder.x >= 0 ? 1 : -1;
+    return {
+      x: (shoulder.x + grip.x) / 2 + out * 8,
+      y: (shoulder.y + grip.y) / 2 - 3,
+      z: (shoulder.z + grip.z) / 2 - 3
+    };
   }
 
   function drawGlove(ctx, c, color) {
@@ -396,11 +411,12 @@
       { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand }
     ].map(pair => {
       const a = proj3(pair.shoulder, yaw);
+      const e = proj3(elbowFor(pair.shoulder, pair.grip), yaw);
       const b = proj3(pair.grip, yaw);
       return {
         d: (a.d + b.d) / 2 + 3,
         draw: () => {
-          drawLimbLine(ctx, a, b, 5, params.jerseyColor);
+          drawArm(ctx, a, e, b, 5, params.jerseyColor);
           drawGlove(ctx, b, params.trimColor);
         }
       };
