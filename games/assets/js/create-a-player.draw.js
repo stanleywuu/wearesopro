@@ -278,30 +278,29 @@
 
   // ---- head details -----------------------------------------------------
 
-  // Helmet: a domed shell on the crown, a darker brim along its lower edge and
-  // an ear cover on each side. The brim and ears are what stop it reading as a
-  // plain beanie.
+  // Helmet: a half-dome capping the crown, with a flat rim at the brow and an
+  // ear cover at each end of that rim. A closed ellipse was tried first and its
+  // visible lower arc read as a saucer sitting on top of the head — the flat rim
+  // is what seats it. Slightly wider than the head, the way a real shell is.
   function helmetPart(ctx, dims, params, yaw) {
     const head = dims.head;
-    // Sits on the crown, clear of the eyes — any lower and it swallows the face.
-    const o = {
-      x: 0, y: head.y + head.ry * 0.46, z: 0,
-      rx: head.rx * 1.18, ry: head.ry * 0.64, rz: head.rz * 1.18,
-      style: { id: "ellipsoid", taper: 0.86, round: 1, boxy: 0 },
-      color: params.helmetColor
-    };
-    const c = project(0, o.y, 0);
-    const hw = silWidth(o.rx, o.rz, yaw, 0) * c.k;
-    const hh = o.ry * c.k;
+    const browY = head.y + head.ry * 0.08;
+    const c = project(0, browY, 0);
+    const hw = silWidth(head.rx * 1.08, head.rz * 1.08, yaw, 0) * c.k;
+    const hh = head.ry * 1.02 * c.k;
     return {
       d: 0.1,
       draw: () => {
-        drawSlab(ctx, {
-          cx: c.sx, cy: c.sy, hw: hw, hh: hh,
-          shape: o.style.id, taper: o.style.taper, round: o.style.round,
-          color: o.color, yaw: yaw
-        });
-        drawEarLobes(ctx, c, hw, hh, params.helmetColor);
+        ctx.beginPath();
+        ctx.ellipse(p(c.sx), p(c.sy), p(hw), p(hh), 0, Math.PI, 2 * Math.PI);
+        ctx.closePath();
+        ctx.fillStyle = slabFill(ctx, c.sx, hw, params.helmetColor, yaw);
+        ctx.fill();
+        ctx.strokeStyle = OUTLINE;
+        ctx.lineWidth = p(OUTLINE_W);
+        ctx.lineJoin = "round";
+        ctx.stroke();
+        drawEarLobes(ctx, c.sx, c.sy, hw, params.helmetColor);
         if (params.helmetStyle === "visor") drawVisor(ctx, dims, yaw);
       }
     };
@@ -309,11 +308,11 @@
 
   // Painted relative to the shell rather than anchored in body space, so they
   // stay welded to the helmet instead of drifting across the face as it turns.
-  function drawEarLobes(ctx, c, hw, hh, helmetColor) {
+  function drawEarLobes(ctx, cx, cy, hw, helmetColor) {
     const color = shade(helmetColor, -0.22);
     [-1, 1].forEach(side => {
       ctx.beginPath();
-      ctx.ellipse(p(c.sx + side * hw * 0.80), p(c.sy + hh * 0.58), p(2.8), p(3.6), 0, 0, Math.PI * 2);
+      ctx.ellipse(p(cx + side * hw * 0.88), p(cy + 1), p(2.8), p(3.6), 0, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = OUTLINE;
