@@ -4,6 +4,17 @@
       "route": "/intermission",
       "redirect": "/games.html",
       "statusCode": 301
+    },
+    {
+      "route": "/CLAUDE.md",
+      "statusCode": 404
+    },
+    {
+      "route": "/Prompt",
+      "statusCode": 404
     }
-  ]
+  ],
+  "navigationFallback": {
+    "exclude": ["/CLAUDE.md", "/Prompt"]
+  }
 }

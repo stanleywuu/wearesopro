@@ -2,35 +2,32 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@.claude/FILES.md
+@.claude/RULES.md
+
 ## Overview
 
-Static HTML/CSS/JS website for the "We Are So Pro" beer league hockey book, hosted on Netlify. No build step — deploy by dragging the `netlify_pages/` folder into Netlify's UI.
+Static HTML/CSS/JS website for the "We Are So Pro" beer league hockey book. No build step.
+
+## Deploying
+
+Pushing to `main` publishes the live site. `.github/workflows/azure-static-web-apps-*.yml` deploys the repo root to Azure Static Web Apps on every push to `main` — there is no manual upload step, so a push to `main` goes live immediately.
+
+Route rules (redirects, blocked paths) live in `staticwebapp.config.json`, which is Azure's config — not Netlify's `_redirects`/`_headers`.
+
+See `.claude/FILES.md` for what every file in the repo is, and `.claude/RULES.md` for coding rules.
 
 ## Partial Includes
 
 `assets/js/main.js` implements a lightweight include system: any page can have `<meta data-include="/partials/nav.html">` tags, which are fetched and replaced with the partial's content at page load. Nav, sidebar, and footer live in `partials/`.
 
-## Games
-
-Three reader games live in `games/`, each with its HTML page and a paired logic/data file in `games/assets/js/`:
-
-- **chirp** — Guess if Stanley said a quote at work or on the ice
-- **whowas** — Identify which character matches a clue (5-question rounds)
-- **quotes** — Match quotes to characters; streak counter; supports an "Everyone" answer
-
-Game data (questions, quotes, choices) is kept in the JS files alongside the logic.
-
 ## Forms
 
 Uses Netlify Forms. Each form has a honeypot field to reduce spam. Successful submissions redirect to `thanks.html`.
 
-## CSS
-
-`assets/css/style.css` is the main stylesheet. `assets/css/critical.css` contains above-the-fold styles intended to be inlined in `<style>` tags.
-
 ## Security
 
-CSP headers are set in `_headers` (Netlify edge config). No inline scripts or styles are allowed — all JS/CSS must be external files.
+CSP is enforced per page by a `<meta http-equiv="Content-Security-Policy">` tag in each page's `<head>` (`script-src 'self'`), so no inline `<script>` or `<style>` will run — all JS/CSS must be external files. Copy the meta tag from an existing page when adding a new one.
 
 ## Instructions
 When we create plans, create the plans under a docs directory here.
@@ -38,3 +35,7 @@ As we execute the plan, mark it off so we know where we currently are and can co
 The plan here doesn't need to be full, it just need to be the tasks we wish to do, and what has been done.
 
 After a while, we can summarize the old tasks and leave the last 5 in plan
+
+Once a plan is finalized, create a granular todo checklist for it (one checkbox per concrete step, in the same docs file). I may edit this list by hand, so re-read it before updating. Each time a change is committed, check off the corresponding todo item and write that commit's short hash beside it — one commit, one checkbox, so the checklist stays traceable to git history.
+
+Preserve the overall objective in `docs/OBJECTIVE.md`, separate from the per-feature todo checklists, so the high-level goal isn't lost when older todos get summarized/trimmed.
