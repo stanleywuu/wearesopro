@@ -222,13 +222,47 @@
     return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
   }
 
+  function shareUrl() {
+    return location.origin + location.pathname + "?" + SHARE_KEY + "=" + toBase64Url(JSON.stringify(params));
+  }
+
+  // Native share sheet where the device has one, otherwise a dialog showing the
+  // link. Copying silently to the clipboard gave no sign it had worked.
   function share() {
-    const url = location.origin + location.pathname + "?" + SHARE_KEY + "=" + toBase64Url(JSON.stringify(params));
-    if (!navigator.clipboard) return status(url);
-    navigator.clipboard.writeText(url).then(
-      () => status("Link copied to clipboard."),
-      () => status(url)
-    );
+    const url = shareUrl();
+    const caption = params.name ? params.name + ", my beer leaguer" : "My beer leaguer";
+    if (!navigator.share) return openShareModal(url);
+    navigator.share({ title: "Create A Player", text: caption, url: url })
+      .catch(err => { if (err && err.name !== "AbortError") openShareModal(url); });
+  }
+
+  function openShareModal(url) {
+    const field = document.getElementById("cap-share-url");
+    field.value = url;
+    document.getElementById("cap-share-modal").showModal();
+    field.focus();
+    field.select();
+    field.scrollLeft = 0;
+  }
+
+  function copyShareUrl() {
+    const field = document.getElementById("cap-share-url");
+    field.focus();
+    field.select();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(field.value).then(
+        () => { copyLabel("Copied"); },
+        () => { copyLabel("Press Ctrl+C"); }
+      );
+      return;
+    }
+    copyLabel(document.execCommand("copy") ? "Copied" : "Press Ctrl+C");
+  }
+
+  function copyLabel(text) {
+    const button = document.getElementById("cap-share-copy");
+    button.textContent = text;
+    setTimeout(() => { button.textContent = "Copy link"; }, 1800);
   }
 
   function loadShared() {
@@ -422,6 +456,10 @@
   document.getElementById("cap-save").addEventListener("click", save);
   document.getElementById("cap-export").addEventListener("click", exportPng);
   document.getElementById("cap-share").addEventListener("click", share);
+  document.getElementById("cap-share-copy").addEventListener("click", copyShareUrl);
+  document.getElementById("cap-share-close").addEventListener("click", () => {
+    document.getElementById("cap-share-modal").close();
+  });
 
   loadSaved();
   loadShared();
