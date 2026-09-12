@@ -48,6 +48,7 @@
   ];
 
   let yaw = 0.5;
+  let statusTimer = 0;
   let lastInput = 0;
   let dragging = false;
   let dragX = 0;
@@ -243,7 +244,7 @@
   // thing that needed to change.
   function showLink(url) {
     history.replaceState(null, "", url);
-    status("Link is in the address bar - copy it to share your player.");
+    status("Link ready - copy it from the address bar");
   }
 
   function loadShared() {
@@ -335,8 +336,14 @@
     document.getElementById(id).value = value;
   }
 
+  // Shown as a highlighted pill so it is not missed, then cleared so it does
+  // not linger as stale advice.
   function status(message) {
-    document.getElementById("cap-status").textContent = message;
+    const el = document.getElementById("cap-status");
+    el.textContent = message;
+    el.classList.toggle("show", Boolean(message));
+    clearTimeout(statusTimer);
+    if (message) statusTimer = setTimeout(() => status(""), 8000);
   }
 
   function exportPng() {

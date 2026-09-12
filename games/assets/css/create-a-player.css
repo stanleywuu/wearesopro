@@ -153,9 +153,26 @@
 
 .cap-status {
   margin: 0;
-  font-size: .8rem;
-  color: var(--muted);
   min-height: 1.1em;
+  font-size: .85rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.cap-status.show {
+  font-weight: 600;
+  color: #0D47A1;
+  background: #FDD835;
+  border-radius: 999px;
+  padding: .45rem 1rem;
+  max-width: 300px;
+  box-shadow: 0 4px 14px rgba(12, 27, 42, .18);
+  animation: cap-status-in .25s ease;
+}
+
+@keyframes cap-status-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
 
 .cap-bubble {
