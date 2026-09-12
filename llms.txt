@@ -70,6 +70,7 @@ The companion site at wearesopro.ca provides bonus content beyond the book:
 - **Author's Notes:** https://wearesopro.ca/notes.html — Behind-the-scenes process notes (the pipeline, the infamous spreadsheet, FAQs)
 - **FAQ:** https://wearesopro.ca/notes/faqs.html — Answers to reader questions about the book's origin, characters, and AI usage
 - **Games & Quizzes:** https://wearesopro.ca/games.html — Interactive character games (quote matching, character identification, Tommy the Goalie simulator)
+- **Create A Player:** https://wearesopro.ca/games/create-a-player.html — A cartoon hockey-player builder. Choose body and head shapes, adjust width, height and contour, pick jersey and helmet colours, handedness, name, number, position and a catch-phrase, then drag to rotate the player in 3D. Players can be saved, downloaded as an image, or shared with a link.
 - **Buy on Amazon:** https://www.amazon.com/dp/B0G2FLQ76Z
 
 ## Intended audience

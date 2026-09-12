@@ -63,6 +63,44 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 .card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(30,136,229,.12)}
 .card h2{margin:0 0 .5rem;font-size:1rem;color:var(--accent)}
 
+/* Feature banner — for calling out one thing above the card grid */
+.feature{
+  display:block;
+  position:relative;
+  overflow:hidden;
+  margin:1rem 0;
+  padding:1.5rem 1.6rem;
+  border-radius:var(--radius);
+  background:linear-gradient(135deg,#1E88E5,#0D47A1);
+  color:#fff;
+  box-shadow:0 10px 28px rgba(30,136,229,.28);
+  transition:transform .15s ease,box-shadow .15s ease;
+}
+.feature:hover{transform:translateY(-3px);box-shadow:0 16px 36px rgba(30,136,229,.36)}
+.feature h2{margin:.4rem 0 .5rem;font-size:1.5rem;color:#fff}
+.feature p{margin:0 0 .9rem;max-width:46ch;color:rgba(255,255,255,.92)}
+.feature-cta{display:inline-block;font-weight:600;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.5);padding:.45rem 1rem;border-radius:999px}
+.feature .badge{background:#FDD835;color:#0C1B2A;border:0}
+
+.badge{
+  display:inline-block;
+  font-size:.7rem;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:.15rem .5rem;
+  border-radius:999px;
+  background:#FDD835;
+  color:#0C1B2A;
+  vertical-align:middle;
+  margin-left:.4rem;
+}
+
+@media (max-width:620px){
+  .feature{padding:1.2rem}
+  .feature h2{font-size:1.25rem}
+}
+
 .links{display:grid;gap:.5rem}
 
 .site-footer{padding:2rem;opacity:.9;text-align:center}
