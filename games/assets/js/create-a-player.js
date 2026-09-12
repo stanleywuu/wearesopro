@@ -228,18 +228,22 @@
 
   // The phone's own share sheet. navigator.share only exists in a secure
   // context, so over plain http — a LAN IP while testing — there is no sheet
-  // and the link goes into the address bar instead.
+  // and the link is written into the address bar instead.
   function share() {
     const url = shareUrl();
-    if (!navigator.share) {
-      if (!window.isSecureContext) status("Share sheet needs https - opening the link instead.");
-      location.assign(url);
-      return;
-    }
+    if (!navigator.share) return showLink(url);
     // Only title and url: some share targets use `text` and drop the url,
     // which would lose the player.
     navigator.share({ title: "Create A Player", url: url })
-      .catch(err => { if (err && err.name !== "AbortError") location.assign(url); });
+      .catch(err => { if (err && err.name !== "AbortError") showLink(url); });
+  }
+
+  // Put the link in the address bar without navigating. Actually loading it
+  // reloaded the whole page, which flickered for no gain — the URL is the only
+  // thing that needed to change.
+  function showLink(url) {
+    history.replaceState(null, "", url);
+    status("Link is in the address bar - copy it to share your player.");
   }
 
   function loadShared() {
