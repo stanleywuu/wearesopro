@@ -28,7 +28,10 @@
     sockColor: D.jerseyColors[0],
     helmetColor: D.helmetColors[0],
     helmetStyle: "cage",
-    handedness: "left"
+    handedness: "left",
+    name: "",
+    number: "",
+    position: D.positions[0]
   };
 
   let yaw = 0.5;
@@ -38,26 +41,25 @@
 
   // ---- controls ---------------------------------------------------------
 
-  function buildShapePickers() {
-    document.querySelectorAll("[data-shapes]").forEach(box => {
-      const key = box.dataset.shapes;
-      D.shapes.forEach(shape => {
+  function buildOptionPickers() {
+    document.querySelectorAll("[data-options]").forEach(box => {
+      const key = box.dataset.options;
+      D[box.dataset.list].forEach(opt => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "cap-shape" + (params[key] === shape.id ? " active" : "");
-        btn.textContent = shape.label;
-        btn.addEventListener("click", () => selectShape(box, key, shape.id));
+        btn.className = "cap-opt" + (params[key] === opt.id ? " active" : "");
+        btn.textContent = opt.label;
+        btn.dataset.id = opt.id;
+        btn.addEventListener("click", () => selectOption(box, key, opt.id));
         box.appendChild(btn);
       });
       updateContourVisibility(box, params[key]);
     });
   }
 
-  function selectShape(box, key, id) {
+  function selectOption(box, key, id) {
     params[key] = id;
-    box.querySelectorAll(".cap-shape").forEach((b, i) => {
-      b.classList.toggle("active", D.shapes[i].id === id);
-    });
+    box.querySelectorAll(".cap-opt").forEach(b => b.classList.toggle("active", b.dataset.id === id));
     updateContourVisibility(box, id);
     touch();
   }
@@ -65,7 +67,58 @@
   // Blocky has no contour of its own, so its slider is pointless there.
   function updateContourVisibility(box, id) {
     const slider = box.closest(".cap-group").querySelector("[data-param$='Contour']");
-    slider.closest(".cap-slot").hidden = (id === "cube");
+    if (slider) slider.closest(".cap-slot").hidden = (id === "cube");
+  }
+
+  function buildSwatches() {
+    document.querySelectorAll("[data-swatch]").forEach(box => {
+      const key = box.dataset.swatch;
+      D[box.dataset.palette].forEach(color => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "cap-swatch" + (params[key] === color ? " active" : "");
+        btn.style.background = color;
+        btn.dataset.color = color;
+        btn.setAttribute("aria-label", key + " " + color);
+        btn.addEventListener("click", () => selectSwatch(box, key, color));
+        box.appendChild(btn);
+      });
+    });
+  }
+
+  function selectSwatch(box, key, color) {
+    params[key] = color;
+    box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
+    touch();
+  }
+
+  function buildIdentity() {
+    const position = document.getElementById("cap-position");
+    D.positions.forEach(name => position.add(new Option(name, name)));
+    position.value = params.position;
+    position.addEventListener("change", () => { params.position = position.value; updateCaption(); });
+    bindText("cap-name", "name", v => v);
+    bindText("cap-number", "number", v => v.replace(/[^0-9]/g, ""));
+  }
+
+  function bindText(id, key, clean) {
+    const input = document.getElementById(id);
+    input.value = params[key];
+    input.addEventListener("input", () => {
+      input.value = clean(input.value);
+      params[key] = input.value;
+      updateCaption();
+      touch();
+    });
+  }
+
+  // User-entered text, so always textContent — never innerHTML.
+  function updateCaption() {
+    const bits = [];
+    if (params.number) bits.push("#" + params.number);
+    if (params.name) bits.push(params.name);
+    bits.push(params.position);
+    document.getElementById("cap-caption").textContent = bits.join(" · ");
   }
 
   function buildSliders() {
@@ -131,8 +184,11 @@
   canvas.addEventListener("pointercancel", endDrag);
   canvas.addEventListener("keydown", onKey);
 
-  buildShapePickers();
+  buildOptionPickers();
+  buildSwatches();
   buildSliders();
+  buildIdentity();
+  updateCaption();
   touch();
   requestAnimationFrame(frame);
 

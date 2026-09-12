@@ -43,13 +43,14 @@
   color: var(--text);
 }
 
-.cap-shapes {
+.cap-opts {
   display: flex;
   gap: .4rem;
-  margin-bottom: .8rem;
 }
 
-.cap-shape {
+.cap-group > .cap-opts { margin-bottom: .8rem; }
+
+.cap-opt {
   flex: 1;
   font-size: .85rem;
   padding: .35rem .2rem;
@@ -59,11 +60,60 @@
   color: var(--text);
   cursor: pointer;
 }
-.cap-shape:hover { background: rgba(30, 136, 229, .10); }
-.cap-shape.active {
+.cap-opt:hover { background: rgba(30, 136, 229, .10); }
+.cap-opt.active {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+.cap-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+
+.cap-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(12, 27, 42, .18);
+  cursor: pointer;
+}
+.cap-swatch.active {
+  border-color: var(--text);
+  transform: scale(1.12);
+}
+
+.cap-slot input[type="text"],
+.cap-slot select {
+  font: inherit;
+  font-size: .9rem;
+  color: var(--text);
+  padding: .3rem .5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(30, 136, 229, .35);
+  background: var(--surface);
+  min-width: 0;
+}
+.cap-slot input[type="text"]:focus-visible,
+.cap-slot select:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+.cap-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+}
+
+.cap-caption {
+  margin: 0;
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  min-height: 1.2em;
 }
 
 .cap-slot {

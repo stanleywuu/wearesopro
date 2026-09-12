@@ -19,6 +19,7 @@
 
   const OUTLINE = "#1B2A38";
   const OUTLINE_W = 1.6;
+  const FONT = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
 
   // ---- primitives -------------------------------------------------------
 
@@ -288,6 +289,58 @@
     };
   }
 
+  // ---- jersey lettering -------------------------------------------------
+
+  // Maps text onto a quad on the jersey surface, so it squashes and shears with
+  // the torso as it turns. tl/tr/bl are already-projected logical points.
+  function drawQuadText(ctx, text, tl, tr, bl, color) {
+    const a = { x: p(tl.sx), y: p(tl.sy) };
+    const b = { x: p(tr.sx), y: p(tr.sy) };
+    const c = { x: p(bl.sx), y: p(bl.sy) };
+    const w = Math.hypot(b.x - a.x, b.y - a.y);
+    const h = Math.hypot(c.x - a.x, c.y - a.y);
+    if (w < 1 || h < 1) return;
+    ctx.save();
+    ctx.transform((b.x - a.x) / w, (b.y - a.y) / w, (c.x - a.x) / h, (c.y - a.y) / h, a.x, a.y);
+    ctx.font = "700 " + h + "px " + FONT;
+    ctx.textBaseline = "top";
+    ctx.fillStyle = color;
+    ctx.fillText(text, (w - ctx.measureText(text).width) / 2, 0);
+    ctx.restore();
+  }
+
+  // One quad on the front or back of the torso, in body space.
+  function jerseyQuad(dims, yaw, side, halfW, yTop, yBot) {
+    const z = dims.torso.rz * side;
+    const corner = (x, y) => {
+      const r = rotY(x * side, z, yaw);
+      return project(r.x, y, r.z);
+    };
+    return { tl: corner(-halfW, yTop), tr: corner(halfW, yTop), bl: corner(-halfW, yBot) };
+  }
+
+  // The number shows on whichever side of the jersey is facing us, and on
+  // neither when the torso is edge-on — which is what a real jersey does.
+  function jerseyPart(ctx, dims, params, yaw) {
+    const facing = Math.cos(yaw);
+    const side = facing > 0 ? 1 : -1;
+    const t = dims.torso;
+    return {
+      d: t.rz * side * facing,
+      draw: () => {
+        if (Math.abs(facing) < 0.25) return;
+        if (params.number) {
+          const q = jerseyQuad(dims, yaw, side, t.rx * 0.45, t.y + t.ry * 0.18, t.y - t.ry * 0.34);
+          drawQuadText(ctx, params.number, q.tl, q.tr, q.bl, params.trimColor);
+        }
+        if (params.name && side < 0) {
+          const q = jerseyQuad(dims, yaw, side, t.rx * 0.62, t.y + t.ry * 0.62, t.y + t.ry * 0.38);
+          drawQuadText(ctx, params.name.toUpperCase(), q.tl, q.tr, q.bl, params.trimColor);
+        }
+      }
+    };
+  }
+
   // ---- stick ------------------------------------------------------------
 
   // Shaft runs from the top glove down to a blade flat on the ice. Handedness
@@ -340,6 +393,7 @@
 
     const parts = bodyParts(ctx, dims, params, yaw).concat([
       slabPart(ctx, torso, yaw),
+      jerseyPart(ctx, dims, params, yaw),
       slabPart(ctx, head, yaw),
       helmetPart(ctx, dims, params, yaw),
       facePart(ctx, dims, yaw),

@@ -19,8 +19,13 @@ window.CAP_DATA = {
   },
 
   helmets: [
-    { id: "bucket", label: "Bucket" },
+    { id: "bucket", label: "Bare" },
     { id: "cage",   label: "Cage" }
+  ],
+
+  handedness: [
+    { id: "left",  label: "Left" },
+    { id: "right", label: "Right" }
   ],
 
   positions: ["Centre", "Left Wing", "Right Wing", "Defence", "Goalie"],
