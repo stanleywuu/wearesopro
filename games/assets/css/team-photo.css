@@ -58,10 +58,14 @@
 
 /* The poster is the reward for filling every spot, so it is plainly dead until
    the team is complete and plainly the main action once it is. */
-#tp-poster:disabled { opacity: .45; cursor: not-allowed; }
-#tp-poster.is-ready {
-  background: var(--brand, #1E88E5);
-  border-color: var(--brand, #1E88E5);
+#tp-poster:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Both classes plus the id, so this beats the site-wide .button:hover fill -
+   which otherwise washes the filled state out to a 10% tint. */
+.tp-actions #tp-poster.is-ready,
+.tp-actions #tp-poster.is-ready:hover {
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
   font-weight: 700;
 }
@@ -124,9 +128,9 @@
 }
 
 /* The one action on a shared team that changes anything on this device. */
-.tp-actions .is-keep {
-  background: var(--brand, #1E88E5);
-  border-color: var(--brand, #1E88E5);
+.tp-actions .is-keep, .tp-actions .is-keep:hover {
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
   font-weight: 700;
 }

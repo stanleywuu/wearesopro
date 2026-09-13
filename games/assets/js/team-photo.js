@@ -28,6 +28,7 @@
   let team = null;
   let slots = [];               // the rect each player was drawn into
   let canvas, ctx, slotBox, statusBox;
+  let paint = null;             // the ctx the scene is currently being painted into
   let editor = null;            // the live mount while the modal is open
   let editorTemplate = "";      // pristine builder markup, re-stamped per open
   let openIndex = -1;
@@ -197,6 +198,109 @@
     return kind + "-" + (slug || "our-team") + ".png";
   }
 
+  // ---- poster -----------------------------------------------------------
+
+  // The reward for filling every spot: the photo again, framed, with the roster
+  // written out underneath. Rendered off-screen at print size and handed
+  // straight to a download - it is never shown on the page.
+  const POSTER_W = 2000, POSTER_PAD = 120, POSTER_LINE = 96;
+
+  function makePoster() {
+    const lines = Math.ceil(team.size / 2);
+    const photoW = POSTER_W - POSTER_PAD * 2;
+    const zoom = photoW / W;
+    // The poster has its own title, so the scene's banner is cropped off the
+    // top rather than printed twice.
+    const photoH = (H - BANNER_H) * zoom;
+    const rosterTop = 400 + photoH + 140;
+    const height = rosterTop + lines * POSTER_LINE + 210;
+
+    const board = document.createElement("canvas");
+    board.width = POSTER_W;
+    board.height = height;
+    const out = board.getContext("2d");
+
+    drawPosterFrame(out, height);
+    drawPosterHead(out);
+    out.save();
+    out.beginPath();
+    out.rect(POSTER_PAD, 400, photoW, photoH);
+    out.clip();
+    out.translate(POSTER_PAD, 400 - BANNER_H * zoom);
+    out.scale(zoom, zoom);
+    paintScene(out, false);
+    out.restore();
+    out.strokeStyle = "#B9D2EA";
+    out.lineWidth = 4;
+    out.strokeRect(POSTER_PAD, 400, photoW, photoH);
+    drawRoster(out, rosterTop, lines);
+    drawPosterFoot(out, height);
+
+    board.toBlob(blob => {
+      if (!blob) return status("Could not make the poster");
+      saveBlob(blob, fileName("team-poster"));
+      status("Poster saved");
+    }, "image/png");
+  }
+
+  function drawPosterFrame(out, height) {
+    out.fillStyle = "#FBFDFF";
+    out.fillRect(0, 0, POSTER_W, height);
+    out.strokeStyle = "#0D47A1";
+    out.lineWidth = 26;
+    out.strokeRect(34, 34, POSTER_W - 68, height - 68);
+    out.strokeStyle = "#E53935";
+    out.lineWidth = 6;
+    out.strokeRect(66, 66, POSTER_W - 132, height - 132);
+  }
+
+  function drawPosterHead(out) {
+    out.save();
+    out.textAlign = "center";
+    out.fillStyle = "#0D47A1";
+    out.font = "800 108px " + FONT;
+    out.fillText(clip(team.name || "Our Team", 22), POSTER_W / 2, 230);
+    if (team.sub) {
+      out.fillStyle = "#3B5568";
+      out.font = "600 48px " + FONT;
+      out.fillText(clip(team.sub, 34), POSTER_W / 2, 306);
+    }
+    out.restore();
+  }
+
+  // Two columns, filled down the left one first, so the printed order matches
+  // the order the players stand in.
+  function drawRoster(out, top, lines) {
+    out.save();
+    out.textAlign = "left";
+    out.font = "600 42px " + FONT;
+    team.players.forEach((code, i) => {
+      const player = playerAt(i);
+      if (!player) return;
+      const col = i < lines ? 0 : 1;
+      const x = POSTER_PAD + 40 + col * (POSTER_W - POSTER_PAD * 2) / 2;
+      const y = top + (i - col * lines) * POSTER_LINE;
+      out.fillStyle = "#E53935";
+      out.fillText(player.number ? "#" + player.number : "--", x, y);
+      out.fillStyle = INK;
+      out.fillText(clip(player.name || "Unnamed", 16), x + 130, y);
+      out.fillStyle = "#5A7285";
+      out.font = "400 34px " + FONT;
+      out.fillText(player.position, x + 520, y);
+      out.font = "600 42px " + FONT;
+    });
+    out.restore();
+  }
+
+  function drawPosterFoot(out, height) {
+    out.save();
+    out.textAlign = "center";
+    out.fillStyle = "#8AA0B4";
+    out.font = "500 36px " + FONT;
+    out.fillText("wearesopro.ca", POSTER_W / 2, height - 110);
+    out.restore();
+  }
+
   // ---- paste ------------------------------------------------------------
 
   // Takes a whole team code, a single player code, or the Create A Player link
@@ -266,31 +370,39 @@
   // ---- drawing ----------------------------------------------------------
 
   function drawPhoto() {
+    paintScene(ctx);
+    placeSlotButtons();
+  }
+
+  // The scene always draws in its own W x H coordinates, so a caller can put it
+  // anywhere at any size by setting a transform first - the same trick the
+  // player renderer uses.
+  function paintScene(target, banner) {
+    paint = target;
     slots = [];
     drawRink();
-    drawBanner();
+    if (banner !== false) drawBanner();
     rows().forEach(row => {
       for (let n = 0; n < row.count; n++) drawSlot(row, n);
     });
     rows().forEach(row => {
       for (let n = 0; n < row.count; n++) drawPlate(row, n);
     });
-    placeSlotButtons();
   }
 
   function drawRink() {
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "#EEF6FF";
-    ctx.fillRect(0, 0, W, H);
+    paint.clearRect(0, 0, W, H);
+    paint.fillStyle = "#EEF6FF";
+    paint.fillRect(0, 0, W, H);
     // Boards behind the team, ice in front of them.
-    ctx.fillStyle = "#DCEBFA";
-    ctx.fillRect(0, 0, W, BANNER_H + 46);
-    ctx.fillStyle = "#C7DCF0";
-    ctx.fillRect(0, BANNER_H + 40, W, 8);
-    ctx.fillStyle = "#F7FBFF";
-    ctx.fillRect(0, H - BAND_H, W, BAND_H);
-    ctx.fillStyle = "#D3E4F5";
-    ctx.fillRect(0, H - BAND_H, W, 2);
+    paint.fillStyle = "#DCEBFA";
+    paint.fillRect(0, 0, W, BANNER_H + 46);
+    paint.fillStyle = "#C7DCF0";
+    paint.fillRect(0, BANNER_H + 40, W, 8);
+    paint.fillStyle = "#F7FBFF";
+    paint.fillRect(0, H - BAND_H, W, BAND_H);
+    paint.fillStyle = "#D3E4F5";
+    paint.fillRect(0, H - BAND_H, W, 2);
   }
 
   function drawBanner() {
@@ -302,16 +414,16 @@
   // Stroke-then-fill, the same trick the highlight reel's GOAL! uses, so text
   // stays readable over whatever it lands on.
   function outlined(text, x, y, font, color, weight) {
-    ctx.save();
-    ctx.font = font;
-    ctx.textAlign = "center";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = weight;
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.strokeText(text, x, y);
-    ctx.fillStyle = color;
-    ctx.fillText(text, x, y);
-    ctx.restore();
+    paint.save();
+    paint.font = font;
+    paint.textAlign = "center";
+    paint.lineJoin = "round";
+    paint.lineWidth = weight;
+    paint.strokeStyle = "#FFFFFF";
+    paint.strokeText(text, x, y);
+    paint.fillStyle = color;
+    paint.fillText(text, x, y);
+    paint.restore();
   }
 
   // Only the front row casts a shadow: the back row stands further up the
@@ -323,12 +435,12 @@
     const player = playerAt(i);
     const height = DRAW.GROUND * DRAW.S * k;
 
-    ctx.save();
-    ctx.translate(x - DRAW.CX * DRAW.S * k, row.baseline - DRAW.GROUND * DRAW.S * k);
-    ctx.scale(k, k);
-    if (player) DRAW.render(ctx, player, yawFor(i), null, { background: false, shadow: row.index === 1 });
+    paint.save();
+    paint.translate(x - DRAW.CX * DRAW.S * k, row.baseline - DRAW.GROUND * DRAW.S * k);
+    paint.scale(k, k);
+    if (player) DRAW.render(paint, player, yawFor(i), null, { background: false, shadow: row.index === 1 });
     else drawPlaceholder();
-    ctx.restore();
+    paint.restore();
 
     const halfW = Math.max(70, (W - row.pad * 2) / row.count / 2 - 6);
     slots[i] = { x: x - halfW, y: row.baseline - height, w: halfW * 2, h: height + 10, empty: !player };
@@ -339,32 +451,32 @@
   // renderer's own logical grid, so it lands in the same footprint.
   function drawPlaceholder() {
     const p = n => n * DRAW.S, CX = DRAW.CX, G = DRAW.GROUND;
-    ctx.save();
-    ctx.fillStyle = "rgba(120, 146, 170, .30)";
-    ctx.strokeStyle = "rgba(90, 120, 148, .55)";
-    ctx.lineWidth = p(2);
-    ctx.setLineDash([p(5), p(4)]);
-    ctx.beginPath();
-    ctx.ellipse(p(CX), p(G - 158), p(22), p(24), 0, 0, Math.PI * 2);   // head
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(p(CX), p(G - 92), p(30), p(46), 0, 0, Math.PI * 2);    // body
-    ctx.fill();
-    ctx.stroke();
+    paint.save();
+    paint.fillStyle = "rgba(120, 146, 170, .30)";
+    paint.strokeStyle = "rgba(90, 120, 148, .55)";
+    paint.lineWidth = p(2);
+    paint.setLineDash([p(5), p(4)]);
+    paint.beginPath();
+    paint.ellipse(p(CX), p(G - 158), p(22), p(24), 0, 0, Math.PI * 2);   // head
+    paint.fill();
+    paint.stroke();
+    paint.beginPath();
+    paint.ellipse(p(CX), p(G - 92), p(30), p(46), 0, 0, Math.PI * 2);    // body
+    paint.fill();
+    paint.stroke();
     [-1, 1].forEach(side => {                                          // legs
-      ctx.beginPath();
-      ctx.roundRect(p(CX + side * 20 - 11), p(G - 56), p(22), p(56), p(10));
-      ctx.fill();
-      ctx.stroke();
+      paint.beginPath();
+      paint.roundRect(p(CX + side * 20 - 11), p(G - 56), p(22), p(56), p(10));
+      paint.fill();
+      paint.stroke();
     });
-    ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(27, 42, 56, .5)";
-    ctx.font = "700 " + p(40) + "px " + FONT;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("+", p(CX), p(G - 92));
-    ctx.restore();
+    paint.setLineDash([]);
+    paint.fillStyle = "rgba(27, 42, 56, .5)";
+    paint.font = "700 " + p(40) + "px " + FONT;
+    paint.textAlign = "center";
+    paint.textBaseline = "middle";
+    paint.fillText("+", p(CX), p(G - 92));
+    paint.restore();
   }
 
   // Nameplates live in their own strip along the bottom, one line per row, each
@@ -378,12 +490,12 @@
     if (player && player.number) bits.push("#" + player.number);
     if (player && player.name) bits.push(player.name);
     const text = player ? (bits.join(" ") || player.position) : "open spot";
-    ctx.save();
-    ctx.font = (player ? "600 " : "400 ") + "22px " + FONT;
-    ctx.textAlign = "center";
-    ctx.fillStyle = player ? INK : "#8AA0B4";
-    ctx.fillText(clip(text, 18), slotX(row, n), y);
-    ctx.restore();
+    paint.save();
+    paint.font = (player ? "600 " : "400 ") + "22px " + FONT;
+    paint.textAlign = "center";
+    paint.fillStyle = player ? INK : "#8AA0B4";
+    paint.fillText(clip(text, 18), slotX(row, n), y);
+    paint.restore();
   }
 
   function clip(text, max) {
@@ -579,6 +691,7 @@
     sub.addEventListener("input", () => { team.sub = sub.value; saveTeam(); refresh(); });
     size.addEventListener("change", () => resize(Number(size.value), size));
 
+    document.getElementById("tp-poster").addEventListener("click", makePoster);
     document.getElementById("tp-download").addEventListener("click", download);
     document.getElementById("tp-share").addEventListener("click", share);
     document.getElementById("tp-copy").addEventListener("click",
