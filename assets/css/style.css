@@ -149,6 +149,12 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 .card h3{margin:0 0 .45rem;font-size:1.05rem;color:var(--accent)}
 .card p{margin:0;color:var(--text);font-size:.95rem}
 
+/* A card for something that does not exist yet: looks like the others but is
+   not a link, so it is not a broken href for crawlers. */
+.card-soon{opacity:.7;box-shadow:none;border-style:dashed}
+.card-soon h2{color:var(--muted)}
+.badge-soon{background:#E3E8EF;color:var(--muted)}
+
 /* Editor's note — ruled notebook paper with a red margin line */
 .note-paper{
   position:relative;
@@ -202,6 +208,17 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 }
 
 .links{display:grid;gap:.5rem}
+
+/* Generated site map (tools/build.py). Real markup so crawlers can follow it,
+   and a genuine convenience for readers who reach the bottom of a page. */
+.site-links{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem 1rem;
+  max-width:70ch;margin:2.5rem auto 0;padding:1.25rem 1rem 0;
+  border-top:2px solid var(--rule);
+  font-size:.85rem;
+}
+.site-links a{color:var(--muted)}
+.site-links a:hover{color:var(--accent)}
 
 .site-footer{padding:2rem;opacity:.9;text-align:center}
 .site-footer p{color:var(--muted)}
