@@ -30,11 +30,10 @@
   gap: 1rem;
 }
 
-/* Collapsed, the column should not still reserve the editor's width. */
-.cap-controls.collapsed {
-  flex: 0 0 auto;
-  min-width: 0;
-}
+/* The "Make it your own" button sits under the stage, so a collapsed column
+   holds nothing but the hidden editor - leaving it in place would park an
+   empty column beside the player. */
+.cap-controls.collapsed { display: none; }
 
 .cap-editor {
   display: flex;
@@ -44,7 +43,7 @@
 .cap-editor[hidden] { display: none; }
 
 .cap-edit {
-  align-self: center;
+  margin-top: .25rem;
   font-weight: 600;
   border-color: var(--accent);
   color: var(--accent);

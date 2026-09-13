@@ -373,7 +373,18 @@
       controls.classList.remove("collapsed");
       button.hidden = true;
       button.setAttribute("aria-expanded", "true");
+      dropShareParam();
     });
+  }
+
+  // From here on they are building their own player, not looking at someone
+  // else's, so the code comes out of the address bar - a reload or a copied URL
+  // should be their work. Any other param (?debug) is left alone.
+  function dropShareParam() {
+    const query = new URLSearchParams(location.search);
+    query.delete(SHARE_KEY);
+    const rest = query.toString();
+    history.replaceState(null, "", location.pathname + (rest ? "?" + rest : ""));
   }
 
   // A shared link is untrusted input, so every field is whitelisted: ids and
