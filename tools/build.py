@@ -57,6 +57,10 @@ PAGES = [
      "section": "games", "badge": "New", "icon": "🎨"},
     {"path": "games/team-photo.html", "label": "Team Photo",
      "section": "games", "badge": "New", "icon": "📸"},
+    # No label and no section on purpose: a card with no player in the URL is
+    # an empty page, so it does not belong in a menu. It is reached from a
+    # player's share view. Listed here only so the sitemap knows about it.
+    {"path": "games/card.html"},
 
     {"path": "teamupdates.html",           "label": "Team Updates"},
     {"path": "links.html",                 "label": "Get the Book"},

@@ -133,9 +133,7 @@
   // comma is legal in a query value as-is. A typed "+" still escapes to %2B and
   // survives the round trip.
   function shareUrl() {
-    const code = encodeURIComponent(CODE.encode(editor.params))
-      .replace(/%20/g, "+").replace(/%2C/g, ",");
-    return location.origin + location.pathname + "?" + SHARE_KEY + "=" + code;
+    return location.origin + location.pathname + "?" + SHARE_KEY + "=" + shareCode();
   }
 
   // The phone's own share sheet. navigator.share only exists in a secure
@@ -189,6 +187,7 @@
     panel.hidden = true;
     intro.hidden = true;
     controls.classList.add("collapsed");
+    addCardLink();
     button.addEventListener("click", () => {
       panel.hidden = false;
       intro.hidden = false;
@@ -199,6 +198,21 @@
       dropShareParam();
     });
     editor.el("host-footer").appendChild(button);
+  }
+
+  // The card is the best thing to do with somebody else's player, so on a
+  // shared link it is the highlighted action - ahead of building your own.
+  function addCardLink() {
+    const link = document.createElement("a");
+    link.className = "button cap-card-link";
+    link.href = "/games/card.html?" + SHARE_KEY + "=" + shareCode();
+    link.textContent = "View hockey card";
+    editor.el("host-footer").appendChild(link);
+  }
+
+  function shareCode() {
+    return encodeURIComponent(CODE.encode(editor.params))
+      .replace(/%20/g, "+").replace(/%2C/g, ",");
   }
 
   // From here on they are building their own player, not looking at someone

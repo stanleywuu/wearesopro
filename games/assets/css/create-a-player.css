@@ -333,3 +333,15 @@
 
 /* Appears under the stage once a player has been added to the team. */
 .cap-team-link { display: inline-block; margin-top: .6rem; text-decoration: none; }
+
+/* On a shared link, the card is the thing worth doing. */
+.cap-card-link {
+  display: inline-block;
+  margin-top: .6rem;
+  text-decoration: none;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+.cap-card-link:hover { background: var(--accent); color: #fff; }

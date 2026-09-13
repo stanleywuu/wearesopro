@@ -1,0 +1,77 @@
+/* Hockey card. Plate text is selected by two classes on purpose: style.css
+   has `.article p`, which outranks a single class and would otherwise repaint
+   the name plate in body colour.
+
+   The proportions are the thing: a tall photo window, a name
+   plate across the bottom, a thick border, and nothing else competing. */
+
+.card-stage { display: grid; justify-items: center; gap: 1rem; }
+
+.card {
+  width: min(340px, 100%);
+  background: linear-gradient(160deg, #FDD835 0%, #F8A41B 55%, #E8890B 100%);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(11, 27, 42, .25);
+}
+
+.card-frame {
+  background: var(--surface);
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* The photo window. The canvas is 180x200 logical, so the box follows it. */
+.card-photo { background: #EEF6FF; border-bottom: 3px solid var(--ink); }
+.card-photo canvas { width: 100%; height: auto; display: block; }
+
+.card-plate {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .6rem .75rem;
+  background: var(--ink);
+  color: #fff;
+}
+
+.card-plate .card-number {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #FDD835;
+  line-height: 1;
+}
+
+.card-id { min-width: 0; }
+
+.card-plate .card-name {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.15;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-plate .card-pos {
+  margin: 0;
+  font-size: .75rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #9FB4C7;
+}
+
+.card-frame .card-quote {
+  margin: 0;
+  padding: .5rem .75rem;
+  font-size: .85rem;
+  font-style: italic;
+  color: var(--muted);
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.card-actions { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+.card-actions .button { text-decoration: none; }
