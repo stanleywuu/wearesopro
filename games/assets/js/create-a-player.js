@@ -248,20 +248,69 @@
 
   // ---- share links ------------------------------------------------------
 
-  function toBase64Url(str) {
-    const bytes = new TextEncoder().encode(str);
-    let bin = "";
-    bytes.forEach(b => { bin += String.fromCharCode(b); });
-    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  // The link used to carry base64 of the whole JSON blob, which ran past 400
+  // characters. Now the player is a fixed-order, "~"-separated list: an enum
+  // is its index, a slider its offset from the minimum, and a palette colour
+  // a single digit. A typical player fits in well under a hundred characters.
+  const SHARE_VERSION = "1";
+  const SLIDER_KEYS = Object.keys(D.sliders);
+
+  function encodeColor(value, list) {
+    const idx = list.indexOf(value);
+    return idx >= 0 ? String(idx) : String(value).replace("#", "");
   }
 
+  function decodeColor(field, list) {
+    return /^\d$/.test(field) ? list[Number(field)] : "#" + field;
+  }
+
+  function encodeParams() {
+    const fields = [
+      D.shapes.findIndex(s => s.id === params.bodyShape),
+      D.shapes.findIndex(s => s.id === params.headShape)
+    ];
+    SLIDER_KEYS.forEach(key => fields.push(params[key] - D.sliders[key].min));
+    PALETTES.forEach(entry => fields.push(encodeColor(params[entry[0]], entry[1])));
+    fields.push(
+      D.helmets.findIndex(h => h.id === params.helmetStyle),
+      D.handedness.findIndex(h => h.id === params.handedness),
+      D.positions.indexOf(params.position),
+      params.name, params.number, params.phrase
+    );
+    // Empty name/number/phrase at the end are just dead weight in the URL.
+    while (fields.length && fields[fields.length - 1] === "") fields.pop();
+    return SHARE_VERSION + "~" + fields.join("~");
+  }
+
+  // Returns the same shape of object the old JSON links did, so sanitizeShared
+  // stays the one place a shared player is validated.
+  function decodeParams(code) {
+    const fields = code.split("~");
+    if (fields.shift() !== SHARE_VERSION) return JSON.parse(fromBase64Url(code));
+    let i = 0;
+    const next = () => (fields[i++] || "");
+    const id = (list, field) => (list[Number(field)] || {}).id;
+    const raw = { bodyShape: id(D.shapes, next()), headShape: id(D.shapes, next()) };
+    SLIDER_KEYS.forEach(key => { raw[key] = Number(next()) + D.sliders[key].min; });
+    PALETTES.forEach(entry => { raw[entry[0]] = decodeColor(next(), entry[1]); });
+    raw.helmetStyle = id(D.helmets, next());
+    raw.handedness = id(D.handedness, next());
+    raw.position = D.positions[Number(next())];
+    raw.name = next();
+    raw.number = next();
+    raw.phrase = next();
+    return raw;
+  }
+
+  // Links shared before the compact format are still base64 of the JSON.
   function fromBase64Url(code) {
     const bin = atob(code.replace(/-/g, "+").replace(/_/g, "/"));
     return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
   }
 
   function shareUrl() {
-    return location.origin + location.pathname + "?" + SHARE_KEY + "=" + toBase64Url(JSON.stringify(params));
+    return location.origin + location.pathname + "?" + SHARE_KEY + "=" +
+      encodeURIComponent(encodeParams());
   }
 
   // The phone's own share sheet. navigator.share only exists in a secure
@@ -288,7 +337,7 @@
     const code = new URLSearchParams(location.search).get(SHARE_KEY);
     if (!code) return false;
     try {
-      Object.assign(params, sanitizeShared(JSON.parse(fromBase64Url(code))));
+      Object.assign(params, sanitizeShared(decodeParams(code)));
       return true;
     } catch (e) {
       return false;   // a mangled link just leaves the defaults in place
