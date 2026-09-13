@@ -643,34 +643,32 @@
     return params;
   }
 
+  // Randomize and Highlight belong to the builder and stay in its row. These
+  // three are about the slot rather than the player, so they get their own row
+  // underneath.
   function addModalButtons() {
-    const save = document.createElement("button");
-    save.type = "button";
-    save.className = "button is-primary";
-    save.textContent = "Save to team";
-    save.addEventListener("click", saveSlot);
-    const cancel = document.createElement("button");
-    cancel.type = "button";
-    cancel.className = "button";
-    cancel.textContent = "Cancel";
-    cancel.addEventListener("click", closeModal);
-    const host = editor.el("host-actions");
-    host.appendChild(save);
-    host.appendChild(cancel);
-    addPickerButton();
+    const row = document.createElement("div");
+    row.className = "tp-modal-actions";
+    row.appendChild(pickerButtonEl());
+    row.appendChild(modalButton("Save to team", "is-primary", saveSlot));
+    row.appendChild(modalButton("Cancel", "", closeModal));
+    editor.el("host-footer").appendChild(row);
+  }
+
+  function modalButton(label, extra, run) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button" + (extra ? " " + extra : "");
+    button.textContent = label;
+    button.addEventListener("click", run);
+    return button;
   }
 
   // Everyone you have already built. Opened from a button rather than sitting
   // across the top of the modal: it is a thing you go to when you want it, not
   // a shelf in front of the builder.
-  function addPickerButton() {
-    if (!PLAYERS.list().length) return;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "button";
-    button.textContent = "Saved players";
-    button.addEventListener("click", openPicker);
-    editor.el("host-actions").appendChild(button);
+  function pickerButtonEl() {
+    return modalButton("Import from Gallery", "", openPicker);
   }
 
   function openPicker() {

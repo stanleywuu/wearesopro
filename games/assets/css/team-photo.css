@@ -213,8 +213,10 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* The one action the modal exists for. */
-.cap-actions .is-primary, .cap-actions .is-primary:hover {
+/* The one action the modal exists for. Both containers are listed because the
+   slot actions moved out of the builder's own row into a row of their own. */
+.cap-actions .is-primary, .cap-actions .is-primary:hover,
+.tp-modal-actions .is-primary, .tp-modal-actions .is-primary:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
@@ -324,3 +326,12 @@
 .tp-advanced-row { display: flex; gap: .5rem; margin-top: .5rem; }
 .tp-advanced-row input { flex: 1 1 auto; padding: .45rem .6rem; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
 
+
+/* Slot actions: their own row, under the builder's own buttons. */
+.tp-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  justify-content: center;
+  margin-top: .75rem;
+}
