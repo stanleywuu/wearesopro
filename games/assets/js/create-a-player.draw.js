@@ -363,8 +363,11 @@
     // around the head's centre rather than seated on the brow.
     const mask = params.helmetStyle === "mask";
     const mc = project(hr.x, head.y, hr.z);
+    // A dome caps the skull, so it can sit at a fixed shallow depth and still
+    // read. A mask wraps the whole head, so it has to sort in FRONT of the head
+    // slab or the face swallows it - which is what it did.
     return {
-      d: 0.1,
+      d: mask ? hr.z + 0.5 : 0.1,
       draw: () => {
         ctx.beginPath();
         if (mask) ctx.ellipse(p(mc.sx), p(mc.sy), p(hw * 1.04), p(head.ry * 1.14 * mc.k), 0, 0, Math.PI * 2);
@@ -450,6 +453,10 @@
       draw: () => {
         const facing = Math.cos(yaw);
         if (facing < 0.3) return;
+        const mask = params.helmetStyle === "mask";
+        // The shell sits in front of the head, so on a mask the face has to be
+        // put back as an opening in it - otherwise he is a blank dark egg.
+        if (mask) drawFaceHole(ctx, dims, params, yaw, facing);
         const eyeY = head.y - head.ry * 0.16;
         [-1, 1].forEach(s => {
           const r = rotY(head.x + s * head.rx * 0.36, head.z + head.rz * 0.8, yaw);
@@ -459,12 +466,24 @@
           const c = project(r.x, eyeY, r.z);
           E(ctx, c.sx, c.sy, 1.7 * c.k, 2.1 * c.k, OUTLINE);
         });
+        if (mask) return drawCage(ctx, dims, yaw);
         const m = rotY(head.x, head.z + head.rz * 0.85, yaw);
         const mc = project(m.x, head.y - head.ry * 0.56, m.z);
         L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
-        if (params.helmetStyle === "mask") drawCage(ctx, dims, yaw);
       }
     };
+  }
+
+  // The opening in the shell, in skin, hung off the front of the head the same
+  // way the visor is - so it narrows and slides as he turns.
+  function drawFaceHole(ctx, dims, params, yaw, facing) {
+    const head = dims.head;
+    const r = rotY(head.x, head.z + head.rz * 0.55, yaw);
+    const c = project(r.x, head.y - head.ry * 0.10, r.z);
+    E(ctx, c.sx, c.sy, head.rx * 0.74 * facing * c.k, head.ry * 0.66 * c.k, params.skinColor);
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(1.2);
+    ctx.stroke();
   }
 
   // ---- jersey lettering -------------------------------------------------
