@@ -11,3 +11,6 @@ Thumbs.db
 *.swp
 *.swo
 docs
+
+# python bytecode from tools/
+__pycache__/

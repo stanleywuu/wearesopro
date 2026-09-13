@@ -16,6 +16,7 @@ It is deliberately not wired into the Azure workflow: the deploy stays a plain
 static upload, so a bug in here can never fail a deployment.
 """
 
+import datetime
 import pathlib
 import re
 import subprocess
@@ -98,15 +99,25 @@ def write_navs(root):
     print("nav written into %d pages" % len(PAGES))
 
 
-def last_modified(root, path):
-    """Commit date of the page, so lastmod reflects real edits."""
+def git(root, *args):
     try:
-        out = subprocess.run(
-            ["git", "log", "-1", "--format=%cs", "--", path],
-            cwd=root, capture_output=True, text=True, timeout=10)
-        return out.stdout.strip() or None
+        out = subprocess.run(["git"] + list(args), cwd=root,
+                             capture_output=True, text=True, timeout=10)
+        return out.stdout.strip()
     except Exception:
-        return None
+        return ""
+
+
+def last_modified(root, path):
+    """When the page last changed.
+
+    A page with uncommitted edits is dated today rather than by its previous
+    commit. Otherwise every commit leaves the sitemap one commit behind, and the
+    pre-commit hook blocks the *next* commit over a sitemap nobody touched.
+    """
+    if git(root, "status", "--porcelain", "--", path):
+        return datetime.date.today().isoformat()
+    return git(root, "log", "-1", "--format=%cs", "--", path) or None
 
 
 def write_sitemap(root):
