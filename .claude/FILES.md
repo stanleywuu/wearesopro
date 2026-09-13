@@ -56,7 +56,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
   - `games/assets/js/create-a-player.js` — DOM wiring: tabs, controls, drag/auto-spin, quiet autosave to localStorage, randomize, the Highlight animation timeline, `?p=` share links (whitelisted on load), `?debug` yaw grid.
 
 ## tools/
-- `tools/build.py` — Generates the static `<nav class="site-links">` site map in every page (between `nav:start`/`nav:end` markers) and `sitemap.xml`, from one `PAGES` list. Run via `make site`. Standard library only; not part of the deploy.
+- `tools/build.py` — Generates the footer site map in every page, the nav/drawer menus in `partials/nav.html`, and `sitemap.xml` — all from one `PAGES` list. Run via `make site`. Standard library only; not part of the deploy.
 - `tools/templates/site-links.html` — Markup template for the generated nav block; `{{links}}` is where the links go. First and last lines are the markers `build.py` searches for.
 - `tools/templates/site-link.html` — Markup template for one nav link (`{{href}}`, `{{label}}`).
 - `tools/templates/nav-item.html` — Markup template for one dropdown/drawer `<li>`; used for both the desktop menu and the mobile drawer.
