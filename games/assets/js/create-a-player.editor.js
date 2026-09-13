@@ -205,24 +205,7 @@
     }
 
     function randomize() {
-      const pick = list => list[Math.floor(Math.random() * list.length)];
-      params.bodyShape = pick(D.shapes).id;
-      params.headShape = pick(D.shapes).id;
-      Object.keys(D.sliders).forEach(key => {
-        const s = D.sliders[key];
-        params[key] = Math.round(s.min + Math.random() * (s.max - s.min));
-      });
-      params.skinColor = pick(D.skinColors);
-      params.jerseyColor = pick(D.jerseyColors);
-      params.trimColor = pick(D.trimColors);
-      params.sockColor = pick(D.jerseyColors);
-      params.helmetColor = pick(D.helmetColors);
-      params.helmetStyle = pick(D.helmets).id;
-      params.handedness = pick(D.handedness).id;
-      params.name = pick(D.randomNames);
-      params.number = String(Math.floor(Math.random() * 98) + 1);
-      params.position = pick(D.positions);
-      params.phrase = pick(D.catchPhrases);
+      Object.assign(params, window.CAP_CODE.random());
       syncControls();
       status("");
       touch();

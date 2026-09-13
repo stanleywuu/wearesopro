@@ -47,6 +47,31 @@
     };
   }
 
+  // A whole random player. Lives here rather than in the builder because it is
+  // pure data, and the team photo needs one without a builder mounted.
+  function random() {
+    const pick = list => list[Math.floor(Math.random() * list.length)];
+    const out = defaults();
+    out.bodyShape = pick(D.shapes).id;
+    out.headShape = pick(D.shapes).id;
+    SLIDER_KEYS.forEach(key => {
+      const s = D.sliders[key];
+      out[key] = Math.round(s.min + Math.random() * (s.max - s.min));
+    });
+    out.skinColor = pick(D.skinColors);
+    out.jerseyColor = pick(D.jerseyColors);
+    out.trimColor = pick(D.trimColors);
+    out.sockColor = pick(D.jerseyColors);
+    out.helmetColor = pick(D.helmetColors);
+    out.helmetStyle = pick(D.helmets).id;
+    out.handedness = pick(D.handedness).id;
+    out.name = pick(D.randomNames);
+    out.number = String(Math.floor(Math.random() * 98) + 1);
+    out.position = pick(D.positions);
+    out.phrase = pick(D.catchPhrases);
+    return out;
+  }
+
   // ---- share codes ------------------------------------------------------
 
   // The code used to carry base64 of the whole JSON blob, which ran past 400
@@ -163,6 +188,7 @@
     PALETTES: PALETTES,
     SLIDER_KEYS: SLIDER_KEYS,
     defaults: defaults,
+    random: random,
     encode: encode,
     decode: decode,
     sanitize: sanitize,

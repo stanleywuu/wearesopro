@@ -662,8 +662,11 @@
   // under it, so several players can be composited into one scene. The caller
   // places and scales with translate/scale before calling - every coordinate
   // here goes through p(), so the whole figure follows the current transform.
+  // opts.shadow === false drops the ground shadow, which reads as a floating
+  // smudge on anyone not standing on the front of the scene.
   function render(ctx, params, yaw, anim, opts) {
     const background = !opts || opts.background !== false;
+    const shadow = !opts || opts.shadow !== false;
     const dims = computeDims(params);
     ANIM = anim || null;
     SHIFT = ANIM ? ANIM.shift : 0;
@@ -673,7 +676,7 @@
       ctx.clearRect(0, 0, p(LW), p(LH));
       drawIce(ctx);
     }
-    drawShadow(ctx, dims);
+    if (shadow) drawShadow(ctx, dims);
     if (ANIM) drawNet(ctx);
 
     const torso = Object.assign({}, dims.torso, { style: dims.bodyStyle, color: params.jerseyColor });

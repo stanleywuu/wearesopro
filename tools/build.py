@@ -55,6 +55,8 @@ PAGES = [
      "section": "games", "icon": "🥊"},
     {"path": "games/create-a-player.html", "label": "Create A Player",
      "section": "games", "badge": "New", "icon": "🎨"},
+    {"path": "games/team-photo.html", "label": "Team Photo",
+     "section": "games", "badge": "New", "icon": "📸"},
 
     {"path": "teamupdates.html",           "label": "Team Updates"},
     {"path": "links.html",                 "label": "Get the Book"},

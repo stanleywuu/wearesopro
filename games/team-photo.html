@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Team Photo — line up your beer league squad</title>
+<meta name="description" content="Build a whole beer league team, one player at a time, and line them up for the team picture. Tap an empty spot, make your guy, and fill the bench.">
+<link rel="canonical" href="https://wearesopro.ca/games/team-photo.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="We Are So Pro">
+<meta property="og:title" content="Team Photo — line up your beer league squad">
+<meta property="og:description" content="Build a whole beer league team, one player at a time, and line them up for the team picture. Tap an empty spot, make your guy, and fill the bench.">
+<meta property="og:url" content="https://wearesopro.ca/games/team-photo.html">
+<meta property="og:image" content="https://wearesopro.ca/assets/img/og-create-a-player.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Create A Player - build your own cartoon beer-league hockey player">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Team Photo — line up your beer league squad">
+<meta name="twitter:description" content="Build a whole beer league team, one player at a time, and line them up for the team picture. Tap an empty spot, make your guy, and fill the bench.">
+<meta name="twitter:image" content="https://wearesopro.ca/assets/img/og-create-a-player.jpg">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
+  <link rel="preload" href="/assets/css/style.css" as="style" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/css/critical.css?v=1">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <link rel="stylesheet" href="/games/assets/css/create-a-player.css">
+  <link rel="stylesheet" href="/games/assets/css/team-photo.css">
+  <script defer src="/assets/js/main.js"></script>
+  <script defer src="/games/assets/js/create-a-player.data.js"></script>
+  <script defer src="/games/assets/js/create-a-player.codec.js"></script>
+  <script defer src="/games/assets/js/create-a-player.draw.js"></script>
+  <script defer src="/games/assets/js/create-a-player.editor.js"></script>
+  <script defer src="/games/assets/js/team-photo.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><a href="/index.html"><span class="logo">🧊🏒</span> We Are So Pro</a></div>
+    <div data-include="/partials/nav.html"></div>
+  </header>
+
+  <main class="layout">
+    <div data-include="/partials/sidebar.html"></div>
+
+    <section class="content">
+      <section class="article" id="tp-intro">
+        <h1>Team Photo</h1>
+        <p class="muted">Tap an empty spot in the line-up and build the guy who goes there. Fill every spot and you can print the poster.</p>
+      </section>
+
+      <section class="article tp-photo">
+        <div class="tp-frame">
+          <canvas id="tp-canvas" aria-label="Your team photo"></canvas>
+          <div class="tp-slots" id="tp-slots"></div>
+        </div>
+        <p id="tp-status" class="cap-status" aria-live="polite"></p>
+      </section>
+
+      <section class="article tp-panel">
+        <div class="tp-fields">
+          <label class="tp-field"><span>Team name</span><input type="text" id="tp-name" maxlength="24" autocomplete="off" placeholder="The Early Birds"></label>
+          <label class="tp-field"><span>Season</span><input type="text" id="tp-sub" maxlength="32" autocomplete="off" placeholder="2026 Beer League"></label>
+          <label class="tp-field"><span>Players</span><select id="tp-size"></select></label>
+        </div>
+
+        <div class="tp-actions">
+          <button type="button" id="tp-poster" class="button" disabled>Make the poster</button>
+          <button type="button" id="tp-download" class="button">Download photo</button>
+          <button type="button" id="tp-share" class="button">Share link</button>
+          <button type="button" id="tp-copy" class="button">Copy team code</button>
+        </div>
+
+        <div class="tp-paste">
+          <label class="tp-field tp-field-wide">
+            <span>Someone sent you a player?</span>
+            <input type="text" id="tp-paste-input" autocomplete="off" placeholder="Paste their code or Create A Player link">
+          </label>
+          <button type="button" id="tp-add" class="button">Add to team</button>
+        </div>
+        <p class="muted tp-note">Everything stays on this device. The team code is the copy worth keeping — a share link with a full roster gets long enough that some chat apps cut it off.</p>
+      </section>
+    </section>
+
+  </main>
+
+  <div class="tp-modal" id="tp-modal" hidden>
+    <div class="tp-modal-card" role="dialog" aria-modal="true" aria-labelledby="tp-modal-title">
+      <div class="tp-modal-head">
+        <h2 id="tp-modal-title">Build your player</h2>
+        <button type="button" class="tp-modal-x" id="tp-close" aria-label="Close without saving">&times;</button>
+      </div>
+      <div class="tp-modal-body" id="tp-modal-body">
+        <div data-include="/partials/player-editor.html"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Static site map. Plain markup on purpose: the nav and footer are injected
+     by data-include, which crawlers do not run, so this is the only internal
+     linking they can see. Keep it short and stable; update it in every page. -->
+<!-- nav:start (generated by tools/build.py from tools/templates/ — do not edit by hand) -->
+<nav class="site-links" aria-label="All pages">
+  <a href="/index.html">Home</a>
+  <a href="/notes.html">Editor&rsquo;s Notes</a>
+  <a href="/notes/pipeline.html">The Pipeline</a>
+  <a href="/notes/spreadsheet.html">The Spreadsheet</a>
+  <a href="/notes/faqs.html">FAQs</a>
+  <a href="/games.html">Games &amp; Quizzes</a>
+  <a href="/games/chirp.html">Teammate or Coworker</a>
+  <a href="/games/quotes.html">Who Said What</a>
+  <a href="/games/whowas.html">Who&rsquo;s This Early Bird</a>
+  <a href="/games/adopt.html">Tommy The Goalie</a>
+  <a href="/games/fighter.html">Goalie Brawl</a>
+  <a href="/games/create-a-player.html">Create A Player</a>
+  <a href="/games/team-photo.html">Team Photo</a>
+  <a href="/teamupdates.html">Team Updates</a>
+  <a href="/links.html">Get the Book</a>
+  <a href="/feedback.html">Feedback</a>
+</nav>
+<!-- nav:end -->
+<div data-include="/partials/footer.html"></div>
+</body>
+</html>
