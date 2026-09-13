@@ -142,6 +142,27 @@
   transform: scale(1.12);
 }
 
+/* The "any other colour" picker at the end of each row. The native colour
+   input is sized to fill the circle so the whole swatch is the hit target. */
+.cap-swatch-custom {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+  background:
+    conic-gradient(#E53935, #FDD835, #43A047, #1E88E5, #8E24AA, #E53935);
+}
+.cap-swatch-custom input[type="color"] {
+  position: absolute;
+  inset: -4px;
+  width: calc(100% + 8px);
+  height: calc(100% + 8px);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+}
+
 .cap-slot input[type="text"],
 .cap-slot select {
   font: inherit;

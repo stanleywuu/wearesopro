@@ -37,8 +37,9 @@
     phrase: ""
   };
 
-  // Which palette each colour field must come from, used when validating a
-  // shared link.
+  // The colour fields, paired with the preset palette each one defaults from.
+  // Custom colours are allowed too, so a shared link is validated by format
+  // rather than by membership of these lists.
   const PALETTES = [
     ["skinColor", D.skinColors],
     ["jerseyColor", D.jerseyColors],
@@ -116,13 +117,46 @@
         btn.addEventListener("click", () => selectSwatch(box, key, color));
         box.appendChild(btn);
       });
+      addCustomSwatch(box, key);
     });
+  }
+
+  // The presets are a starting point, not the whole range: every row ends with
+  // a colour picker so any shade is reachable.
+  function addCustomSwatch(box, key) {
+    const label = document.createElement("label");
+    label.className = "cap-swatch cap-swatch-custom";
+    label.title = "Any other colour";
+    const input = document.createElement("input");
+    input.type = "color";
+    input.value = params[key];
+    input.setAttribute("aria-label", key + ", custom colour");
+    input.addEventListener("input", () => {
+      label.dataset.color = input.value;
+      label.style.background = input.value;
+      selectSwatch(box, key, input.value);
+    });
+    label.appendChild(input);
+    box.appendChild(label);
   }
 
   function selectSwatch(box, key, color) {
     params[key] = color;
     box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
     touch();
+  }
+
+  // A colour that is not one of the presets belongs to that row's picker, so
+  // the picker is the swatch that shows as active.
+  function syncSwatchRow(box, color) {
+    const custom = box.querySelector(".cap-swatch-custom");
+    const preset = D[box.dataset.palette].indexOf(color) >= 0;
+    if (custom && !preset) {
+      custom.dataset.color = color;
+      custom.style.background = color;
+      custom.querySelector("input").value = color;
+    }
+    box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
   }
 
   function buildIdentity() {
@@ -262,16 +296,21 @@
   }
 
   // Someone arriving on a shared link came to see a player, not a control
-  // panel, so the editor starts collapsed behind a button.
+  // panel, so the editor starts collapsed behind a button. The "build your own"
+  // pitch goes with it — it is an instruction for a builder, and this visitor
+  // is not one yet — and comes back if they decide to make their own.
   function collapseEditor() {
     const controls = document.getElementById("cap-controls");
     const editor = document.getElementById("cap-editor");
+    const intro = document.getElementById("cap-intro");
     const button = document.getElementById("cap-edit");
     editor.hidden = true;
+    intro.hidden = true;
     controls.classList.add("collapsed");
     button.hidden = false;
     button.addEventListener("click", () => {
       editor.hidden = false;
+      intro.hidden = false;
       controls.classList.remove("collapsed");
       button.hidden = true;
       button.setAttribute("aria-expanded", "true");
@@ -296,13 +335,20 @@
       if (Number.isFinite(value)) out[key] = Math.min(spec.max, Math.max(spec.min, Math.round(value)));
     });
     PALETTES.forEach(entry => {
-      if (entry[1].indexOf(raw[entry[0]]) >= 0) out[entry[0]] = raw[entry[0]];
+      if (isHexColor(raw[entry[0]])) out[entry[0]] = raw[entry[0]];
     });
     if (D.positions.indexOf(raw.position) >= 0) out.position = raw.position;
     out.name = capText(raw.name, 14);
     out.phrase = capText(raw.phrase, 48);
     out.number = capText(raw.number, 2).replace(/[^0-9]/g, "");
     return out;
+  }
+
+  // Custom colours mean a shared link is no longer restricted to the palette,
+  // so the format is what gets checked. Colours only ever reach the canvas as
+  // a fillStyle, never the DOM, and anything else is dropped.
+  function isHexColor(value) {
+    return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
   }
 
   function capText(value, max) {
@@ -341,8 +387,7 @@
       updateContourVisibility(box, id);
     });
     document.querySelectorAll("[data-swatch]").forEach(box => {
-      const color = params[box.dataset.swatch];
-      box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
+      syncSwatchRow(box, params[box.dataset.swatch]);
     });
     document.querySelectorAll("[data-param]").forEach(i => { i.value = params[i.dataset.param]; });
     setValue("cap-name", params.name);
