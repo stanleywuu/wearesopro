@@ -24,46 +24,43 @@ import sys
 
 SITE = "https://wearesopro.ca"
 
-# Every real page, in nav order. (path, nav label, include-in-nav)
-# Utility pages are still in the sitemap but do not need a nav link.
-# Every real page. One entry per page, and the only place a link is declared.
-#   path    file, relative to the repo root
-#   label   text in the generated site-map nav at the foot of every page
-#   nav     include in that site-map nav
-#   section which dropdown/drawer menu it belongs to ("notes", "games", or None)
-#   menu    menu wording when it differs from label; falls back to label
-#   badge   optional flag shown in the menus only, e.g. "New"
+# Every page, and the only place a link is declared. Only "path" is required.
+#   path     file, relative to the repo root
+#   label    text in the site map at the foot of every page; no label = not listed
+#   section  which menu it belongs to: "notes", "games", or absent for neither
+#   menu     menu wording, when it should differ from label
+#   badge    flag shown in the menus only, e.g. "New"
 PAGES = [
-    {"path": "index.html",                 "label": "Home",                  "nav": True},
-    {"path": "teamupdates.html",           "label": "Team Updates",          "nav": True},
-    {"path": "notes.html",                 "label": "Editor&rsquo;s Notes",  "nav": True},
+    {"path": "index.html",                 "label": "Home"},
+    {"path": "teamupdates.html",           "label": "Team Updates"},
+    {"path": "notes.html",                 "label": "Editor&rsquo;s Notes"},
 
-    {"path": "notes/pipeline.html",        "label": "The Pipeline",          "nav": True,
+    {"path": "notes/pipeline.html",        "label": "The Pipeline",
      "section": "notes", "menu": "The pipeline that built everything"},
-    {"path": "notes/spreadsheet.html",     "label": "The Spreadsheet",       "nav": True,
+    {"path": "notes/spreadsheet.html",     "label": "The Spreadsheet",
      "section": "notes", "menu": "The infamous Spreadsheet"},
-    {"path": "notes/faqs.html",            "label": "FAQs",                  "nav": True,
+    {"path": "notes/faqs.html",            "label": "FAQs",
      "section": "notes", "menu": "Frequently Asked Questions"},
 
-    {"path": "games.html",                 "label": "Games &amp; Quizzes",   "nav": True},
-    {"path": "games/chirp.html",           "label": "Teammate or Coworker",  "nav": True,
+    {"path": "games.html",                 "label": "Games &amp; Quizzes"},
+    {"path": "games/chirp.html",           "label": "Teammate or Coworker",
      "section": "games"},
-    {"path": "games/quotes.html",          "label": "Who Said What",         "nav": True,
+    {"path": "games/quotes.html",          "label": "Who Said What",
      "section": "games", "menu": "Who said what?"},
-    {"path": "games/whowas.html",          "label": "Who&rsquo;s This Early Bird", "nav": True,
+    {"path": "games/whowas.html",          "label": "Who&rsquo;s This Early Bird",
      "section": "games", "menu": "Who&rsquo;s this Early Bird?"},
-    {"path": "games/adopt.html",           "label": "Tommy The Goalie",      "nav": True,
+    {"path": "games/adopt.html",           "label": "Tommy The Goalie",
      "section": "games"},
-    {"path": "games/fighter.html",         "label": "Goalie Brawl",          "nav": True,
+    {"path": "games/fighter.html",         "label": "Goalie Brawl",
      "section": "games"},
-    {"path": "games/create-a-player.html", "label": "Create A Player",       "nav": True,
+    {"path": "games/create-a-player.html", "label": "Create A Player",
      "section": "games", "badge": "New"},
 
-    {"path": "links.html",                 "label": "Get the Book",          "nav": True},
-    {"path": "feedback.html",              "label": "Feedback",              "nav": True},
-    {"path": "experiments.html",           "label": None,                    "nav": False},
-    {"path": "thanks.html",                "label": None,                    "nav": False},
-    {"path": "404.html",                   "label": None,                    "nav": False},
+    {"path": "links.html",                 "label": "Get the Book"},
+    {"path": "feedback.html",              "label": "Feedback"},
+    {"path": "experiments.html"},
+    {"path": "thanks.html"},
+    {"path": "404.html"},
 ]
 
 NAV_PARTIAL = "partials/nav.html"
@@ -85,16 +82,13 @@ def nav_html():
     item = template("site-link.html").rstrip("\n")
     links = "\n".join(
         item.replace("{{href}}", "/" + page["path"]).replace("{{label}}", page["label"])
-        for page in PAGES if page["nav"]
+        for page in PAGES if page.get("label")
     )
     return template("site-links.html").replace("{{links}}", links)
 
 
 def insert(source, block, start, end):
     """Put the block in, replacing an older one if this page already has it."""
-    # an unmarked nav from before this script existed
-    source = re.sub(r'(<!--[^>]*?static site map.*?-->\s*)?<nav class="site-links".*?</nav>\n?',
-                    "", source, flags=re.S)
     if start in source and end in source:
         pattern = re.escape(start) + r".*?" + re.escape(end) + r"\n?"
         return re.sub(pattern, block, source, flags=re.S)

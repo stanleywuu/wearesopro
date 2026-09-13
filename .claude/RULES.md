@@ -43,61 +43,42 @@ If a change turns out not to match any existing todo item, add the item, then ti
 
 ## Generated markup — `make site`
 
-Crawlers do not run JS, so anything they must follow has to be real markup in the
-page rather than a `data-include`. `tools/build.py` generates that from **one
-`PAGES` list**, which is the single source of truth for:
+**Day to day this changes nothing: edit, commit.** The pre-commit hook keeps the
+generated files current for you. You only run `make site` yourself when adding or
+removing a page, or editing a template, and want to see the result before committing.
 
-| what | where it lands |
-|---|---|
-| footer site map | `<nav class="site-links">` in every page, between `nav:start` / `nav:end` |
-| desktop dropdowns | `partials/nav.html`, between `nav:notes` / `nav:games` |
-| mobile drawer menus | `partials/nav.html`, same markers (identical `<li>` markup) |
-| `sitemap.xml` | repo root |
+### Why it exists
+Crawlers do not run JS, so `data-include` markup is invisible to them. Internal links
+have to be real markup in the page. `tools/build.py` writes that from one `PAGES`
+list, which is the single source for: the site map at the foot of every page, the nav
+dropdown and mobile drawer in `partials/nav.html`, and `sitemap.xml`.
 
-**Never hand-edit inside any of those markers** — the next `make site` overwrites it.
-
-- To change **which** pages appear: edit `PAGES` in `tools/build.py`.
-- To change **how** the nav looks: edit `tools/templates/` — `site-links.html`
-  (footer block), `site-link.html` (one footer link), `nav-item.html` (one menu row).
-  No Python involved.
+**Never hand-edit between `nav:*:start` / `nav:*:end` markers** — regeneration wins.
 
 ### Adding a page (e.g. a new game)
-1. Create the page — copy an existing one, so it carries the CSP meta tag and the
-   literal `<title>` / `og:*` set.
-2. Add **one entry** to `PAGES`:
+1. Create the page — copy an existing one for the CSP meta tag and the `og:*` set.
+2. Add one entry to `PAGES` in `tools/build.py`:
    ```python
-   {"path": "games/yourgame.html", "label": "Your Game", "nav": True,
+   {"path": "games/yourgame.html", "label": "Your Game",
     "section": "games", "badge": "New"},
    ```
-   `section` puts it in the dropdown + drawer (`"games"` or `"notes"`; omit for none),
-   `menu` overrides the wording in menus, `badge` flags it as New.
+   Only `path` is required. `label` lists it in the footer site map, `section` puts it
+   in the menus, `menu` overrides the menu wording, `badge` flags it.
 3. `make site`
 4. Add the card to `games.html` by hand — the blurb is prose, so it is not generated.
 5. Commit.
 
 ### Commands
-- `make site` — regenerate everything above.
-- `make check` — report pages missing the generated nav, and broken internal links.
-- `make hooks` — install the pre-commit hook, **once per clone**. `.git/hooks` is not
-  version controlled, so the committed hook is inert until git is pointed at it.
+- `make site` — regenerate. `make check` — find broken internal links.
+- `make hooks` — install the pre-commit hook, **once per clone** (`.git/hooks` is not
+  version controlled, so the committed hook is inert until git is pointed at it).
 
-### What the pre-commit hook does
-1. runs `make site`
-2. **stages** a regenerated `sitemap.xml` — it is a pure artifact, and without this an
-   ordinary page edit fails its first commit whenever the page's `lastmod` moves to today
-3. **stops the commit** if the nav inside pages changed and is unstaged — that only
-   happens when `PAGES` or a template changed, so it is worth a look first
-4. **fails** on broken internal links
+The hook regenerates, quietly stages `sitemap.xml` (a pure artifact), stops the commit
+if the nav in pages changed and is unstaged, and fails on broken internal links.
+`--no-verify` skips it; don't make a habit of it.
 
-`git commit --no-verify` skips it; do not make a habit of that.
-
-You do **not** need `make site` before testing an ordinary content edit — the nav is
-already baked into the page files, and the hook keeps things current at commit time.
-Run it when you change `PAGES` or a template and want to see the result.
-
-It is deliberately **not** wired into the Azure workflow: the deploy stays a plain
-static upload, so a bug in the generator can never fail a deploy. The trade-off is
-that generated output must be committed.
+Nothing here touches the Azure workflow — the deploy stays a plain static upload, so a
+generator bug cannot fail a deploy. The trade-off is that generated output is committed.
 
 ## Keeping this repo self-describing
 - If you add, remove, or repurpose a file, update `.claude/FILES.md` in the same change.

@@ -23,7 +23,7 @@ See `.claude/FILES.md` for what every file in the repo is, and `.claude/RULES.md
 
 **Includes are invisible to crawlers** (they do not run JS), so anything a crawler must see — titles, meta tags, and internal links — has to be real markup in the page. That is what `make site` generates: a footer site map in every page, the nav dropdown and drawer lists in `partials/nav.html`, and `sitemap.xml`, all from the single `PAGES` list in `tools/build.py`.
 
-Run `make site` after changing `PAGES` or a template in `tools/templates/`; a pre-commit hook (installed once with `make hooks`) runs it for you at commit time and fails on broken internal links. Never hand-edit between the `nav:*:start` / `nav:*:end` markers. See `.claude/RULES.md` for the full procedure, including how to add a new game page.
+Day to day this changes nothing — edit and commit, and the pre-commit hook (installed once per clone with `make hooks`) keeps the generated files current. Run `make site` yourself when adding a page or editing a template. Never hand-edit between the `nav:*:start` / `nav:*:end` markers. See `.claude/RULES.md` for the add-a-page steps.
 
 ## Forms
 
@@ -34,8 +34,6 @@ Uses Netlify Forms. Each form has a honeypot field to reduce spam. Successful su
 CSP is enforced per page by a `<meta http-equiv="Content-Security-Policy">` tag in each page's `<head>` (`script-src 'self'`), so no inline `<script>` or `<style>` will run — all JS/CSS must be external files. Copy the meta tag from an existing page when adding a new one.
 
 ## Instructions
-Before committing, `make site` must be current — the pre-commit hook enforces it. See "Partial Includes" above and `.claude/RULES.md`.
-
 When we create plans, create the plans under a docs directory here.
 As we execute the plan, mark it off so we know where we currently are and can continue to pick it up from there, even if we cleared context
 The plan here doesn't need to be full, it just need to be the tasks we wish to do, and what has been done.
