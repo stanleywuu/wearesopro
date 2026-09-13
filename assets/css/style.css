@@ -103,7 +103,24 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 .feature-body{flex:1;min-width:0}
 .feature h3{margin:0 0 .2rem;font-size:1.25rem;color:#fff}
 .feature p{margin:0;color:rgba(255,255,255,.88);font-size:.95rem}
-.feature-stamp{vertical-align:middle}
+/* Stamped "New" tag — sits on the banner like it was pressed on by hand */
+.feature-stamp{
+  display:inline-block;
+  margin-left:.45rem;
+  padding:.18rem .55rem;
+  border:2px solid var(--ink);
+  border-radius:6px;
+  background:var(--stamp);
+  color:var(--ink);
+  font-size:.68rem;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  line-height:1.2;
+  vertical-align:middle;
+  transform:rotate(-4deg);
+  box-shadow:2px 2px 0 rgba(0,0,0,.35);
+}
 .feature-cta{
   flex:0 0 auto;font-weight:800;white-space:nowrap;
   background:var(--stamp);color:var(--ink);
@@ -151,6 +168,7 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 
 @media (max-width:620px){
   .hero{grid-template-columns:1fr;text-align:center;justify-items:center;padding:1.25rem}
+  .hero-book{max-width:140px}
   .hero-tagline,.hero-text h1{max-width:none}
   .feature{flex-wrap:wrap;gap:.85rem}
   .feature-body{flex:1 0 60%}
@@ -265,7 +283,7 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 /* Mobile layout: show sidebar under content */
 @media (max-width: 960px){
   .layout{flex-direction:column}
-  .sidebar{position:relative;flex:auto;margin-top:1rem;}
+  .sidebar{position:relative;flex:auto;margin-top:1rem;order:2}
   .sidebar .full { display: none; }
   .sidebar .mobile { display: block; }
 
