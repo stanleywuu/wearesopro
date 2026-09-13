@@ -198,3 +198,38 @@
 .tp-advanced > summary { cursor: pointer; color: var(--muted); font-weight: 600; }
 .tp-advanced-row { display: flex; gap: .5rem; margin-top: .5rem; }
 .tp-advanced-row input { flex: 1 1 auto; padding: .45rem .6rem; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
+
+/* A tile is the player plus its own remove control. */
+.tp-pick-wrap { position: relative; flex: 0 0 auto; }
+.tp-pick-wrap .tp-pick { width: 76px; }
+
+.tp-pick-x {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  min-width: 0;
+  padding: 0;
+  line-height: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(179, 38, 30, .35);
+  background: var(--surface);
+  color: #B3261E;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.tp-pick-x:hover, .tp-pick-x:focus-visible { background: #B3261E; color: #fff; outline: none; }
+
+/* The offer inside the status pill. */
+.tp-undo {
+  margin-left: .5rem;
+  padding: .1rem .55rem;
+  min-height: 0;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}

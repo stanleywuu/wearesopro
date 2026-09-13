@@ -664,6 +664,8 @@
   // rather than making them again. Hidden entirely until there is somebody to
   // pick - an empty shelf is just clutter.
   function addPicker(body) {
+    const old = body.querySelector(".tp-picker");
+    if (old) old.remove();
     const saved = PLAYERS.list();
     if (!saved.length) return;
     const strip = document.createElement("div");
@@ -674,9 +676,45 @@
     strip.appendChild(title);
     const row = document.createElement("div");
     row.className = "tp-picker-row";
-    saved.forEach(entry => row.appendChild(pickerButton(entry)));
+    saved.forEach(entry => row.appendChild(pickerTile(entry, body)));
     strip.appendChild(row);
     body.insertBefore(strip, body.firstChild);
+  }
+
+  // A tile is a wrapper, not a button, because the remove control is a button
+  // of its own and one cannot sit inside another.
+  function pickerTile(entry, body) {
+    const wrap = document.createElement("div");
+    wrap.className = "tp-pick-wrap";
+    wrap.appendChild(pickerButton(entry));
+    wrap.appendChild(removeButton(entry, body));
+    return wrap;
+  }
+
+  // Deleting is one tap with an undo rather than a tap and a confirm box. The
+  // entry is held in the closure, so putting it back is the same call that
+  // saved it in the first place.
+  function removeButton(entry, body) {
+    const player = safeLoad(entry.code);
+    const name = (player && player.name) ? player.name : "that player";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tp-pick-x";
+    button.textContent = "\u00D7";
+    button.setAttribute("aria-label", "Remove " + name + " from your saved players");
+    button.addEventListener("click", () => {
+      PLAYERS.forget(entry.id);
+      addPicker(body);
+      status("Removed " + name + ".", {
+        label: "Undo",
+        run: () => {
+          PLAYERS.remember(entry.id, entry.code);
+          addPicker(body);
+          status("Back.");
+        }
+      });
+    });
+    return button;
   }
 
   function pickerButton(entry) {
@@ -770,11 +808,24 @@
 
   // ---- page -------------------------------------------------------------
 
-  function status(message) {
+  // An optional action turns the pill into an offer - "Removed Wheels. Undo" -
+  // which is what lets a delete be a single tap with no confirm box in front
+  // of it.
+  function status(message, action) {
     statusBox.textContent = message;
     statusBox.classList.toggle("show", Boolean(message));
     clearTimeout(statusTimer);
+    if (action) statusBox.appendChild(undoButton(action));
     if (message) statusTimer = setTimeout(() => status(""), 8000);
+  }
+
+  function undoButton(action) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tp-undo";
+    button.textContent = action.label;
+    button.addEventListener("click", action.run);
+    return button;
   }
 
   function refresh() {
