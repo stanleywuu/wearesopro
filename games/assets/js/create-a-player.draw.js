@@ -842,14 +842,13 @@
     return Math.min(1.45, (GROUND - TOP_MARGIN) / topY);
   }
 
-  // One zoom for a whole group, set by its tallest member so nobody is clipped
-  // and everybody keeps their real height relative to the rest.
-  function fitFor(list) {
-    ANIM = null;           // computeDims reads it, and a stale one would lie
-    const tallest = list.reduce(function (most, params) {
-      return Math.max(most, computeDims(params).topY);
-    }, 0);
-    return tallest ? autoFit(tallest) : 1;
+  // Every player scaled to exactly the same rendered height, whatever their
+  // sliders say. Uncapped on purpose: the cap exists to stop a tiny build
+  // blowing up in the builder frame, and here "the same height as everyone
+  // else" is the whole point. Perspective, not the sliders, is what makes one
+  // player smaller than another in a group shot.
+  function uniformFit(params) {
+    return (GROUND - TOP_MARGIN) / computeDims(params).topY;
   }
 
   // opts.background === false draws the figure alone, on whatever is already
@@ -900,9 +899,11 @@
   // them up on the renderer's own centre line and ice, rather than guessing.
   window.CAP_DRAW = {
     LW: LW, LH: LH, S: S, CX: CX, GROUND: GROUND,
+    // A uniform-fit player is exactly this many logical units tall.
+    FRAME: GROUND - TOP_MARGIN,
     render: render,
     computeDims: computeDims,
-    fitFor: fitFor
+    uniformFit: uniformFit
   };
 
 })();

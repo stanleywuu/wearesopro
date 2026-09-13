@@ -19,9 +19,27 @@
   const H = 640;
   const BANNER_H = 104;         // banner over the boards
   const BAND_H = 84;            // nameplate strip along the bottom
-  const FRONT_K = 0.43;         // figure scale, front row
-  const BACK_K = 0.40;          // back row: smaller and raised, like a riser
-  const RISER = 78;             // how far the back row's feet sit above the front's
+  // Rows are placed by a real one-point perspective, not by picked numbers.
+  //
+  // For people of the same height on flat ground, apparent height is
+  // proportional to how far their FEET fall below the horizon. So a row is
+  // described by how far away it is and how high it is standing, and its size
+  // and its baseline both fall out of that - which is what makes the heads of
+  // every same-height player line up along one line to the vanishing point,
+  // and their feet along another.
+  //
+  //   height  = PLAYER_PX / depth
+  //   baseline = HORIZON + (CAM - rise) * height
+  //
+  // Distances are in player-heights: CAM is how high the camera is, rise is
+  // how high the row is standing. The back row is on a riser, which is the
+  // only reason a back row is ever visible in a real team photo - at the same
+  // depth and the same elevation it would be hidden behind the front row.
+  const HORIZON = 150;          // canvas y the rows converge towards
+  const CAM = 1.33;             // camera height, in player-heights
+  const PLAYER_PX = 290;        // a front-row player's height in canvas px
+  const BACK_DEPTH = 1.18;      // back row is 18% further from the camera
+  const BACK_RISE = 0.30;       // and stands this much higher
   const FIGURE_W = 76;          // logical width a player actually takes up
   const HUDDLE = 0.86;          // under 1, so shoulders overlap like a real photo
   const SIDE = 96;              // margin beyond the outermost player
@@ -35,7 +53,7 @@
   let slots = [];               // the rect each player was drawn into
   let canvas, ctx, slotBox, statusBox;
   let paint = null;             // the ctx the scene is currently being painted into
-  let groupFit = 1;             // one zoom for the whole team, not one each
+  let groupFits = {};           // slot -> zoom, all worked out together
   let editor = null;            // the live mount while the modal is open
   let editorTemplate = "";      // pristine builder markup, re-stamped per open
   let openIndex = -1;
@@ -364,9 +382,18 @@
     const front = frontCount(team.size);
     const back = team.size - front;
     return [
-      { index: 0, from: 0, count: back, k: BACK_K, baseline: H - BAND_H - RISER },
-      { index: 1, from: back, count: front, k: FRONT_K, baseline: H - BAND_H - 2 }
+      Object.assign({ index: 0, from: 0, count: back }, place(BACK_DEPTH, BACK_RISE)),
+      Object.assign({ index: 1, from: back, count: front }, place(1, 0))
     ].map(row => Object.assign(row, { gap: FIGURE_W * DRAW.S * row.k * HUDDLE }));
+  }
+
+  // One row's size and ground line, straight off the perspective above.
+  function place(depth, rise) {
+    const height = PLAYER_PX / depth;
+    return {
+      k: height / (DRAW.FRAME * DRAW.S),
+      baseline: HORIZON + (CAM - rise) * height
+    };
   }
 
   // Front row, dead centre. Every team picture ever taken.
@@ -413,7 +440,7 @@
   function paintScene(target, banner) {
     paint = target;
     slots = [];
-    groupFit = DRAW.fitFor(team.players.map((_, i) => playerAt(i)).filter(Boolean));
+    measureTeam();
     drawRink();
     if (banner !== false) drawBanner();
     rows().forEach(row => {
@@ -421,6 +448,18 @@
     });
     rows().forEach(row => {
       for (let n = 0; n < row.count; n++) drawPlate(row, n);
+    });
+  }
+
+  // The zooms are worked out across the whole team at once, so one player's
+  // height is always relative to the rest.
+  // For now every player is the same height and perspective alone decides who
+  // is bigger. Height variation comes later, and comes on top of this.
+  function measureTeam() {
+    groupFits = {};
+    team.players.forEach((code, i) => {
+      const player = playerAt(i);
+      if (player) groupFits[i] = DRAW.uniformFit(player);
     });
   }
 
@@ -485,7 +524,7 @@
     paint.scale(k, k);
     if (player) {
       DRAW.render(paint, player, yawFor(i), null,
-        { background: false, shadow: row.index === 1, fit: groupFit });
+        { background: false, shadow: row.index === 1, fit: groupFits[i] });
     } else {
       drawPlaceholder(i === goalieIndex());
     }
@@ -776,8 +815,13 @@
       if (code) return code;
       const player = CODE.random();
       // The goalie spot gets a goalie, so the debug fill shows the real layout.
-      player.position = i === goalie ? "Goalie" : skaterPosition();
-      if (player.position === "Goalie") player.helmetStyle = "mask";
+      if (i === goalie) {
+        player.position = "Goalie";
+        player.helmetStyle = "mask";
+      } else if (player.position === "Goalie") {
+        player.position = skaterPosition();
+        player.helmetStyle = "visor";
+      }
       return CODE.encode(player);
     });
   }

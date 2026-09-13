@@ -63,11 +63,15 @@
     out.trimColor = pick(D.trimColors);
     out.sockColor = pick(D.jerseyColors);
     out.helmetColor = pick(D.helmetColors);
-    out.helmetStyle = pick(D.helmets).id;
     out.handedness = pick(D.handedness).id;
     out.name = pick(D.randomNames);
     out.number = String(Math.floor(Math.random() * 98) + 1);
     out.position = pick(D.positions);
+    // Headgear follows the position: a mask belongs to a goalie and nobody
+    // else, and the mask being in the helmet list made random skaters wear one.
+    out.helmetStyle = out.position === "Goalie"
+      ? "mask"
+      : pick(D.helmets.filter(h => h.id !== "mask")).id;
     out.phrase = pick(D.catchPhrases);
     return out;
   }
