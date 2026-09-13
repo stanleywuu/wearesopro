@@ -141,10 +141,26 @@
       const position = el("position");
       D.positions.forEach(name => position.add(new Option(name, name)));
       position.value = params.position;
-      position.addEventListener("change", () => { params.position = position.value; updateCaption(); touch(); });
+      position.addEventListener("change", () => {
+        params.position = position.value;
+        maskWithPosition();
+        updateCaption();
+        touch();
+      });
       bindText("name", "name", v => v);
       bindText("number", "number", v => v.replace(/[^0-9]/g, ""));
       buildPhrase();
+    }
+
+    // A goalie without a mask looks like a mistake, and a skater in one looks
+    // like a different mistake - so the headgear follows the position unless
+    // they have gone and picked something else themselves.
+    function maskWithPosition() {
+      const goalie = params.position === "Goalie";
+      if (goalie && params.helmetStyle !== "mask") params.helmetStyle = "mask";
+      else if (!goalie && params.helmetStyle === "mask") params.helmetStyle = "visor";
+      else return;
+      syncControls();
     }
 
     function buildPhrase() {

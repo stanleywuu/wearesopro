@@ -13,14 +13,20 @@
   const SHARE_KEY = "t";
   const MIN_SIZE = 6, MAX_SIZE = 16, DEFAULT_SIZE = 12;
 
-  // Photo geometry, in canvas pixels.
-  const W = 1900, H = 640;
+  // Photo geometry, in canvas pixels. The width is not fixed: it is whatever the
+  // team needs at a shoulder-to-shoulder spacing, so six players huddle up
+  // instead of being spread across a canvas sized for sixteen.
+  const H = 640;
   const BANNER_H = 104;         // banner over the boards
   const BAND_H = 84;            // nameplate strip along the bottom
-  const FRONT_K = 0.44;         // figure scale, front row
-  const BACK_K = 0.37;          // back row: smaller and raised, like a riser
-  const RISER = 150;             // how far the back row's feet sit above the front's
-  const ROW_FIT = 6;            // rows wider than this shrink to fit
+  const FRONT_K = 0.48;         // figure scale, front row
+  const BACK_K = 0.40;          // back row: smaller and raised, like a riser
+  const RISER = 95;             // how far the back row's feet sit above the front's
+  const FIGURE_W = 76;          // logical width a player actually takes up
+  const HUDDLE = 0.86;          // under 1, so shoulders overlap like a real photo
+  const SIDE = 96;              // margin beyond the outermost player
+  const MIN_W = 900;
+  let W = 1200;
 
   const FONT = "system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
   const INK = "#1B2A38";
@@ -206,6 +212,7 @@
   const POSTER_W = 2000, POSTER_PAD = 120, POSTER_LINE = 96;
 
   function makePoster() {
+    layout();
     const lines = Math.ceil(team.size / 2);
     const photoW = POSTER_W - POSTER_PAD * 2;
     const zoom = photoW / W;
@@ -342,19 +349,35 @@
 
   // ---- layout -----------------------------------------------------------
 
-  // Back row first, front row second, in slot order, so moving a player
-  // between rows is just a matter of where they sit in the list.
-  //
-  // The front row is inset by half a back-row gap, so the two rows interleave
-  // instead of standing in one another's shadow.
+  // The front row always holds an odd number, because the middle of the front
+  // row is the goalie's spot and a row with an even count has no middle.
+  function frontCount(size) {
+    const half = Math.floor(size / 2);
+    return Math.min(size - 1, half % 2 === 0 ? half + 1 : half);
+  }
+
+  // Back row first, front row second, in slot order, so moving a player between
+  // rows is just a matter of where they sit in the list. The two rows have
+  // different counts and different spacings, so they interleave on their own.
   function rows() {
-    const back = Math.ceil(team.size / 2);
-    const front = team.size - back;
-    const gap = (W - 120) / back;
+    const front = frontCount(team.size);
+    const back = team.size - front;
     return [
-      { index: 0, from: 0, count: back, k: BACK_K, pad: 60, baseline: H - BAND_H - RISER },
-      { index: 1, from: back, count: front, k: FRONT_K, pad: 60 + gap / 2, baseline: H - BAND_H - 16 }
-    ];
+      { index: 0, from: 0, count: back, k: BACK_K, baseline: H - BAND_H - RISER },
+      { index: 1, from: back, count: front, k: FRONT_K, baseline: H - BAND_H - 16 }
+    ].map(row => Object.assign(row, { gap: FIGURE_W * DRAW.S * row.k * HUDDLE }));
+  }
+
+  // Front row, dead centre. Every team picture ever taken.
+  function goalieIndex() {
+    const list = rows();
+    return list[1].from + (list[1].count - 1) / 2;
+  }
+
+  // Wide enough for the widest row and no wider.
+  function widthFor(list) {
+    return Math.round(Math.max.apply(null,
+      list.map(row => row.count * row.gap + SIDE * 2).concat([MIN_W])));
   }
 
   // A small, fixed wobble per slot so a line-up does not read as one player
@@ -364,14 +387,23 @@
   }
 
   function slotX(row, n) {
-    return row.pad + (W - row.pad * 2) * (n + 0.5) / row.count;
+    return W / 2 + (n - (row.count - 1) / 2) * row.gap;
   }
 
   // ---- drawing ----------------------------------------------------------
 
   function drawPhoto() {
+    layout();
+    if (canvas.width !== W) canvas.width = W;   // resizing also clears it
     paintScene(ctx);
     placeSlotButtons();
+  }
+
+  // Sets the scene width for everything that follows. Called before painting,
+  // by the page and by the poster, so the two never disagree about it.
+  function layout() {
+    W = widthFor(rows());
+    return rows();
   }
 
   // The scene always draws in its own W x H coordinates, so a caller can put it
@@ -430,7 +462,7 @@
   // scene, where a shadow at its feet reads as a smudge hanging in the air.
   function drawSlot(row, n) {
     const i = row.from + n;
-    const k = row.k * Math.min(1, ROW_FIT / row.count);
+    const k = row.k;
     const x = slotX(row, n);
     const player = playerAt(i);
     const height = DRAW.GROUND * DRAW.S * k;
@@ -439,17 +471,17 @@
     paint.translate(x - DRAW.CX * DRAW.S * k, row.baseline - DRAW.GROUND * DRAW.S * k);
     paint.scale(k, k);
     if (player) DRAW.render(paint, player, yawFor(i), null, { background: false, shadow: row.index === 1 });
-    else drawPlaceholder();
+    else drawPlaceholder(i === goalieIndex());
     paint.restore();
 
-    const halfW = Math.max(70, (W - row.pad * 2) / row.count / 2 - 6);
+    const halfW = Math.max(52, row.gap / 2 - 2);
     slots[i] = { x: x - halfW, y: row.baseline - height, w: halfW * 2, h: height + 10, empty: !player };
   }
 
   // An empty spot has to read as an invitation, not as a missing image, so it
   // is a plain grey stand-in of a player with a plus over it. Drawn in the
   // renderer's own logical grid, so it lands in the same footprint.
-  function drawPlaceholder() {
+  function drawPlaceholder(goalie) {
     const p = n => n * DRAW.S, CX = DRAW.CX, G = DRAW.GROUND;
     paint.save();
     paint.fillStyle = "rgba(120, 146, 170, .30)";
@@ -470,6 +502,14 @@
       paint.fill();
       paint.stroke();
     });
+    if (goalie) {                                                      // pads, so
+      [-1, 1].forEach(side => {                                        // the spot
+        paint.beginPath();                                             // reads as
+        paint.roundRect(p(CX + side * 20 - 15), p(G - 58), p(30), p(58), p(12));
+        paint.fill();
+        paint.stroke();
+      });
+    }
     paint.setLineDash([]);
     paint.fillStyle = "rgba(27, 42, 56, .5)";
     paint.font = "700 " + p(40) + "px " + FONT;
@@ -486,20 +526,42 @@
     const i = row.from + n;
     const player = playerAt(i);
     const y = H - BAND_H + (row.index === 0 ? 32 : 66);
-    const bits = [];
-    if (player && player.number) bits.push("#" + player.number);
-    if (player && player.name) bits.push(player.name);
-    const text = player ? (bits.join(" ") || player.position) : "open spot";
+    // The rows huddle, so a plate has only its own player's width to live in.
+    // The font goes on before anything measures against it.
+    const room = row.gap - 8;
     paint.save();
-    paint.font = (player ? "600 " : "400 ") + "22px " + FONT;
+    paint.font = (player ? "600 " : "400 ") + "17px " + FONT;
     paint.textAlign = "center";
     paint.fillStyle = player ? INK : "#8AA0B4";
-    paint.fillText(clip(text, 18), slotX(row, n), y);
+    const text = player ? plateText(paint, player, room)
+      : (i === goalieIndex() ? "goalie spot" : "open spot");
+    paint.fillText(fit(paint, text, room), slotX(row, n), y);
     paint.restore();
+  }
+
+  // "#7 Wheels" if it fits, then the name alone, then the number alone - a
+  // truncated name tells you less than either.
+  function plateText(target, player, room) {
+    const number = player.number ? "#" + player.number : "";
+    const full = [number, player.name].filter(Boolean).join(" ");
+    if (!full) return player.position;
+    if (target.measureText(full).width <= room) return full;
+    if (player.name && target.measureText(player.name).width <= room) return player.name;
+    return number || player.name;
   }
 
   function clip(text, max) {
     return text.length > max ? text.slice(0, max - 1) + "…" : text;
+  }
+
+  // Trim to whatever actually fits the space, rather than to a character count
+  // that is wrong for "#7 Al" and wrong again for "#88 Bartholomew".
+  function fit(target, text, width) {
+    let out = text;
+    while (out.length > 1 && target.measureText(out).width > width) {
+      out = out.slice(0, -1);
+    }
+    return out === text ? text : out.slice(0, -1) + "…";
   }
 
   // ---- slot buttons -----------------------------------------------------
@@ -517,9 +579,10 @@
       button.style.top = (rect.y / H * 100) + "%";
       button.style.width = (rect.w / W * 100) + "%";
       button.style.height = (rect.h / H * 100) + "%";
+      const what = i === goalieIndex() ? "Goalie spot" : "Spot " + (i + 1);
       button.setAttribute("aria-label", rect.empty
-        ? "Spot " + (i + 1) + ", empty. Build a player."
-        : "Spot " + (i + 1) + ", " + (player.name || "unnamed") + ". Edit this player.");
+        ? what + ", empty. Build a player."
+        : what + ", " + (player.name || "unnamed") + ". Edit this player.");
       button.addEventListener("click", () => openSlot(i));
       slotBox.appendChild(button);
     });
@@ -537,7 +600,7 @@
     openIndex = i;
     lastFocus = document.activeElement;
 
-    const params = playerAt(i) || CODE.defaults();
+    const params = playerAt(i) || newPlayerFor(i);
     editor = EDITOR.mount(body.querySelector(".cap-wrap"), params, {});
     if (!editor) return;
     addModalButtons();
@@ -565,6 +628,18 @@
       e.preventDefault();
       first.focus();
     }
+  }
+
+  // The middle of the front row is the goalie's, so a player built there starts
+  // as one - gear, mask and the rest pose - rather than as a centre they have to
+  // remember to change.
+  function newPlayerFor(i) {
+    const params = CODE.defaults();
+    if (i === goalieIndex()) {
+      params.position = "Goalie";
+      params.helmetStyle = "mask";
+    }
+    return params;
   }
 
   function addModalButtons() {
@@ -679,7 +754,20 @@
   // touches the saved team.
   function seedForDebug() {
     if (!new URLSearchParams(location.search).has("debug")) return;
-    team.players = team.players.map(code => code || CODE.encode(CODE.random()));
+    const goalie = goalieIndex();
+    team.players = team.players.map((code, i) => {
+      if (code) return code;
+      const player = CODE.random();
+      // The goalie spot gets a goalie, so the debug fill shows the real layout.
+      player.position = i === goalie ? "Goalie" : skaterPosition();
+      if (player.position === "Goalie") player.helmetStyle = "mask";
+      return CODE.encode(player);
+    });
+  }
+
+  function skaterPosition() {
+    const skaters = D.positions.filter(name => name !== "Goalie");
+    return skaters[Math.floor(Math.random() * skaters.length)];
   }
 
   function bindPanel() {

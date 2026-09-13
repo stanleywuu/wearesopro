@@ -191,13 +191,22 @@
     const lean = crouch * 7;
     const hipY = HIP_Y - drop;
 
-    const torso = { rx: 22 * bw, ry: 26 * bh, x: 0, z: lean };
+    // A goalie at rest stands straight with both hands on the knob of an
+    // upright stick and his head tipped forward onto them - the Dryden pose.
+    // Only while idle: mid-highlight he takes the ordinary skating stance.
+    const rest = params.position === "Goalie" && !ANIM;
+
+    const torso = { rx: 22 * bw, ry: 26 * bh, x: 0, z: lean + (rest ? 2 : 0) };
     torso.rz = torso.rx * 0.62;
     torso.y = hipY + torso.ry * 0.8;
 
     const head = { rx: 14 * hw, ry: 15 * hh, x: 0, z: lean * 1.5 };
     head.rz = head.rx * 0.8;
     head.y = torso.y + torso.ry + head.ry * 0.8;
+    if (rest) {
+      head.z += 11;                // lean out over the stick
+      head.y -= head.ry * 0.30;    // and sink the neck onto the hands
+    }
 
     // Kept inboard of the silhouette: an arm rooted at the torso's full width
     // leaves a rounded nub poking out above the shoulder.
@@ -207,6 +216,8 @@
       head: head,
       hipY: hipY,
       crouch: crouch,
+      goalie: params.position === "Goalie",
+      rest: rest,
       // Framing is measured standing, so crouching does not zoom the figure.
       topY: head.y + head.ry * 1.12 + drop,
       shoulderY: shoulderY,
@@ -240,11 +251,35 @@
     const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
     const cuffs = [-1, 1].map((s, i) => pantsCuff(ctx, dims, params, yaw, s, legs[i].d));
     const waist = pantsWaist(ctx, dims, params, yaw);
+    const pads = dims.goalie ? [-1, 1].map(s => padPart(ctx, dims, params, yaw, s)) : [];
     // The waist must clear BOTH thighs and the torso it is worn over. A fixed
     // depth loses to the near leg side-on, and a depth that only tracks the
     // legs slips behind the torso when the player turns his back.
     waist.d = Math.max(legs[0].d, legs[1].d, 0) + 0.6;
-    return legs.concat(skates, cuffs, [waist]);
+    return legs.concat(skates, cuffs, pads, [waist]);
+  }
+
+  // Goalie pads: a tall slab strapped to the front of each leg. Anchored well
+  // forward in z, so they fall behind the legs by themselves once he turns his
+  // back rather than needing a special case.
+  function padPart(ctx, dims, params, yaw, side) {
+    const r = rotY(side * (dims.legX + 0.5), 9, yaw);
+    const midY = (SKATE_Y + dims.hipY) / 2 + 2;
+    const c = project(r.x, midY, r.z);
+    const hh = ((dims.hipY - SKATE_Y) / 2 + 2) * c.k;
+    return {
+      d: r.z + 0.8,
+      draw: () => {
+        const hw = silWidth(9, 5.5, yaw, 0) * c.k;
+        drawSlab(ctx, {
+          cx: c.sx, cy: c.sy, hw: hw, hh: hh,
+          shape: "capsule", taper: 0.95, round: 1,
+          color: params.trimColor, yaw: yaw
+        });
+        [-0.45, 0, 0.45].forEach(f =>
+          L(ctx, c.sx - hw, c.sy + hh * f, c.sx + hw, c.sy + hh * f, shade(params.jerseyColor, 0), 1.5));
+      }
+    };
   }
 
   // Bulky shorts: one band across the hips plus a cuff wrapping the top of each
@@ -324,22 +359,47 @@
     const c = project(hr.x, browY, hr.z);
     const hw = silWidth(head.rx * 1.08, head.rz * 1.08, yaw, 0) * c.k;
     const hh = head.ry * 1.02 * c.k;
+    // A mask is a whole shell, not a cap: it wraps the face too, so it is drawn
+    // around the head's centre rather than seated on the brow.
+    const mask = params.helmetStyle === "mask";
+    const mc = project(hr.x, head.y, hr.z);
     return {
       d: 0.1,
       draw: () => {
         ctx.beginPath();
-        ctx.ellipse(p(c.sx), p(c.sy), p(hw), p(hh), 0, Math.PI, 2 * Math.PI);
+        if (mask) ctx.ellipse(p(mc.sx), p(mc.sy), p(hw * 1.04), p(head.ry * 1.14 * mc.k), 0, 0, Math.PI * 2);
+        else ctx.ellipse(p(c.sx), p(c.sy), p(hw), p(hh), 0, Math.PI, 2 * Math.PI);
         ctx.closePath();
-        ctx.fillStyle = slabFill(ctx, c.sx, hw, params.helmetColor, yaw);
+        ctx.fillStyle = slabFill(ctx, mask ? mc.sx : c.sx, hw, params.helmetColor, yaw);
         ctx.fill();
         ctx.strokeStyle = OUTLINE;
         ctx.lineWidth = p(OUTLINE_W);
         ctx.lineJoin = "round";
         ctx.stroke();
+        if (mask) return;
         drawEarLobes(ctx, c.sx, c.sy, hw, params.helmetColor);
         if (params.helmetStyle === "visor") drawVisor(ctx, dims, yaw);
       }
     };
+  }
+
+  // The cage goes on in facePart, not here: it has to land on top of the eyes,
+  // and the face sorts in front of the shell.
+  function drawCage(ctx, dims, yaw) {
+    const facing = Math.cos(yaw);
+    if (facing < 0.3) return;
+    const head = dims.head;
+    const hr = rotY(head.x, head.z + head.rz * facing, yaw);
+    const c = project(hr.x, head.y - head.ry * 0.2, hr.z);
+    const hw = head.rx * 0.74 * facing * c.k, hh = head.ry * 0.52 * c.k;
+    ctx.save();
+    ctx.strokeStyle = "#3A4A59";
+    ctx.lineWidth = p(1.3);
+    [-0.55, 0, 0.55].forEach(f =>
+      L(ctx, c.sx + hw * f, c.sy - hh, c.sx + hw * f, c.sy + hh, "#3A4A59", 1.3));
+    [-0.4, 0.35].forEach(f =>
+      L(ctx, c.sx - hw, c.sy + hh * f, c.sx + hw, c.sy + hh * f, "#3A4A59", 1.3));
+    ctx.restore();
   }
 
   // Painted relative to the shell rather than anchored in body space, so they
@@ -383,7 +443,7 @@
   }
 
   // Eyes and mouth live on the front of the head, so they vanish as it turns away.
-  function facePart(ctx, dims, yaw) {
+  function facePart(ctx, dims, params, yaw) {
     const head = dims.head;
     return {
       d: head.rz,
@@ -402,6 +462,7 @@
         const m = rotY(head.x, head.z + head.rz * 0.85, yaw);
         const mc = project(m.x, head.y - head.ry * 0.56, m.z);
         L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
+        if (params.helmetStyle === "mask") drawCage(ctx, dims, yaw);
       }
     };
   }
@@ -503,6 +564,38 @@
     return ANIM && ANIM.swing ? swingStick(s, ANIM.swing * hand) : s;
   }
 
+  // The goalie's stick stands on its blade out in front of him, knob just under
+  // the chin. The hands go on top of the knob and the head comes down onto the
+  // hands - so the head drives the height, not the other way round.
+  function goalieStick(dims, params) {
+    const hand = params.handedness === "left" ? -1 : 1;
+    const head = dims.head;
+    const butt = { x: hand * 2, y: head.y - head.ry - 1.5, z: head.z + 17 };
+    const heel = { x: hand * 2, y: 2.5, z: butt.z + 4 };
+    const grip = { x: butt.x, y: butt.y + 2, z: butt.z };
+    return {
+      hand: hand, butt: butt, heel: heel,
+      toe: { x: heel.x - hand * 17, y: 2.5, z: heel.z + 2 },
+      topHand: grip, lowHand: grip
+    };
+  }
+
+  function stickFor(dims, params) {
+    return dims.rest ? goalieStick(dims, params) : stickPoints(dims, params);
+  }
+
+  // Where the shaft thickens into the paddle: a point on the shaft at a fixed
+  // height, so the wide part is the same length whatever angle the stick is at.
+  function paddleTop(s) {
+    const span = s.butt.y - s.heel.y;
+    const t = span > 1 ? Math.min(0.95, (s.butt.y - 34) / span) : 0;
+    return {
+      x: s.butt.x + (s.heel.x - s.butt.x) * t,
+      y: s.butt.y + (s.heel.y - s.butt.y) * t,
+      z: s.butt.z + (s.heel.z - s.butt.z) * t
+    };
+  }
+
   // A shot sweeps the shaft around the top hand, so everything below the grip
   // rotates about it while the hands stay put.
   function swingStick(s, angle) {
@@ -553,15 +646,27 @@
   // stick's side takes the TOP hand — that arm stays tucked and bent — while the
   // far shoulder reaches across to the lower hand and extends. Swapping them
   // puts the hands on the wrong arms.
+  // Resting, both hands sit side by side on top of the knob instead of spread
+  // along the shaft.
+  function gripsFor(dims, s) {
+    if (!dims.rest) return [s.topHand, s.lowHand];
+    const k = s.butt, h = s.hand;
+    return [
+      { x: k.x + h * 5.2, y: k.y + 1.4, z: k.z + 0.8 },
+      { x: k.x - h * 5.2, y: k.y + 2.4, z: k.z - 1.0 }
+    ];
+  }
+
   function armParts(ctx, dims, params, yaw) {
-    const s = stickPoints(dims, params);
+    const s = stickFor(dims, params);
+    const grips = gripsFor(dims, s);
     const shoulderX = dims.torso.rx * 0.70;
     // Gloves take a darker shade of the jersey rather than the lettering
     // colour — white lettering is right on a jersey, wrong on a glove.
     const gloveColor = shade(params.jerseyColor, -0.4);
     return [
-      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.topHand },
-      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: s.lowHand }
+      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[0], blocker: true },
+      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[1], blocker: false }
     ].map(pair => {
       const a = proj3(pair.shoulder, yaw);
       const e = proj3(elbowFor(pair.shoulder, pair.grip), yaw);
@@ -570,14 +675,46 @@
         d: (a.d + b.d) / 2 + 3,
         draw: () => {
           drawArm(ctx, a, e, b, 8, params.jerseyColor);
-          drawGlove(ctx, b, gloveColor);
+          if (!dims.goalie) return drawGlove(ctx, b, gloveColor);
+          if (pair.blocker) drawBlocker(ctx, b, gloveColor, params.trimColor);
+          else drawTrapper(ctx, b, gloveColor, params.trimColor);
         }
       };
     });
   }
 
+  // A slab of a blocker on the stick hand and a fat round trapper on the other:
+  // the two shapes are most of what tells a goalie apart at this size.
+  function drawBlocker(ctx, c, color, trim) {
+    const w = 6.4 * c.k, h = 7.6 * c.k;
+    pathRoundedPoly(ctx, [
+      { x: p(c.sx - w), y: p(c.sy - h) }, { x: p(c.sx + w), y: p(c.sy - h) },
+      { x: p(c.sx + w), y: p(c.sy + h) }, { x: p(c.sx - w), y: p(c.sy + h) }
+    ], p(1.8));
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(OUTLINE_W);
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    L(ctx, c.sx - w * 0.55, c.sy - h, c.sx - w * 0.55, c.sy + h, trim, 1.4);
+  }
+
+  function drawTrapper(ctx, c, color, trim) {
+    E(ctx, c.sx, c.sy, 7.2 * c.k, 7.6 * c.k, color);
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(OUTLINE_W);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(p(c.sx), p(c.sy + 1 * c.k), p(4 * c.k), Math.PI * 1.1, Math.PI * 1.9);
+    ctx.strokeStyle = trim;
+    ctx.lineWidth = p(1.4);
+    ctx.stroke();
+  }
+
   function stickPart(ctx, dims, params, yaw) {
-    const s = stickPoints(dims, params);
+    const s = stickFor(dims, params);
+    if (dims.goalie) return goalieStickPart(ctx, s, yaw);
     const b = proj3(s.butt, yaw);
     const h = proj3(s.heel, yaw);
     const t = proj3(s.toe, yaw);
@@ -591,6 +728,30 @@
         L(ctx, b.sx, b.sy, h.sx, h.sy, OUTLINE, 3.6);
         L(ctx, b.sx, b.sy, h.sx, h.sy, "#C9A227", 2.2);
         L(ctx, h.sx, h.sy, t.sx, t.sy, OUTLINE, 4.2);
+        ctx.lineCap = "butt";
+      }
+    };
+  }
+
+  // Thin shaft down to the paddle, then a broad paddle and a broad blade. Drawn
+  // as three strokes of increasing width rather than a filled outline - at this
+  // size the widths are the whole read.
+  function goalieStickPart(ctx, s, yaw) {
+    const b = proj3(s.butt, yaw);
+    const m = proj3(paddleTop(s), yaw);
+    const h = proj3(s.heel, yaw);
+    const t = proj3(s.toe, yaw);
+    const grip = rotY(s.topHand.x, s.topHand.z, yaw);
+    return {
+      d: grip.z - 3,
+      draw: () => {
+        ctx.lineCap = "round";
+        L(ctx, b.sx, b.sy, m.sx, m.sy, OUTLINE, 4.0);
+        L(ctx, b.sx, b.sy, m.sx, m.sy, "#C9A227", 2.4);
+        L(ctx, m.sx, m.sy, h.sx, h.sy, OUTLINE, 12.5);
+        L(ctx, m.sx, m.sy, h.sx, h.sy, "#C9A227", 10.0);
+        L(ctx, h.sx, h.sy, t.sx, t.sy, OUTLINE, 8.5);
+        L(ctx, h.sx, h.sy, t.sx, t.sy, "#C9A227", 6.2);
         ctx.lineCap = "butt";
       }
     };
@@ -687,7 +848,7 @@
       jerseyPart(ctx, dims, params, yaw),
       slabPart(ctx, head, yaw),
       helmetPart(ctx, dims, params, yaw),
-      facePart(ctx, dims, yaw),
+      facePart(ctx, dims, params, yaw),
       stickPart(ctx, dims, params, yaw)
     ]).concat(armParts(ctx, dims, params, yaw));
     depthSort(parts);

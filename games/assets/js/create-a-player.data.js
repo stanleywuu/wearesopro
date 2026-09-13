@@ -18,9 +18,11 @@ window.CAP_DATA = {
     headContour:  { min: 0,  max: 100, value: 50 }
   },
 
+  // Appended, never reordered: a share code carries the INDEX of the choice.
   helmets: [
     { id: "bare",  label: "Bare" },
-    { id: "visor", label: "Visor" }
+    { id: "visor", label: "Visor" },
+    { id: "mask",  label: "Goalie mask" }
   ],
 
   handedness: [
