@@ -35,6 +35,7 @@
   let slots = [];               // the rect each player was drawn into
   let canvas, ctx, slotBox, statusBox;
   let paint = null;             // the ctx the scene is currently being painted into
+  let groupFit = 1;             // one zoom for the whole team, not one each
   let editor = null;            // the live mount while the modal is open
   let editorTemplate = "";      // pristine builder markup, re-stamped per open
   let openIndex = -1;
@@ -412,14 +413,26 @@
   function paintScene(target, banner) {
     paint = target;
     slots = [];
+    groupFit = DRAW.fitFor(team.players.map((_, i) => playerAt(i)).filter(Boolean));
     drawRink();
     if (banner !== false) drawBanner();
     rows().forEach(row => {
-      for (let n = 0; n < row.count; n++) drawSlot(row, n);
+      centreLast(row).forEach(n => drawSlot(row, n));
     });
     rows().forEach(row => {
       for (let n = 0; n < row.count; n++) drawPlate(row, n);
     });
+  }
+
+  // Outermost first, middle last. A team picture has the middle of the front
+  // row - the goalie - in front of everyone, and whoever is drawn last is in
+  // front. Left to right put the goalie behind his right-hand neighbour, which
+  // is what made him look like he was standing further back.
+  function centreLast(row) {
+    const middle = (row.count - 1) / 2;
+    const order = [];
+    for (let n = 0; n < row.count; n++) order.push(n);
+    return order.sort((a, b) => Math.abs(b - middle) - Math.abs(a - middle));
   }
 
   function drawRink() {
@@ -470,8 +483,12 @@
     paint.save();
     paint.translate(x - DRAW.CX * DRAW.S * k, row.baseline - DRAW.GROUND * DRAW.S * k);
     paint.scale(k, k);
-    if (player) DRAW.render(paint, player, yawFor(i), null, { background: false, shadow: row.index === 1 });
-    else drawPlaceholder(i === goalieIndex());
+    if (player) {
+      DRAW.render(paint, player, yawFor(i), null,
+        { background: false, shadow: row.index === 1, fit: groupFit });
+    } else {
+      drawPlaceholder(i === goalieIndex());
+    }
     paint.restore();
 
     const halfW = Math.max(52, row.gap / 2 - 2);
@@ -784,6 +801,7 @@
     document.getElementById("tp-share").addEventListener("click", share);
     document.getElementById("tp-copy").addEventListener("click",
       () => copy(encodeTeam(), "Team code copied - paste it here any time to rebuild this team"));
+    document.getElementById("tp-reset").addEventListener("click", reset);
     document.getElementById("tp-add").addEventListener("click", () => {
       const input = document.getElementById("tp-paste-input");
       addFromPaste(input.value);
@@ -798,6 +816,25 @@
     document.getElementById("tp-name").value = team.name;
     document.getElementById("tp-sub").value = team.sub;
     document.getElementById("tp-size").value = team.size;
+  }
+
+  // Wipes the lot so another team can be built. It asks first, and it says how
+  // many players are about to go - this is the only button here that destroys
+  // anything, and there is no undo for it.
+  function reset() {
+    const built = team.players.filter(Boolean).length;
+    const warning = built
+      ? "Start a new team? That deletes " + built + " player" + (built > 1 ? "s" : "") + "."
+      : "Clear the team name and start over?";
+    if (!confirm(warning + " Copy the team code first if you want them back.")) return;
+    const size = team.size;
+    team = blankTeam();
+    team.size = size;
+    team.players = new Array(size).fill(null);
+    saveTeam();
+    syncPanel();
+    refresh();
+    status("Cleared. Tap a spot to start building.");
   }
 
   // Shrinking can throw players away, so it asks first and puts the control

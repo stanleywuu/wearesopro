@@ -838,19 +838,37 @@
 
   // ---- entry point ------------------------------------------------------
 
+  function autoFit(topY) {
+    return Math.min(1.45, (GROUND - TOP_MARGIN) / topY);
+  }
+
+  // One zoom for a whole group, set by its tallest member so nobody is clipped
+  // and everybody keeps their real height relative to the rest.
+  function fitFor(list) {
+    ANIM = null;           // computeDims reads it, and a stale one would lie
+    const tallest = list.reduce(function (most, params) {
+      return Math.max(most, computeDims(params).topY);
+    }, 0);
+    return tallest ? autoFit(tallest) : 1;
+  }
+
   // opts.background === false draws the figure alone, on whatever is already
   // under it, so several players can be composited into one scene. The caller
   // places and scales with translate/scale before calling - every coordinate
   // here goes through p(), so the whole figure follows the current transform.
   // opts.shadow === false drops the ground shadow, which reads as a floating
   // smudge on anyone not standing on the front of the scene.
+  // opts.fit overrides the auto-zoom. The zoom exists so one player fills the
+  // builder frame, which is exactly wrong for a group: applied per player it
+  // scales everyone to the same height and flattens out the height sliders.
+  // A group passes ONE fit for everybody - see fitFor().
   function render(ctx, params, yaw, anim, opts) {
     const background = !opts || opts.background !== false;
     const shadow = !opts || opts.shadow !== false;
     const dims = computeDims(params);
     ANIM = anim || null;
     SHIFT = ANIM ? ANIM.shift : 0;
-    FIT = Math.min(1.45, (GROUND - TOP_MARGIN) / dims.topY);
+    FIT = (opts && opts.fit) ? opts.fit : autoFit(dims.topY);
     ctx.save();
     if (background) {
       ctx.clearRect(0, 0, p(LW), p(LH));
@@ -883,7 +901,8 @@
   window.CAP_DRAW = {
     LW: LW, LH: LH, S: S, CX: CX, GROUND: GROUND,
     render: render,
-    computeDims: computeDims
+    computeDims: computeDims,
+    fitFor: fitFor
   };
 
 })();

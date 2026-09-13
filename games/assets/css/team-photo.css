@@ -134,3 +134,7 @@
   color: #fff;
   font-weight: 700;
 }
+
+/* The only control here that destroys anything. Quiet until you reach for it. */
+.tp-danger { color: #B3261E; border-color: rgba(179, 38, 30, .35); }
+.tp-danger:hover { background: rgba(179, 38, 30, .08); border-color: #B3261E; }
