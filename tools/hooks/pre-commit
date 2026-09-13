@@ -1,0 +1,21 @@
+#!/bin/sh
+# Enforces the rule that RULES.md states: generated output must be current and
+# internal links must resolve. Installed with `make hooks`.
+#
+# This does not stage anything for you. If generation changes a file, the commit
+# stops so you can look at the diff and stage it yourself.
+
+set -e
+
+python3 tools/build.py
+
+stale=$(git diff --name-only -- sitemap.xml '*.html')
+if [ -n "$stale" ]; then
+  echo "pre-commit: 'make site' changed generated output that is not staged:"
+  echo "$stale" | sed 's/^/  /'
+  echo
+  echo "Review the diff, 'git add' those files, and commit again."
+  exit 1
+fi
+
+python3 tools/build.py --check
