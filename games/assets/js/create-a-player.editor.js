@@ -350,11 +350,12 @@
     // less time, and the number on the end is the same number.
     function buildReel() {
       if (params.position !== "Defence") return Object.assign({ slap: false, home: 0 }, CLASSIC);
-      const speed = 70 + Math.round(Math.random() * 35);
+      // Beer league. Nobody here is breaking 80.
+      const speed = 55 + Math.round(Math.random() * 25);
       const contact = 2300;
-      // He is shooting from the point, so it is a long way: 70mph spends over
-      // two seconds in the air, 105mph about a second and a half.
-      const flight = Math.round(150000 / speed);
+      // It is a long way from the point: 55mph spends over two seconds in the
+      // air, 80mph about a second and a half.
+      const flight = Math.round(120000 / speed);
       return {
         slap: true,
         label: speed + " mph!!",
