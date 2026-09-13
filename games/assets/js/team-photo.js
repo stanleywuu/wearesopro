@@ -19,9 +19,9 @@
   const H = 640;
   const BANNER_H = 104;         // banner over the boards
   const BAND_H = 84;            // nameplate strip along the bottom
-  const FRONT_K = 0.48;         // figure scale, front row
+  const FRONT_K = 0.43;         // figure scale, front row
   const BACK_K = 0.40;          // back row: smaller and raised, like a riser
-  const RISER = 95;             // how far the back row's feet sit above the front's
+  const RISER = 78;             // how far the back row's feet sit above the front's
   const FIGURE_W = 76;          // logical width a player actually takes up
   const HUDDLE = 0.86;          // under 1, so shoulders overlap like a real photo
   const SIDE = 96;              // margin beyond the outermost player
@@ -364,7 +364,7 @@
     const back = team.size - front;
     return [
       { index: 0, from: 0, count: back, k: BACK_K, baseline: H - BAND_H - RISER },
-      { index: 1, from: back, count: front, k: FRONT_K, baseline: H - BAND_H - 16 }
+      { index: 1, from: back, count: front, k: FRONT_K, baseline: H - BAND_H - 2 }
     ].map(row => Object.assign(row, { gap: FIGURE_W * DRAW.S * row.k * HUDDLE }));
   }
 
