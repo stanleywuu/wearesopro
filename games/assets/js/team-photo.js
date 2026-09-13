@@ -604,7 +604,6 @@
     editor = EDITOR.mount(body.querySelector(".cap-wrap"), params, {});
     if (!editor) return;
     addModalButtons();
-    addPicker(body);
     addAdvanced();
 
     modal.hidden = false;
@@ -658,65 +657,69 @@
     const host = editor.el("host-actions");
     host.appendChild(save);
     host.appendChild(cancel);
+    addPickerButton();
   }
 
-  // Everyone you have already built, so filling a team is mostly picking people
-  // rather than making them again. Hidden entirely until there is somebody to
-  // pick - an empty shelf is just clutter.
-  function addPicker(body) {
-    const old = body.querySelector(".tp-picker");
-    if (old) old.remove();
-    const saved = PLAYERS.list();
-    if (!saved.length) return;
-    const strip = document.createElement("div");
-    strip.className = "tp-picker";
-    const title = document.createElement("p");
-    title.className = "tp-picker-title";
+  // Everyone you have already built. Opened from a button rather than sitting
+  // across the top of the modal: it is a thing you go to when you want it, not
+  // a shelf in front of the builder.
+  function addPickerButton() {
+    if (!PLAYERS.list().length) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button";
+    button.textContent = "Saved players";
+    button.addEventListener("click", openPicker);
+    editor.el("host-actions").appendChild(button);
+  }
+
+  function openPicker() {
+    closePicker();
+    const card = document.querySelector(".tp-modal-card");
+    const panel = document.createElement("div");
+    panel.className = "tp-gallery";
+    panel.appendChild(pickerHead());
+    panel.appendChild(pickerGrid());
+    card.appendChild(panel);
+    const first = panel.querySelector(".tp-pick");
+    if (first) first.focus();
+  }
+
+  function closePicker() {
+    const open = document.querySelector(".tp-gallery");
+    if (open) open.remove();
+  }
+
+  function pickerHead() {
+    const head = document.createElement("div");
+    head.className = "tp-gallery-head";
+    const title = document.createElement("h3");
     title.textContent = "Someone you already made";
-    strip.appendChild(title);
-    const row = document.createElement("div");
-    row.className = "tp-picker-row";
-    saved.forEach(entry => row.appendChild(pickerTile(entry, body)));
-    strip.appendChild(row);
-    body.insertBefore(strip, body.firstChild);
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "button";
+    back.textContent = "Back";
+    back.addEventListener("click", closePicker);
+    head.appendChild(title);
+    head.appendChild(back);
+    return head;
+  }
+
+  function pickerGrid() {
+    const grid = document.createElement("div");
+    grid.className = "tp-gallery-grid";
+    PLAYERS.list().forEach(entry => grid.appendChild(pickerButton(entry)));
+    if (!PLAYERS.list().length) {
+      const empty = document.createElement("p");
+      empty.className = "muted";
+      empty.textContent = "Nobody saved yet. Build someone and they show up here.";
+      grid.appendChild(empty);
+    }
+    return grid;
   }
 
   // A tile is a wrapper, not a button, because the remove control is a button
   // of its own and one cannot sit inside another.
-  function pickerTile(entry, body) {
-    const wrap = document.createElement("div");
-    wrap.className = "tp-pick-wrap";
-    wrap.appendChild(pickerButton(entry));
-    wrap.appendChild(removeButton(entry, body));
-    return wrap;
-  }
-
-  // Deleting is one tap with an undo rather than a tap and a confirm box. The
-  // entry is held in the closure, so putting it back is the same call that
-  // saved it in the first place.
-  function removeButton(entry, body) {
-    const player = safeLoad(entry.code);
-    const name = (player && player.name) ? player.name : "that player";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tp-pick-x";
-    button.textContent = "\u00D7";
-    button.setAttribute("aria-label", "Remove " + name + " from your saved players");
-    button.addEventListener("click", () => {
-      PLAYERS.forget(entry.id);
-      addPicker(body);
-      status("Removed " + name + ".", {
-        label: "Undo",
-        run: () => {
-          PLAYERS.remember(entry.id, entry.code);
-          addPicker(body);
-          status("Back.");
-        }
-      });
-    });
-    return button;
-  }
-
   function pickerButton(entry) {
     const player = safeLoad(entry.code);
     const button = document.createElement("button");
@@ -731,7 +734,7 @@
     name.textContent = player ? (player.name || player.position) : "player";
     button.appendChild(name);
     button.setAttribute("aria-label", "Use " + (player && player.name ? player.name : "this player"));
-    if (player) button.addEventListener("click", () => useSaved(player));
+    if (player) button.addEventListener("click", () => { useSaved(player); closePicker(); });
     return button;
   }
 
@@ -798,6 +801,7 @@
 
   function closeModal() {
     const modal = document.getElementById("tp-modal");
+    closePicker();
     if (editor) editor.destroy();
     editor = null;
     modal.removeEventListener("keydown", trapFocus);
@@ -809,24 +813,11 @@
 
   // ---- page -------------------------------------------------------------
 
-  // An optional action turns the pill into an offer - "Removed Wheels. Undo" -
-  // which is what lets a delete be a single tap with no confirm box in front
-  // of it.
-  function status(message, action) {
+  function status(message) {
     statusBox.textContent = message;
     statusBox.classList.toggle("show", Boolean(message));
     clearTimeout(statusTimer);
-    if (action) statusBox.appendChild(undoButton(action));
     if (message) statusTimer = setTimeout(() => status(""), 8000);
-  }
-
-  function undoButton(action) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tp-undo";
-    button.textContent = action.label;
-    button.addEventListener("click", action.run);
-    return button;
   }
 
   function refresh() {
@@ -861,7 +852,9 @@
       if (e.target.id === "tp-modal") closeModal();
     });
     document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !document.getElementById("tp-modal").hidden) closeModal();
+      if (e.key !== "Escape" || document.getElementById("tp-modal").hidden) return;
+      if (document.querySelector(".tp-gallery")) return closePicker();
+      closeModal();
     });
     refresh();
   }

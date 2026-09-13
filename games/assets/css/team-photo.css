@@ -90,6 +90,7 @@
 }
 
 .tp-modal-card {
+  position: relative;      /* the saved-players panel sits over it */
   background: var(--surface, #fff);
   border-radius: var(--radius);
   box-shadow: 0 18px 50px rgba(11, 27, 42, .35);
@@ -162,15 +163,41 @@
 
 .tp-more-body { display: grid; gap: 1rem; padding-top: 1rem; }
 
-/* ---- saved-player picker, inside the slot modal ---- */
+/* ---- saved-player picker ----
+   A panel over the modal, opened from a button. It used to be a strip across
+   the top of the builder, which put a shelf in front of the thing you came to
+   do. */
 
-.tp-picker { margin-bottom: 1rem; }
-.tp-picker-title { margin: 0 0 .4rem; font-size: .85rem; font-weight: 600; color: var(--muted); }
-.tp-picker-row { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .35rem; }
+.tp-gallery {
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.tp-gallery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(30, 136, 229, .2);
+}
+.tp-gallery-head h3 { margin: 0; font-size: 1rem; }
+
+.tp-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: .75rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
 
 .tp-pick {
-  flex: 0 0 auto;
-  width: 76px;
+  width: 100%;
   display: grid;
   gap: .15rem;
   padding: .25rem;
@@ -205,41 +232,95 @@
 .tp-advanced-row { display: flex; gap: .5rem; margin-top: .5rem; }
 .tp-advanced-row input { flex: 1 1 auto; padding: .45rem .6rem; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
 
-/* A tile is the player plus its own remove control. */
-.tp-pick-wrap { position: relative; flex: 0 0 auto; }
-.tp-pick-wrap .tp-pick { width: 76px; }
+/* ---- the "more" drawer ---- */
 
-/* Small on purpose - it sits on the corner of a thumbnail - but the tap area
-   is pushed out to 44px with a transparent overlay, so a thumb does not have
-   to find a 22px dot. */
-.tp-pick-x {
+.tp-more { border-top: 1px solid rgba(30, 136, 229, .18); padding-top: .75rem; }
+
+.tp-more > summary {
+  display: inline-block;
+  list-style: none;
+  cursor: pointer;
+  padding: .5rem 1rem;
+  border: 1px solid rgba(0, 0, 0, .15);
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--muted);
+  min-height: 44px;
+  line-height: 1.7;
+}
+.tp-more > summary::-webkit-details-marker { display: none; }
+.tp-more > summary::after { content: " \25BE"; }
+.tp-more[open] > summary::after { content: " \25B4"; }
+.tp-more > summary:hover { background: rgba(22, 104, 196, .08); border-color: var(--accent); }
+
+.tp-more-body { display: grid; gap: 1rem; padding-top: 1rem; }
+
+/* ---- saved-player picker ----
+   A panel over the modal, opened from a button. It used to be a strip across
+   the top of the builder, which put a shelf in front of the thing you came to
+   do. */
+
+.tp-gallery {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 22px;
-  height: 22px;
-  min-width: 0;
-  padding: 0;
-  line-height: 1;
-  border-radius: 999px;
-  border: 1px solid rgba(179, 38, 30, .35);
+  inset: 0;
   background: var(--surface);
-  color: #B3261E;
-  font-size: 1rem;
-  cursor: pointer;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
 }
-.tp-pick-x::after { content: ""; position: absolute; inset: -11px; }
-.tp-pick-x:hover, .tp-pick-x:focus-visible { background: #B3261E; color: #fff; }
 
-/* The offer inside the status pill. */
-.tp-undo {
-  margin-left: .5rem;
-  padding: .35rem .8rem;
-  min-height: 36px;
-  border-radius: 999px;
-  border: 1px solid currentColor;
-  background: none;
-  font: inherit;
-  font-weight: 700;
+.tp-gallery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(30, 136, 229, .2);
+}
+.tp-gallery-head h3 { margin: 0; font-size: 1rem; }
+
+.tp-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: .75rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.tp-pick {
+  width: 100%;
+  display: grid;
+  gap: .15rem;
+  padding: .25rem;
+  border: 1px solid rgba(30, 136, 229, .25);
+  border-radius: 12px;
+  background: var(--surface);
   cursor: pointer;
 }
+.tp-pick:hover, .tp-pick:focus-visible { border-color: var(--accent); background: rgba(22, 104, 196, .08); outline: none; }
+.tp-pick canvas { width: 100%; height: auto; display: block; }
+.tp-pick span {
+  font-size: .7rem; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* The one action the modal exists for. */
+.cap-actions .is-primary, .cap-actions .is-primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.tp-advanced { margin-top: .75rem; font-size: .9rem; }
+.tp-advanced > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  min-height: 44px;
+  line-height: 44px;
+}
+.tp-advanced-row { display: flex; gap: .5rem; margin-top: .5rem; }
+.tp-advanced-row input { flex: 1 1 auto; padding: .45rem .6rem; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
+
