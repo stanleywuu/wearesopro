@@ -183,6 +183,9 @@ function initAnnouncements(endpoint){
 
   window.addEventListener('DOMContentLoaded', async ()=>{
     await includePartials(); // pulls in title, nav, footer
+    // Page scripts are deferred, so they run before the fetches above
+    // finish. Anything that needs included markup waits for this.
+    document.dispatchEvent(new Event('partials:ready'));
     setYear();
     initFeedback();
     initDropdowns();

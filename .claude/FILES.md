@@ -27,13 +27,14 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 
 ## partials/ (included via `data-include`, see `assets/js/main.js`)
 - `partials/nav.html` — Main site navigation. The dropdown and drawer link lists are **generated** from `PAGES` between `nav:notes` / `nav:games` markers — edit `tools/build.py`, not the lists.
+- `partials/player-editor.html` — **The** player builder markup (stage, canvas, tabs, all controls), shared by `games/create-a-player.html` and the slot modal on `games/team-photo.html`. Driven by `CAP_EDITOR.mount()`; elements addressed by `data-el`, never by id. `[data-el="host-actions"]` / `[data-el="host-footer"]` are empty slots each host page fills with its own buttons. See `.claude/RULES.md`, "One builder, two mounts".
 - `partials/nav-noscript.html` — **Unused.** Was included inside `<noscript>` via `data-include`, which cannot work (the include needs JS); replaced by the generated `.site-links` nav.
 - `partials/sidebar.html` — Sidebar (poll widgets, etc.).
 - `partials/footer.html` — Site footer.
 - `partials/PLAN.md` — Task tracker for partials-related work (see CLAUDE.md plan conventions).
 
 ## assets/
-- `assets/js/main.js` — Core include system: fetches `data-include` partials and swaps them into the DOM at load.
+- `assets/js/main.js` — Core include system: fetches `data-include` partials and swaps them into the DOM at load, then dispatches `partials:ready` so deferred page scripts can wait for included markup.
 - `assets/js/tommy-float.js` — Standalone animation/behavior script for the "Tommy" mascot floating element.
 - `assets/css/style.css` — Main site stylesheet.
 - `assets/css/critical.css` — Above-the-fold styles meant to be inlined in `<style>` for fast first paint.
@@ -54,7 +55,8 @@ One-line purpose for every file/directory in the repo. Update this when you add,
   - `games/assets/js/create-a-player.data.js` — data only: shapes, slider ranges, colour palettes, positions, random name and catch-phrase pools.
   - `games/assets/js/create-a-player.codec.js` — `CAP_CODE`: the player parameter defaults, the compact `~`-separated share code (encode/decode) and `sanitize()`, the one whitelist every untrusted player passes through. No DOM, no drawing; shared by the builder and the team photo page.
   - `games/assets/js/create-a-player.draw.js` — hand-rolled 2.5D renderer (no 3D library): silhouette slabs whose width, position, depth and shading are recomputed from the yaw angle. No DOM access. `render(ctx, params, yaw, anim, opts)` obeys the current canvas transform, and `opts.background:false` drops the ice fill so several players can be composited into one scene.
-  - `games/assets/js/create-a-player.js` — DOM wiring: tabs, controls, drag/auto-spin, quiet autosave to localStorage, randomize, the Highlight animation timeline, `?p=` share links (whitelisted on load), `?debug` yaw grid.
+  - `games/assets/js/create-a-player.editor.js` — `CAP_EDITOR.mount(root, params, opts)`: the builder as a mountable widget — tabs, option pickers, swatches, sliders, identity fields, drag/auto-spin, randomize, the Highlight animation timeline, `?debug` yaw grid. Scoped strictly to its `root`, so it also runs inside the team-photo slot modal. `destroy()` stops its render loop.
+  - `games/assets/js/create-a-player.js` — the *page* only: mounts the editor on `partials:ready`, quiet autosave to localStorage, `?p=` share links (whitelisted on load), and the collapsed view a shared link opens in.
 
 ## tools/
 - `tools/build.py` — Generates the footer site map in every page, the nav/drawer menus in `partials/nav.html`, and `sitemap.xml` — all from one `PAGES` list. Run via `make site`. Standard library only; not part of the deploy.

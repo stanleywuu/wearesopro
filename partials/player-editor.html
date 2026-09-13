@@ -1,0 +1,79 @@
+<!-- The one and only player builder. Included by /games/create-a-player.html and
+     by the slot modal on /games/team-photo.html, and driven by CAP_EDITOR.mount().
+     Add new player controls HERE - both pages pick them up for free.
+     Elements are addressed by data-el, never by id, so the module never has to
+     reach outside its own root. -->
+<div class="cap-wrap">
+  <div class="cap-stage">
+    <p data-el="bubble" class="cap-bubble" hidden></p>
+    <canvas data-el="canvas" tabindex="0" aria-label="Your created hockey player, drag to rotate"></canvas>
+    <p data-el="caption" class="cap-caption" aria-live="polite"></p>
+    <div class="cap-actions">
+      <button type="button" data-el="random" class="button">Randomize</button>
+      <button type="button" data-el="highlight" class="button">Highlight</button>
+      <span data-el="host-actions"></span>
+    </div>
+    <p data-el="status" class="cap-status" aria-live="polite"></p>
+    <div data-el="host-footer"></div>
+  </div>
+
+  <div class="cap-controls" data-el="controls">
+    <div data-el="editor" class="cap-editor">
+      <div class="cap-tabs" role="tablist" aria-label="Player options">
+        <button class="cap-tab" role="tab" id="tab-shape" aria-controls="panel-shape" data-tab="shape">Shape</button>
+        <button class="cap-tab" role="tab" id="tab-kit" aria-controls="panel-kit" data-tab="kit">Kit</button>
+        <button class="cap-tab" role="tab" id="tab-info" aria-controls="panel-info" data-tab="info">Info</button>
+      </div>
+
+      <div class="cap-panel" id="panel-shape" role="tabpanel" aria-labelledby="tab-shape" data-panel="shape">
+        <fieldset class="cap-group">
+          <legend>Body</legend>
+          <div class="cap-opts" data-options="bodyShape" data-list="shapes"></div>
+          <label class="cap-slot"><span>Width</span><input type="range" data-param="bodyWidth"></label>
+          <label class="cap-slot"><span>Height</span><input type="range" data-param="bodyHeight"></label>
+          <label class="cap-slot"><span>Contour</span><input type="range" data-param="bodyContour"></label>
+        </fieldset>
+
+        <fieldset class="cap-group">
+          <legend>Head</legend>
+          <div class="cap-opts" data-options="headShape" data-list="shapes"></div>
+          <label class="cap-slot"><span>Width</span><input type="range" data-param="headWidth"></label>
+          <label class="cap-slot"><span>Height</span><input type="range" data-param="headHeight"></label>
+          <label class="cap-slot"><span>Contour</span><input type="range" data-param="headContour"></label>
+        </fieldset>
+      </div>
+
+      <div class="cap-panel" id="panel-kit" role="tabpanel" aria-labelledby="tab-kit" data-panel="kit">
+        <fieldset class="cap-group">
+          <legend>Colours</legend>
+          <div class="cap-slot"><span>Jersey</span><div class="cap-swatches" data-swatch="jerseyColor" data-palette="jerseyColors"></div></div>
+          <div class="cap-slot"><span>Lettering</span><div class="cap-swatches" data-swatch="trimColor" data-palette="trimColors"></div></div>
+          <div class="cap-slot"><span>Socks</span><div class="cap-swatches" data-swatch="sockColor" data-palette="jerseyColors"></div></div>
+          <div class="cap-slot"><span>Skin</span><div class="cap-swatches" data-swatch="skinColor" data-palette="skinColors"></div></div>
+        </fieldset>
+
+        <fieldset class="cap-group">
+          <legend>Helmet</legend>
+          <div class="cap-slot"><span>Colour</span><div class="cap-swatches" data-swatch="helmetColor" data-palette="helmetColors"></div></div>
+          <div class="cap-slot"><span>Face</span><div class="cap-opts" data-options="helmetStyle" data-list="helmets"></div></div>
+        </fieldset>
+      </div>
+
+      <div class="cap-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" data-panel="info">
+        <fieldset class="cap-group">
+          <legend>Player</legend>
+          <label class="cap-slot"><span>Name</span><input type="text" data-el="name" maxlength="14" autocomplete="off"></label>
+          <label class="cap-slot"><span>Number</span><input type="text" data-el="number" maxlength="2" inputmode="numeric" autocomplete="off"></label>
+          <label class="cap-slot"><span>Position</span><select data-el="position"></select></label>
+          <div class="cap-slot"><span>Shoots</span><div class="cap-opts" data-options="handedness" data-list="handedness"></div></div>
+        </fieldset>
+
+        <fieldset class="cap-group">
+          <legend>Catch-phrase</legend>
+          <label class="cap-slot"><span>Says</span><input type="text" data-el="phrase" maxlength="48" autocomplete="off" placeholder="What do they always say?"></label>
+          <label class="cap-slot"><span>Or pick</span><select data-el="phrase-preset"></select></label>
+        </fieldset>
+      </div>
+    </div>
+  </div>
+</div>

@@ -6,7 +6,7 @@
   gap: 1.5rem;
 }
 
-#cap-canvas {
+.cap-stage canvas {
   width: 320px;
   max-width: 100%;
   height: auto;
@@ -18,8 +18,14 @@
      so the canvas does not trap scrolling on a phone. */
   touch-action: pan-y;
 }
-#cap-canvas:active { cursor: grabbing; }
-#cap-canvas:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.cap-stage canvas:active { cursor: grabbing; }
+.cap-stage canvas:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* The host slots - the page drops its own buttons (Share, Make it your own,
+   Save/Cancel in the team modal) in here. Empty on a page that has none, and an
+   empty one must not push the layout around. */
+[data-el="host-actions"]:empty,
+[data-el="host-footer"]:empty { display: none; }
 
 .cap-controls {
   flex: 1 1 260px;

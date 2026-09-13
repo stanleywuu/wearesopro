@@ -82,6 +82,29 @@ if the nav in pages changed and is unstaged, and fails on broken internal links.
 Nothing here touches the Azure workflow — the deploy stays a plain static upload, so a
 generator bug cannot fail a deploy. The trade-off is that generated output is committed.
 
+## One builder, two mounts
+
+There is exactly **one** player builder: its markup in `partials/player-editor.html`,
+its behaviour in `CAP_EDITOR` (`games/assets/js/create-a-player.editor.js`). The Create
+A Player page and the slot modal on the Team Photo page are two *mounts* of it, not two
+copies. Add a control once and both get it.
+
+- **No builder control markup in a page.** `create-a-player.html` and `team-photo.html`
+  each hold a `data-include` mount point and nothing else of the builder.
+- **No builder behaviour in `create-a-player.js`.** That file is the *page*: share links,
+  `?p=`, autosave, the collapsed view a shared link opens in. Page-specific buttons are
+  created in JS and dropped into the partial's `[data-el="host-actions"]` /
+  `[data-el="host-footer"]` slots.
+- **`CAP_EDITOR.mount` never reaches outside its `root`** — no `document.getElementById`,
+  no global ids. Elements are addressed `root.querySelector('[data-el="..."]')`. That is
+  what lets two mounts coexist, and CSS must not target the builder by id either.
+- **A new player field goes in exactly three places:** `defaults()` in
+  `create-a-player.codec.js`, the field order in `encode`/`decode`/`sanitize` there
+  (**append to the end** so codes already shared keep decoding), and the control in the
+  partial. The renderer reads it off `params`; both pages and every saved team get it free.
+- Included markup arrives after deferred page scripts run, so anything that needs it
+  listens for `partials:ready` (dispatched by `main.js` once the includes resolve).
+
 ## Keeping this repo self-describing
 - If you add, remove, or repurpose a file, update `.claude/FILES.md` in the same change.
 - If you establish a new non-obvious convention, add it here.
