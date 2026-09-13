@@ -387,7 +387,7 @@
     function goalieReel() {
       // Face on, not side on: a goalie is looked at down the ice, with the net
       // behind him and the blocker and glove out to either side of frame.
-      return { save: true, yaw: 0, label: "ROBBED HIM!!", saves: SAVES, end: 4000, home: 0 };
+      return { save: true, yaw: 0, label: "Robbed!", saves: SAVES, end: 4000, home: 0 };
     }
 
     // Each save: snap into the pose, hold it, come back out. The snap is quick
