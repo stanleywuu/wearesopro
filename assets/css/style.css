@@ -149,6 +149,25 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 .card h3{margin:0 0 .45rem;font-size:1.05rem;color:var(--accent)}
 .card p{margin:0;color:var(--text);font-size:.95rem}
 
+/* Game cards: an icon and a colour edge, so a column of six on a phone is
+   scannable instead of six identical white boxes. Each card gets its own hue
+   via --edge. */
+.card-game{position:relative;padding-left:1.5rem}
+.card-game::before{
+  content:"";position:absolute;left:0;top:-2px;bottom:-2px;width:.6rem;
+  background:var(--edge,var(--accent));
+  border-right:2px solid var(--ink);
+  border-radius:calc(var(--radius) - 2px) 0 0 calc(var(--radius) - 2px);
+}
+.cards .card-game:nth-of-type(1){--edge:#1E88E5}
+.cards .card-game:nth-of-type(2){--edge:#E5A32E}
+.cards .card-game:nth-of-type(3){--edge:#43A047}
+.cards .card-game:nth-of-type(4){--edge:#8E24AA}
+.cards .card-game:nth-of-type(5){--edge:#D7263D}
+.cards .card-game:nth-of-type(6){--edge:#5A6B7A}
+.card-icon{margin-right:.45rem;font-size:1.1em}
+.card-game h2{display:flex;align-items:center}
+
 /* A card for something that does not exist yet: looks like the others but is
    not a link, so it is not a broken href for crawlers. */
 .card-soon{opacity:.7;box-shadow:none;border-style:dashed}
@@ -293,6 +312,16 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 .drawer-nav ul a{
   display:block;padding:.45rem .5rem;color:var(--text);font-size:.95rem;
   border-left:2px solid var(--rule);margin-left:.35rem;
+}
+/* Emoji marker on menu rows — six near-identical game titles are hard to scan
+   as plain text, especially in the mobile drawer. */
+.menu-icon{
+  display:inline-block;
+  width:1.6em;
+  margin-right:.15rem;
+  font-size:1.05em;
+  line-height:1;
+  text-align:center;
 }
 .drawer-nav ul a:hover{ background:rgba(22,104,196,.08);border-left-color:var(--accent);text-decoration:none }
 

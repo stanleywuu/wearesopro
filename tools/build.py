@@ -30,30 +30,31 @@ SITE = "https://wearesopro.ca"
 #   section  which menu it belongs to: "notes", "games", or absent for neither
 #   menu     menu wording, when it should differ from label
 #   badge    flag shown in the menus only, e.g. "New"
+#   icon     emoji shown in the menus, so a long list is scannable
 PAGES = [
     {"path": "index.html",                 "label": "Home"},
     {"path": "notes.html",                 "label": "Editor&rsquo;s Notes"},
 
     {"path": "notes/pipeline.html",        "label": "The Pipeline",
-     "section": "notes", "menu": "The pipeline that built everything"},
+     "section": "notes", "menu": "The pipeline that built everything", "icon": "⚙️"},
     {"path": "notes/spreadsheet.html",     "label": "The Spreadsheet",
-     "section": "notes", "menu": "The infamous Spreadsheet"},
+     "section": "notes", "menu": "The infamous Spreadsheet", "icon": "📊"},
     {"path": "notes/faqs.html",            "label": "FAQs",
-     "section": "notes", "menu": "Frequently Asked Questions"},
+     "section": "notes", "menu": "Frequently Asked Questions", "icon": "❓"},
 
     {"path": "games.html",                 "label": "Games &amp; Quizzes"},
     {"path": "games/chirp.html",           "label": "Teammate or Coworker",
-     "section": "games"},
+     "section": "games", "icon": "💬"},
     {"path": "games/quotes.html",          "label": "Who Said What",
-     "section": "games", "menu": "Who said what?"},
+     "section": "games", "menu": "Who said what?", "icon": "🗣️"},
     {"path": "games/whowas.html",          "label": "Who&rsquo;s This Early Bird",
-     "section": "games", "menu": "Who&rsquo;s this Early Bird?"},
+     "section": "games", "menu": "Who&rsquo;s this Early Bird?", "icon": "🕵️"},
     {"path": "games/adopt.html",           "label": "Tommy The Goalie",
-     "section": "games"},
+     "section": "games", "icon": "🥅"},
     {"path": "games/fighter.html",         "label": "Goalie Brawl",
-     "section": "games"},
+     "section": "games", "icon": "🥊"},
     {"path": "games/create-a-player.html", "label": "Create A Player",
-     "section": "games", "badge": "New"},
+     "section": "games", "badge": "New", "icon": "🎨"},
 
     {"path": "teamupdates.html",           "label": "Team Updates"},
     {"path": "links.html",                 "label": "Get the Book"},
@@ -110,6 +111,7 @@ def menu_html(section):
         if page.get("badge"):
             label += ' <span class="badge">%s</span>' % page["badge"]
         rows.append(item.replace("{{href}}", "/" + page["path"])
+                        .replace("{{icon}}", page.get("icon", ""))
                         .replace("{{label}}", label))
     return "\n".join(rows)
 

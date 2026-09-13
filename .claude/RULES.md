@@ -63,7 +63,9 @@ dropdown and mobile drawer in `partials/nav.html`, and `sitemap.xml`.
     "section": "games", "badge": "New"},
    ```
    Only `path` is required. `label` lists it in the footer site map, `section` puts it
-   in the menus, `menu` overrides the menu wording, `badge` flags it.
+   in the menus, `menu` overrides the menu wording, `badge` flags it, `icon` is the
+   emoji shown beside it in the menus (give every game one — a plain list of six
+   titles is unscannable on a phone).
 3. `make site`
 4. Add the card to `games.html` by hand — the blurb is prose, so it is not generated.
 5. Commit.
