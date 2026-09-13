@@ -855,8 +855,6 @@
     document.getElementById("tp-poster").addEventListener("click", makePoster);
     document.getElementById("tp-download").addEventListener("click", download);
     document.getElementById("tp-share").addEventListener("click", share);
-    document.getElementById("tp-copy").addEventListener("click",
-      () => copy(encodeTeam(), "Team code copied - paste it here any time to rebuild this team"));
     document.getElementById("tp-random").addEventListener("click", randomTeam);
     document.getElementById("tp-reset").addEventListener("click", reset);
     document.getElementById("tp-add").addEventListener("click", () => {

@@ -138,3 +138,26 @@
 /* The only control here that destroys anything. Quiet until you reach for it. */
 .tp-danger { color: #B3261E; border-color: rgba(179, 38, 30, .35); }
 .tp-danger:hover { background: rgba(179, 38, 30, .08); border-color: #B3261E; }
+
+/* ---- the "more" drawer ---- */
+
+.tp-more { border-top: 1px solid rgba(30, 136, 229, .18); padding-top: .75rem; }
+
+.tp-more > summary {
+  display: inline-block;
+  list-style: none;
+  cursor: pointer;
+  padding: .5rem 1rem;
+  border: 1px solid rgba(0, 0, 0, .15);
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--muted);
+  min-height: 44px;
+  line-height: 1.7;
+}
+.tp-more > summary::-webkit-details-marker { display: none; }
+.tp-more > summary::after { content: " \25BE"; }
+.tp-more[open] > summary::after { content: " \25B4"; }
+.tp-more > summary:hover { background: rgba(22, 104, 196, .08); border-color: var(--accent); }
+
+.tp-more-body { display: grid; gap: 1rem; padding-top: 1rem; }
