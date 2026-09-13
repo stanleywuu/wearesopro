@@ -565,8 +565,16 @@
   // sit forward of the chest, the shaft angles down and away, and the blade
   // lands on the ice well ahead of the skates. So the hands are placed first
   // and the shaft is extended through them in both directions.
+  // Which side of the body the blade sits on. A LEFT-handed shot puts it on
+  // the player's left, which is +x here - it was the other way round, so every
+  // left shot was drawn as a right one and the reel had them shooting the
+  // wrong way.
+  function handSign(params) {
+    return params.handedness === "left" ? 1 : -1;
+  }
+
   function stickPoints(dims, params) {
-    const hand = params.handedness === "left" ? -1 : 1;
+    const hand = handSign(params);
     // The shaft leans back across the body as it descends, so the blade ends up
     // angled in front of the player rather than pointing away off to the side.
     const topHand = { x: hand * 14, y: dims.shoulderY - 15, z: 22 };
@@ -590,7 +598,7 @@
   // the chin. The hands go on top of the knob and the head comes down onto the
   // hands - so the head drives the height, not the other way round.
   function goalieStick(dims, params) {
-    const hand = params.handedness === "left" ? -1 : 1;
+    const hand = handSign(params);
     const head = dims.head;
     const butt = { x: hand * 2, y: head.y - head.ry - 1.5, z: head.z + 17 };
     const heel = { x: hand * 2, y: 2.5, z: butt.z + 4 };
@@ -710,8 +718,14 @@
       const a = proj3(pair.shoulder, yaw);
       const e = proj3(elbowFor(pair.shoulder, pair.grip), yaw);
       const b = proj3(pair.grip, yaw);
+      // The bias is what makes the near glove read as gripping the shaft rather
+      // than the shaft crossing it. Applied to BOTH arms it also dragged the
+      // far arm in front of the torso, so side on you saw two arms where a
+      // body only shows one. The far arm now keeps its own negative depth and
+      // the torso covers it.
+      const depth = (a.d + b.d) / 2;
       return {
-        d: (a.d + b.d) / 2 + 3,
+        d: depth >= 0 ? depth + 3 : depth,
         draw: () => {
           drawArm(ctx, a, e, b, 8, params.jerseyColor);
           if (!dims.goalie) return drawGlove(ctx, b, gloveColor);
