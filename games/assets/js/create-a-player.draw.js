@@ -25,6 +25,7 @@
   // the stick sweeps, and the whole figure glides across the ice.
   let ANIM = null;
   let SHIFT = 0;
+  const PAN_MAX = 180;      // far enough that the stick and shadow clear the edge too
   const TILT = 0.16;        // how much +z (towards viewer) drops on screen
   const PERSP = 0.0028;     // weak perspective: growth per unit of +z
   const LIGHT_YAW = -0.6;   // light direction, radians
@@ -801,7 +802,9 @@
     const w = dims.torso.rx * 1.6;
     ctx.save();
     ctx.globalAlpha = 0.18;
-    E(ctx, CX, GROUND + 1, w, w * 0.26, "#0C1B2A");
+    // CX + SHIFT, not CX: the shadow belongs to the player, and when the camera
+    // pans away it has to leave with him.
+    E(ctx, CX + SHIFT, GROUND + 1, w, w * 0.26, "#0C1B2A");
     ctx.restore();
   }
 
@@ -809,9 +812,16 @@
 
   const NET = { x: LW - 30, w: 36, h: 30 };
 
-  function drawNet(ctx) {
+  // t is how far the net has come into frame: 0 is off the right edge entirely,
+  // 1 is in its place. The shot from the point starts with no net on screen at
+  // all, so the puck has nothing to travel towards but distance.
+  function drawNet(ctx, t) {
+    const into = (t === undefined) ? 1 : t;
+    // Starts just past the right edge, not miles beyond it: slide it in from
+    // too far away and it spends the whole slide off screen, then pops.
+    const cx = NET.x + (1 - into) * ((LW - NET.x) + NET.w);
     const w = NET.w * FIT, h = NET.h * FIT;
-    const base = GROUND - 1, left = NET.x - w / 2, right = NET.x + w / 2, top = base - h;
+    const base = GROUND - 1, left = cx - w / 2, right = cx + w / 2, top = base - h;
     ctx.fillStyle = "rgba(255,255,255,.7)";
     ctx.fillRect(p(left), p(top), p(w), p(h));
     for (let i = 1; i < 6; i++) {
@@ -827,18 +837,45 @@
     L(ctx, left, top, right, top, "#E53935", 2.4);
   }
 
-  // Where the blade was at contact. Held, because a slapshot follow-through
-  // carries the blade a long way after the puck has gone and the puck would
-  // otherwise appear to set off from wherever the stick had got to.
+  // Where the puck is sitting before the shot, and therefore where it sets off
+  // from. It tracks the blade while he skates in - he is carrying it - and
+  // freezes the moment he starts his backswing, so the puck stays on the ice
+  // while the stick goes up and the follow-through carries the blade away.
   let LAUNCH = null;
 
+  function puckRest(ctx, dims, params, yaw) {
+    if (!ANIM.lift) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
+    if (LAUNCH) puckAt(ctx, LAUNCH.sx, LAUNCH.sy, 1, 1);
+  }
+
   function drawPuck(ctx, dims, params, yaw, t) {
-    if (!LAUNCH || t <= 0.02) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
+    if (!LAUNCH) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
+    // Once the camera is travelling the puck is all there is on screen, so it
+    // gets a little bigger to stay readable.
+    const size = (ANIM && ANIM.pan > 0.25) ? 1.5 : 1;
+    // A trail, because a black dot moving across a white rink reads as slow
+    // however fast it is actually going.
+    for (let i = 3; i >= 1; i--) {
+      const back = t - i * 0.04;
+      if (back > 0) puckAt(ctx, puckX(back), puckY(back), size * (1 - i * 0.18), 0.13 * (4 - i));
+    }
+    puckAt(ctx, puckX(t), puckY(t), size, 1);
+  }
+
+  function puckX(t) {
+    return LAUNCH.sx + (NET.x - LAUNCH.sx) * t;
+  }
+
+  function puckY(t) {
     const arc = (ANIM && ANIM.arc) || 9;
-    const size = (ANIM && ANIM.puckOnly) ? 1.5 : 1;
-    const sx = LAUNCH.sx + (NET.x - LAUNCH.sx) * t;
-    const sy = LAUNCH.sy + (GROUND - 9 - LAUNCH.sy) * t - Math.sin(t * Math.PI) * arc;
+    return LAUNCH.sy + (GROUND - 9 - LAUNCH.sy) * t - Math.sin(t * Math.PI) * arc;
+  }
+
+  function puckAt(ctx, sx, sy, size, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
     E(ctx, sx, sy, 3 * size, 2.1 * size, "#11181F");
+    ctx.restore();
   }
 
   function drawGoalText(ctx, label) {
@@ -892,20 +929,21 @@
     const shadow = !opts || opts.shadow !== false;
     const dims = computeDims(params);
     ANIM = anim || null;
-    SHIFT = ANIM ? ANIM.shift : 0;
+    // The camera follows the puck, so the shooter slides out of frame to the
+    // left rather than being cut away. PAN_MAX is far enough to clear the edge.
+    SHIFT = ANIM ? ANIM.shift - PAN_MAX * (ANIM.pan || 0) : 0;
     FIT = (opts && opts.fit) ? opts.fit : autoFit(dims.topY);
     ctx.save();
     if (background) {
       ctx.clearRect(0, 0, p(LW), p(LH));
       drawIce(ctx);
     }
-    // Once the shot is away the reel cuts to the puck alone, so the player is
-    // simply not drawn - no shadow under him either.
-    const solo = Boolean(ANIM && ANIM.puckOnly);
-    if (shadow && !solo) drawShadow(ctx, dims);
-    if (ANIM) drawNet(ctx);
+    // No shadow during a highlight: the camera travels, and a shadow is one
+    // more thing that has to travel convincingly with it for no gain.
+    if (shadow && !ANIM) drawShadow(ctx, dims);
+    if (ANIM && ANIM.net !== 0) drawNet(ctx, ANIM.net);
 
-    if (!solo) drawFigure(ctx, dims, params, yaw);
+    drawFigure(ctx, dims, params, yaw);
     if (ANIM) finishShot(ctx, dims, params, yaw);
     else LAUNCH = null;
     ctx.restore();
@@ -928,7 +966,8 @@
 
   // The puck and the readout, which outlive the player on screen.
   function finishShot(ctx, dims, params, yaw) {
-    if (ANIM.puckT !== null) drawPuck(ctx, dims, params, yaw, ANIM.puckT);
+    if (ANIM.puckT === null) return puckRest(ctx, dims, params, yaw);
+    drawPuck(ctx, dims, params, yaw, ANIM.puckT);
     if (ANIM.goal) drawGoalText(ctx, ANIM.label);
   }
 

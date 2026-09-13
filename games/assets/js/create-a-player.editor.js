@@ -349,18 +349,24 @@
     // is what decides everything after contact: a harder shot is in the air for
     // less time, and the number on the end is the same number.
     function buildReel() {
-      if (params.position !== "Defence") return Object.assign({ slap: false }, CLASSIC);
+      if (params.position !== "Defence") return Object.assign({ slap: false, home: 0 }, CLASSIC);
       const speed = 70 + Math.round(Math.random() * 35);
       const contact = 2300;
-      const flight = Math.round(105000 / speed);   // 70mph ~1500ms, 105mph ~1000ms
+      // He is shooting from the point, so it is a long way: 70mph spends over
+      // two seconds in the air, 105mph about a second and a half.
+      const flight = Math.round(150000 / speed);
       return {
         slap: true,
         label: speed + " mph!!",
+        home: -42,                 // out by the left boards, where a point shot comes from
         glide: 1200,
         wind: 1800,
         hold: 2010,                // a beat at the top, or the windup flashes by
         contact: contact,
-        solo: contact + 450,       // long enough to see the follow-through
+        panFrom: contact + 320,    // long enough to see the follow-through first
+        panTo: contact + Math.round(flight * 0.5),
+        netIn: contact + Math.round(flight * 0.7),
+        netSet: contact + Math.round(flight * 0.9),
         land: contact + flight,
         end: contact + flight + 1300
       };
@@ -371,24 +377,39 @@
       if (!reel || ms >= reel.end) return null;
       const anim = {
         shift: 0, crouch: 0, swing: 0, lift: 0,
-        puckT: null, goal: false, puckOnly: false,
-        arc: reel.slap ? 17 : 9, label: reel.label
+        puckT: null, goal: false, pan: 0,
+        arc: reel.slap ? 17 : 9, net: 1, label: reel.label
       };
       if (ms < reel.glide) {
         const t = ms / reel.glide;
-        anim.shift = -55 * (1 - t * t * (3 - 2 * t));
+        anim.shift = reel.home - 55 * (1 - t * t * (3 - 2 * t));
         anim.crouch = 0.35 * t;
       } else {
+        anim.shift = reel.home;
         anim.crouch = 0.35;
       }
       if (reel.slap) slapAt(ms, anim);
       else wristAt(ms, anim);
       if (ms >= reel.contact) {
         anim.puckT = Math.min(1, (ms - reel.contact) / (reel.land - reel.contact));
-        anim.puckOnly = Boolean(reel.solo) && ms >= reel.solo;
+      }
+      if (reel.slap) {
+        anim.pan = ramp(ms, reel.panFrom, reel.panTo);
+        anim.net = ramp(ms, reel.netIn, reel.netSet);
       }
       anim.goal = ms >= reel.land;
       return anim;
+    }
+
+    // The camera starts travelling once the follow-through has played, and the
+    // net arrives after it - so there is a stretch with the shooter gone, the
+    // net not yet there, and nothing on the ice but the puck. That gap is the
+    // distance.
+    function ramp(ms, from, to) {
+      if (ms <= from) return 0;
+      if (ms >= to) return 1;
+      const t = (ms - from) / (to - from);
+      return t * t * (3 - 2 * t);
     }
 
     // Up and back over the shoulder, then down through the puck and high out
