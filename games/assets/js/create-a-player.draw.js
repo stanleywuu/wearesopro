@@ -828,11 +828,11 @@
 
   // ---- highlight scenery ------------------------------------------------
 
-  const NET = { x: LW - 36, w: 54, h: 42 };
+  const NET = { x: LW - 44, w: 54, h: 42 };
 
   // Where the net comes to rest when the camera is riding along with the puck:
   // out at the middle of the frame, so it closes on a puck sitting there.
-  const NET_CLOSE = CX + 8;
+  const NET_CLOSE = CX + 22;
 
   // t is how far the net has come into frame: 0 is off the right edge entirely,
   // 1 is parked. A point shot starts with no net on screen at all, so the puck
@@ -893,9 +893,17 @@
   const CRUISE_IN = 0.18;         // how much of the flight it takes to get there
   const CRUISE_Y = GROUND - 40;   // how high it rides
 
+  // Where it settles. Taken from the launch point rather than fixed, so the
+  // first thing the puck does is always travel RIGHT: pin it to the middle and
+  // a blade that finished right of the middle sends the puck backwards into
+  // the shooter for the opening frames.
+  function cruiseX() {
+    return Math.max(CX + 12, LAUNCH.sx + 26);
+  }
+
   function puckX(t) {
     if (!ANIM || !ANIM.puckHold) return LAUNCH.sx + (NET.x - LAUNCH.sx) * t;
-    return LAUNCH.sx + (CX - LAUNCH.sx) * Math.min(1, t / CRUISE_IN);
+    return LAUNCH.sx + (cruiseX() - LAUNCH.sx) * Math.min(1, t / CRUISE_IN);
   }
 
   function puckY(t) {

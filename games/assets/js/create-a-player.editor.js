@@ -359,7 +359,7 @@
       return {
         slap: true,
         label: speed + " mph!!",
-        home: -42,                 // out by the left boards, where a point shot comes from
+        home: -55,                 // out by the left boards, where a point shot comes from
         glide: 1200,
         wind: 1800,
         hold: 2010,                // a beat at the top, or the windup flashes by
