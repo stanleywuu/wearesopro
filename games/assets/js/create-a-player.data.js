@@ -30,31 +30,13 @@ window.CAP_DATA = {
 
   positions: ["Centre", "Left Wing", "Right Wing", "Defence", "Goalie"],
 
-  // Presets only — every swatch row also has a custom picker, so any hex is
-  // reachable. Keep the first entry of each list as the sensible default.
-  skinColors: [
-    "#F8D9BD", "#F2C9A0", "#E0A878", "#D18E5E", "#C68642",
-    "#A9683C", "#8D5524", "#6B4323", "#5C3317", "#3E2317"
-  ],
-
-  jerseyColors: [
-    "#1E88E5", "#0D47A1", "#4FC3F7", "#00ACC1", "#00897B",
-    "#43A047", "#7CB342", "#FDD835", "#FFB300", "#FB8C00",
-    "#E53935", "#B71C1C", "#D81B60", "#8E24AA", "#5E35B1",
-    "#6D4C41", "#455A64", "#9E9E9E", "#212121", "#FAFAFA"
-  ],
-
-  trimColors: [
-    "#FFFFFF", "#212121", "#FDD835", "#FFB300", "#E53935",
-    "#B71C1C", "#1E88E5", "#0D47A1", "#43A047", "#00897B",
-    "#8E24AA", "#9E9E9E", "#6D4C41", "#C0A062"
-  ],
-
-  helmetColors: [
-    "#212121", "#455A64", "#FFFFFF", "#9E9E9E", "#1E88E5",
-    "#0D47A1", "#E53935", "#B71C1C", "#43A047", "#00897B",
-    "#FDD835", "#FB8C00", "#8E24AA", "#6D4C41"
-  ],
+  // Presets are a short starting row, not the whole range — every swatch row
+  // ends with a colour picker, so any hex is reachable. Keep each list at
+  // seven so the row plus its picker stays on one line.
+  skinColors:   ["#F8D9BD", "#F2C9A0", "#E0A878", "#C68642", "#A9683C", "#8D5524", "#5C3317"],
+  jerseyColors: ["#1E88E5", "#0D47A1", "#E53935", "#43A047", "#FDD835", "#212121", "#FAFAFA"],
+  trimColors:   ["#FFFFFF", "#212121", "#FDD835", "#E53935", "#1E88E5", "#43A047", "#9E9E9E"],
+  helmetColors: ["#212121", "#FFFFFF", "#0D47A1", "#E53935", "#1E88E5", "#43A047", "#9E9E9E"],
 
   randomNames: [
     "Tommy", "Stanley", "Dale", "Ricky", "Wheels", "Bucket", "Chief", "Turbo",

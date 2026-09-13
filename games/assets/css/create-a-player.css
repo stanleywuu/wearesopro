@@ -125,13 +125,14 @@
 
 .cap-swatches {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;      /* presets + picker are sized to stay on one row */
   gap: .3rem;
 }
 
 .cap-swatch {
   width: 22px;
   height: 22px;
+  flex: 0 0 auto;
   padding: 0;
   border-radius: 50%;
   border: 2px solid rgba(12, 27, 42, .18);
