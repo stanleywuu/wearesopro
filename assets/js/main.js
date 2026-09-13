@@ -96,7 +96,11 @@
     const mq = window.matchMedia('(max-width: 960px)');
     const syncState = () => {
       document.querySelectorAll('.sidebar-section').forEach(d => {
-        if(mq.matches){ d.removeAttribute('open'); } else { d.setAttribute('open',''); }
+        // Only fold a section big enough to be worth folding. Extras is two
+        // links at the foot of the page; collapsed it is a stub that hides
+        // them rather than a section anyone would think to open.
+        const long = d.querySelectorAll('li').length > 3;
+        if(mq.matches && long){ d.removeAttribute('open'); } else { d.setAttribute('open',''); }
       });
     };
     syncState();
