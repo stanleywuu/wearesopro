@@ -1,5 +1,7 @@
-# Claude Code
-.claude/
+# Claude Code — the conventions (CLAUDE.md, .claude/RULES.md, .claude/FILES.md)
+# and the shared hook in settings.json are versioned; only personal machine
+# settings stay out.
+.claude/settings.local.json
 
 # OS
 .DS_Store

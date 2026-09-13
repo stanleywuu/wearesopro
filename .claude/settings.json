@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{ jq -r '.tool_input.command // \"\"' | grep -q 'git commit' && git rev-parse --short HEAD | { read -r h; printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Commit %s just landed. Per .claude/RULES.md the commit loop is not finished: tick the matching docs/ tracker item(s) and write %s beside them before starting anything else.\"}}' \"$h\" \"$h\"; }; } 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
