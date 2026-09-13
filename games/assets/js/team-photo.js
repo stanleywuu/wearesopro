@@ -7,7 +7,8 @@
 (function () {
 
   const D = window.CAP_DATA, DRAW = window.CAP_DRAW;
-  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR, TEAM = window.CAP_TEAM;
+  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR;
+  const TEAM = window.CAP_TEAM, PLAYERS = window.CAP_PLAYERS;
 
   const SHARE_KEY = "t";
   const MIN_SIZE = TEAM.MIN_SIZE, MAX_SIZE = TEAM.MAX_SIZE;
@@ -603,6 +604,8 @@
     editor = EDITOR.mount(body.querySelector(".cap-wrap"), params, {});
     if (!editor) return;
     addModalButtons();
+    addPicker(body);
+    addAdvanced();
 
     modal.hidden = false;
     document.body.style.overflow = "hidden";
@@ -644,7 +647,7 @@
   function addModalButtons() {
     const save = document.createElement("button");
     save.type = "button";
-    save.className = "button";
+    save.className = "button is-primary";
     save.textContent = "Save to team";
     save.addEventListener("click", saveSlot);
     const cancel = document.createElement("button");
@@ -655,6 +658,95 @@
     const host = editor.el("host-actions");
     host.appendChild(save);
     host.appendChild(cancel);
+  }
+
+  // Everyone you have already built, so filling a team is mostly picking people
+  // rather than making them again. Hidden entirely until there is somebody to
+  // pick - an empty shelf is just clutter.
+  function addPicker(body) {
+    const saved = PLAYERS.list();
+    if (!saved.length) return;
+    const strip = document.createElement("div");
+    strip.className = "tp-picker";
+    const title = document.createElement("p");
+    title.className = "tp-picker-title";
+    title.textContent = "Someone you already made";
+    strip.appendChild(title);
+    const row = document.createElement("div");
+    row.className = "tp-picker-row";
+    saved.forEach(entry => row.appendChild(pickerButton(entry)));
+    strip.appendChild(row);
+    body.insertBefore(strip, body.firstChild);
+  }
+
+  function pickerButton(entry) {
+    const player = safeLoad(entry.code);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tp-pick";
+    const thumb = document.createElement("canvas");
+    thumb.width = DRAW.LW * DRAW.S;
+    thumb.height = DRAW.LH * DRAW.S;
+    if (player) DRAW.render(thumb.getContext("2d"), player, 0.35);
+    button.appendChild(thumb);
+    const name = document.createElement("span");
+    name.textContent = player ? (player.name || player.position) : "player";
+    button.appendChild(name);
+    button.setAttribute("aria-label", "Use " + (player && player.name ? player.name : "this player"));
+    if (player) button.addEventListener("click", () => useSaved(player));
+    return button;
+  }
+
+  function safeLoad(code) {
+    try {
+      return CODE.load(code);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Drops the saved player into the open editor rather than straight into the
+  // slot, so they can still be tweaked before being saved to the team.
+  function useSaved(player) {
+    Object.assign(editor.params, player);
+    editor.sync();
+    status("Loaded. Change anything you like, then save to the team.");
+  }
+
+  // Pasting a code is a power-user route, so it goes behind a disclosure
+  // instead of sitting in front of everybody filling a slot.
+  function addAdvanced() {
+    const box = document.createElement("details");
+    box.className = "tp-advanced";
+    const head = document.createElement("summary");
+    head.textContent = "Advanced";
+    box.appendChild(head);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Paste a player code or link";
+    input.autocomplete = "off";
+    const go = document.createElement("button");
+    go.type = "button";
+    go.className = "button";
+    go.textContent = "Use this code";
+    go.addEventListener("click", () => {
+      const player = fromPasted(input.value);
+      if (!player) return status("That does not look like a player");
+      useSaved(player);
+      input.value = "";
+    });
+    const row = document.createElement("div");
+    row.className = "tp-advanced-row";
+    row.appendChild(input);
+    row.appendChild(go);
+    box.appendChild(row);
+    editor.el("host-footer").appendChild(box);
+  }
+
+  function fromPasted(text) {
+    const value = (text || "").trim();
+    if (!value) return null;
+    return safeLoad(playerCodeFrom(value));
   }
 
   function saveSlot() {
@@ -697,7 +789,7 @@
     canvas = document.getElementById("tp-canvas");
     slotBox = document.getElementById("tp-slots");
     statusBox = document.getElementById("tp-status");
-    if (!canvas || !D || !DRAW || !CODE || !EDITOR || !TEAM) return;
+    if (!canvas || !D || !DRAW || !CODE || !EDITOR || !TEAM || !PLAYERS) return;
 
     canvas.width = W;
     canvas.height = H;

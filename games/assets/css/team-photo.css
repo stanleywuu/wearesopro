@@ -161,3 +161,40 @@
 .tp-more > summary:hover { background: rgba(22, 104, 196, .08); border-color: var(--accent); }
 
 .tp-more-body { display: grid; gap: 1rem; padding-top: 1rem; }
+
+/* ---- saved-player picker, inside the slot modal ---- */
+
+.tp-picker { margin-bottom: 1rem; }
+.tp-picker-title { margin: 0 0 .4rem; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.tp-picker-row { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .35rem; }
+
+.tp-pick {
+  flex: 0 0 auto;
+  width: 76px;
+  display: grid;
+  gap: .15rem;
+  padding: .25rem;
+  border: 1px solid rgba(30, 136, 229, .25);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.tp-pick:hover, .tp-pick:focus-visible { border-color: var(--accent); background: rgba(22, 104, 196, .08); outline: none; }
+.tp-pick canvas { width: 100%; height: auto; display: block; }
+.tp-pick span {
+  font-size: .7rem; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* The one action the modal exists for. */
+.cap-actions .is-primary, .cap-actions .is-primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.tp-advanced { margin-top: .75rem; font-size: .9rem; }
+.tp-advanced > summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.tp-advanced-row { display: flex; gap: .5rem; margin-top: .5rem; }
+.tp-advanced-row input { flex: 1 1 auto; padding: .45rem .6rem; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }

@@ -4,7 +4,8 @@
 
 (function () {
 
-  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR, TEAM = window.CAP_TEAM;
+  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR;
+  const TEAM = window.CAP_TEAM, PLAYERS = window.CAP_PLAYERS;
 
   const STORE_KEY = "cap-player";
   const SHARE_KEY = "p";
@@ -12,16 +13,21 @@
 
   let editor = null;
   let saveTimer = 0;
+  let playerId = null;       // which gallery entry this player is
+  let started = false;       // the mount fires one change of its own; ignore it
+  let keeping = true;        // false while looking at somebody else's player
 
   function init() {
     const root = document.querySelector(".cap-wrap");
-    if (!root || !CODE || !EDITOR || !TEAM) return;
+    if (!root || !CODE || !EDITOR || !TEAM || !PLAYERS) return;
 
     const params = CODE.defaults();
     loadSaved(params);
     const fromLink = loadShared(params);
 
-    editor = EDITOR.mount(root, params, { onChange: queueSave });
+    playerId = PLAYERS.newId();
+    keeping = !fromLink;     // looking at a shared player is not building one
+    editor = EDITOR.mount(root, params, { onChange: onChange, onNew: newPlayer });
     if (!editor) return;
 
     addShareButton();
@@ -30,6 +36,22 @@
   }
 
   // ---- save -------------------------------------------------------------
+
+  // Everything you build is kept, without a Save button. Two things stop the
+  // gallery filling with noise: the mount's own opening change does not count,
+  // and neither does a shared player you have only looked at.
+  function onChange(params) {
+    queueSave(params);
+    if (!started) {
+      started = true;
+      return;
+    }
+    if (keeping) PLAYERS.remember(playerId, CODE.encode(params));
+  }
+
+  function newPlayer() {
+    playerId = PLAYERS.newId();
+  }
 
   function loadSaved(params) {
     try {
@@ -172,6 +194,8 @@
       intro.hidden = false;
       controls.classList.remove("collapsed");
       button.remove();
+      keeping = true;
+      newPlayer();
       dropShareParam();
     });
     editor.el("host-footer").appendChild(button);

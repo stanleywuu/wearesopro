@@ -221,6 +221,9 @@
     }
 
     function randomize() {
+      // A roll of the dice is a different person, not an edit of this one, so
+      // the host gets told before the change lands.
+      if (options.onNew) options.onNew();
       Object.assign(params, window.CAP_CODE.random());
       syncControls();
       status("");
