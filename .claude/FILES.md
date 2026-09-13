@@ -53,7 +53,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 - `games/create-a-player.html` + `games/assets/css/create-a-player.css` — **Create A Player**: build a cartoon player (body/head shape, colours, helmet, handedness, name, number, catch-phrase) and drag to spin them in 3D. See `docs/create-a-player.md` for the task tracker.
   - `games/assets/js/create-a-player.data.js` — data only: shapes, slider ranges, colour palettes, positions, random name and catch-phrase pools.
   - `games/assets/js/create-a-player.codec.js` — `CAP_CODE`: the player parameter defaults, the compact `~`-separated share code (encode/decode) and `sanitize()`, the one whitelist every untrusted player passes through. No DOM, no drawing; shared by the builder and the team photo page.
-  - `games/assets/js/create-a-player.draw.js` — hand-rolled 2.5D renderer (no 3D library): silhouette slabs whose width, position, depth and shading are recomputed from the yaw angle. No DOM access.
+  - `games/assets/js/create-a-player.draw.js` — hand-rolled 2.5D renderer (no 3D library): silhouette slabs whose width, position, depth and shading are recomputed from the yaw angle. No DOM access. `render(ctx, params, yaw, anim, opts)` obeys the current canvas transform, and `opts.background:false` drops the ice fill so several players can be composited into one scene.
   - `games/assets/js/create-a-player.js` — DOM wiring: tabs, controls, drag/auto-spin, quiet autosave to localStorage, randomize, the Highlight animation timeline, `?p=` share links (whitelisted on load), `?debug` yaw grid.
 
 ## tools/

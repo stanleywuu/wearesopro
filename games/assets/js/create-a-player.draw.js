@@ -658,13 +658,21 @@
 
   // ---- entry point ------------------------------------------------------
 
-  function render(ctx, params, yaw, anim) {
+  // opts.background === false draws the figure alone, on whatever is already
+  // under it, so several players can be composited into one scene. The caller
+  // places and scales with translate/scale before calling - every coordinate
+  // here goes through p(), so the whole figure follows the current transform.
+  function render(ctx, params, yaw, anim, opts) {
+    const background = !opts || opts.background !== false;
     const dims = computeDims(params);
     ANIM = anim || null;
     SHIFT = ANIM ? ANIM.shift : 0;
     FIT = Math.min(1.45, (GROUND - TOP_MARGIN) / dims.topY);
-    ctx.clearRect(0, 0, p(LW), p(LH));
-    drawIce(ctx);
+    ctx.save();
+    if (background) {
+      ctx.clearRect(0, 0, p(LW), p(LH));
+      drawIce(ctx);
+    }
     drawShadow(ctx, dims);
     if (ANIM) drawNet(ctx);
 
@@ -684,10 +692,13 @@
 
     if (ANIM && ANIM.puckT !== null) drawPuck(ctx, dims, params, yaw, ANIM.puckT);
     if (ANIM && ANIM.goal) drawGoalText(ctx);
+    ctx.restore();
   }
 
+  // CX and GROUND are exported so a caller compositing several players lines
+  // them up on the renderer's own centre line and ice, rather than guessing.
   window.CAP_DRAW = {
-    LW: LW, LH: LH, S: S,
+    LW: LW, LH: LH, S: S, CX: CX, GROUND: GROUND,
     render: render,
     computeDims: computeDims
   };
