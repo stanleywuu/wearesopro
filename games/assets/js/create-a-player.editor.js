@@ -318,12 +318,12 @@
       reel = buildReel();
       const grid = document.createElement("div");
       grid.className = "cap-debug";
-      const frames = 16;
+      const frames = 20;
       for (let i = 0; i < frames; i++) {
         const thumb = document.createElement("canvas");
         thumb.width = DRAW.LW * DRAW.S;
         thumb.height = DRAW.LH * DRAW.S;
-        DRAW.render(thumb.getContext("2d"), params, SIDE_ON,
+        DRAW.render(thumb.getContext("2d"), params, reel.yaw,
           highlightAt((reel.end - 1) * i / (frames - 1)));
         grid.appendChild(thumb);
       }
@@ -349,7 +349,8 @@
     // is what decides everything after contact: a harder shot is in the air for
     // less time, and the number on the end is the same number.
     function buildReel() {
-      if (params.position !== "Defence") return Object.assign({ slap: false, home: 0 }, CLASSIC);
+      if (params.position === "Goalie") return goalieReel();
+      if (params.position !== "Defence") return Object.assign({ slap: false, home: 0, yaw: SIDE_ON }, CLASSIC);
       // Beer league. Nobody here is breaking 80.
       const speed = 55 + Math.round(Math.random() * 25);
       const contact = 2300;
@@ -358,6 +359,7 @@
       const flight = Math.round(120000 / speed);
       return {
         slap: true,
+        yaw: SIDE_ON,
         label: speed + " mph!!",
         home: -55,                 // out by the left boards, where a point shot comes from
         glide: 1200,
@@ -371,6 +373,49 @@
         land: contact + flight,
         end: contact + flight + 1300
       };
+    }
+
+    // A goalie does not take the highlight, he is the highlight: leaning on his
+    // stick in front of the net, then three saves in a row with no warning.
+    const SAVES = [
+      { at: 1000, kind: "drop",    hold: 300 },
+      { at: 1620, kind: "blocker", hold: 260 },
+      { at: 2240, kind: "glove",   hold: 520 }
+    ];
+    const APPROACH = 300, DEFLECT = 260;   // puck in, puck away
+
+    function goalieReel() {
+      // Face on, not side on: a goalie is looked at down the ice, with the net
+      // behind him and the blocker and glove out to either side of frame.
+      return { save: true, yaw: 0, label: "ROBBED HIM!!", saves: SAVES, end: 4000, home: 0 };
+    }
+
+    // Each save: snap into the pose, hold it, come back out. The snap is quick
+    // on purpose - a goalie's reaction is the whole point of the shot.
+    function saveAt(ms) {
+      const pose = { drop: 0, blocker: 0, glove: 0 };
+      SAVES.forEach(save => {
+        pose[save.kind] = Math.max(pose[save.kind], envelope(ms, save.at, save.hold));
+      });
+      return pose;
+    }
+
+    function envelope(ms, at, hold) {
+      if (ms < at - 90 || ms > at + hold + 280) return 0;
+      if (ms < at) return (ms - (at - 90)) / 90;
+      if (ms <= at + hold) return 1;
+      return 1 - (ms - at - hold) / 280;
+    }
+
+    // The puck for whichever save is currently happening, as 0..1 across its
+    // approach and its deflection. Impact is where those two meet.
+    function shotAt(ms) {
+      let out = null;
+      SAVES.forEach(save => {
+        const from = save.at - APPROACH, to = save.at + DEFLECT;
+        if (ms >= from && ms <= to) out = { kind: save.kind, t: (ms - from) / (to - from) };
+      });
+      return out;
     }
 
     // The whole reel as a function of elapsed time. Returns null once finished.
@@ -390,6 +435,7 @@
         anim.shift = reel.home;
         anim.crouch = 0.35;
       }
+      if (reel.save) return goalieFrame(ms, anim);
       if (reel.slap) slapAt(ms, anim);
       else wristAt(ms, anim);
       if (ms >= reel.contact) {
@@ -412,6 +458,22 @@
       if (ms >= to) return 1;
       const t = (ms - from) / (to - from);
       return t * t * (3 - 2 * t);
+    }
+
+    // He keeps his resting pose all the way through - the saves happen around
+    // it - and the net sits behind him rather than off at the far end.
+    function goalieFrame(ms, anim) {
+      const pose = saveAt(ms);
+      anim.save = true;          // without this the renderer never looks for a shot
+      anim.rest = true;
+      anim.netBehind = true;
+      anim.drop = pose.drop;
+      anim.blocker = pose.blocker;
+      anim.glove = pose.glove;
+      anim.shot = shotAt(ms);
+      anim.crouch = 0;
+      anim.goal = ms >= reel.saves[2].at + reel.saves[2].hold;
+      return anim;
     }
 
     // Up and back over the shoulder, then down through the puck and high out
@@ -460,7 +522,7 @@
       const anim = highlightStart ? highlightAt(now - highlightStart) : null;
       if (highlightStart && !anim) highlightStart = 0;
       if (anim) {
-        yaw = SIDE_ON;
+        yaw = reel.yaw;
       } else if (!dragging && now - lastInput > IDLE_DELAY) {
         yaw += SPIN_SPEED / 60;
       }

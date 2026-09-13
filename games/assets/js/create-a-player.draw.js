@@ -188,14 +188,15 @@
     // in body space, which is what reads as "towards the net" in the side view
     // the highlight uses.
     const crouch = ANIM ? ANIM.crouch : 0;
+    const flop = ANIM && ANIM.drop ? ANIM.drop : 0;   // butterfly, 0..1
     const drop = crouch * 12;
     const lean = crouch * 7;
-    const hipY = HIP_Y - drop;
+    const hipY = HIP_Y - drop - 15 * flop;
 
     // A goalie at rest stands straight with both hands on the knob of an
     // upright stick and his head tipped forward onto them - the Dryden pose.
     // Only while idle: mid-highlight he takes the ordinary skating stance.
-    const rest = params.position === "Goalie" && !ANIM;
+    const rest = params.position === "Goalie" && (!ANIM || Boolean(ANIM.rest));
 
     const torso = { rx: 22 * bw, ry: 26 * bh, x: 0, z: lean + (rest ? 2 : 0) };
     torso.rz = torso.rx * 0.62;
@@ -219,6 +220,7 @@
       crouch: crouch,
       goalie: params.position === "Goalie",
       rest: rest,
+      flop: flop,
       // Framing is measured standing, so crouching does not zoom the figure.
       topY: head.y + head.ry * 1.12 + drop,
       shoulderY: shoulderY,
@@ -264,14 +266,17 @@
   // forward in z, so they fall behind the legs by themselves once he turns his
   // back rather than needing a special case.
   function padPart(ctx, dims, params, yaw, side) {
-    const r = rotY(side * (dims.legX + 0.5), 9, yaw);
-    const midY = (SKATE_Y + dims.hipY) / 2 + 2;
+    // In the butterfly the pads go flat and out: wider, shorter, further from
+    // the centre line and lower down.
+    const f = dims.flop;
+    const r = rotY(side * (dims.legX + 0.5 + 13 * f), 9, yaw);
+    const midY = ((SKATE_Y + dims.hipY) / 2 + 2) * (1 - 0.3 * f);
     const c = project(r.x, midY, r.z);
-    const hh = ((dims.hipY - SKATE_Y) / 2 + 2) * c.k;
+    const hh = ((dims.hipY - SKATE_Y) / 2 + 2) * (1 - 0.5 * f) * c.k;
     return {
       d: r.z + 0.8,
       draw: () => {
-        const hw = silWidth(9, 5.5, yaw, 0) * c.k;
+        const hw = silWidth(9 + 9 * f, 5.5, yaw, 0) * c.k;
         drawSlab(ctx, {
           cx: c.sx, cy: c.sy, hw: hw, hh: hh,
           shape: "capsule", taper: 0.95, round: 1,
@@ -449,8 +454,13 @@
   // Eyes and mouth live on the front of the head, so they vanish as it turns away.
   function facePart(ctx, dims, params, yaw) {
     const head = dims.head;
+    // A mask shell sorts just in front of the head, so the face has to sort in
+    // front of the MASK or it is painted over and he has no eyes. Measured off
+    // the head's own rotated depth, since a resting goalie leans his head
+    // forward far enough that a fixed depth stops being in front of anything.
+    const hr = rotY(head.x, head.z, yaw);
     return {
-      d: head.rz,
+      d: params.helmetStyle === "mask" ? hr.z + 1.5 : head.rz,
       draw: () => {
         const facing = Math.cos(yaw);
         if (facing < 0.3) return;
@@ -698,10 +708,22 @@
   function gripsFor(dims, s) {
     if (!dims.rest) return [s.topHand, s.lowHand];
     const k = s.butt, h = s.hand;
-    return [
+    const rest = [
       { x: k.x + h * 5.2, y: k.y + 1.4, z: k.z + 0.8 },
       { x: k.x - h * 5.2, y: k.y + 2.4, z: k.z - 1.0 }
     ];
+    if (!ANIM) return rest;
+    // A save throws one hand out and leaves the other where it was. Blended
+    // rather than switched, so the arm travels there instead of teleporting.
+    return [
+      blend(rest[0], { x: h * 34, y: dims.shoulderY - 2, z: 16 }, ANIM.blocker || 0),
+      blend(rest[1], { x: -h * 30, y: dims.shoulderY + 20, z: 14 }, ANIM.glove || 0)
+    ];
+  }
+
+  function blend(a, b, t) {
+    if (!t) return a;
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
   }
 
   function armParts(ctx, dims, params, yaw) {
@@ -814,6 +836,79 @@
     };
   }
 
+  // ---- goalie saves -----------------------------------------------------
+
+  // Where each save happens, in logical screen space. All three come in from
+  // the left, at the height that forces the save being shown.
+  const POW = { drop: "PAD!", blocker: "POW!", glove: "SNAG!" };
+
+  function saveSpot(kind, dims, hand) {
+    if (kind === "blocker") return { x: CX + hand * 30, y: GROUND - 52 };
+    if (kind === "glove") return { x: CX - hand * 26, y: GROUND - 74 };
+    return { x: CX + 4, y: GROUND - 12 };          // low, and he drops on it
+  }
+
+  // In from off frame, then away off whatever stopped it. The glove keeps it.
+  function drawSave(ctx, dims, params, yaw) {
+    const shot = ANIM.shot;
+    const hand = handSign(params);
+    const spot = saveSpot(shot.kind, dims, hand);
+    const hit = 0.53;
+    if (shot.t <= hit) {
+      const t = shot.t / hit;
+      const rise = 26 * (1 - t) * (1 - t);
+      const x = -14 + (spot.x + 14) * t;
+      if (t > 0.25) streaksTo(ctx, x, spot.y - rise);
+      puckAt(ctx, x, spot.y - rise, 1.4, 1);
+      return;
+    }
+    drawPow(ctx, spot, shot);
+    if (shot.kind === "glove") return puckAt(ctx, spot.x, spot.y, 1.4, 1);
+    const t = (shot.t - hit) / (1 - hit);
+    const away = shot.kind === "blocker" ? 1 : -0.4;
+    puckAt(ctx, spot.x + away * 52 * t, spot.y - 30 * t + 40 * t * t, 1.4, 1 - t * 0.5);
+  }
+
+  // A comic burst on the moment of contact, popping out and fading. Drawn as a
+  // spiky ring rather than a speech bubble - nobody is talking, something got
+  // hit.
+  function drawPow(ctx, spot, shot) {
+    const t = (shot.t - 0.53) / 0.34;
+    if (t < 0 || t > 1) return;
+    const grow = t < 0.35 ? t / 0.35 : 1;
+    const r = 15 * (0.55 + 0.45 * grow);
+    const x = spot.x + 14, y = spot.y - 16;
+    ctx.save();
+    ctx.globalAlpha = 1 - Math.max(0, (t - 0.6) / 0.4);
+    ctx.beginPath();
+    for (let i = 0; i < 20; i++) {
+      const a = (i / 20) * Math.PI * 2;
+      const rr = r * (i % 2 ? 0.62 : 1);
+      const px = p(x + Math.cos(a) * rr), py = p(y + Math.sin(a) * rr * 0.85);
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = "#FDD835";
+    ctx.fill();
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(1.4);
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    ctx.font = "800 " + p(8.5) + "px " + FONT;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = OUTLINE;
+    ctx.fillText(POW[shot.kind], p(x), p(y));
+    ctx.restore();
+  }
+
+  function streaksTo(ctx, x, y) {
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    [-5, 2].forEach((dy, i) => L(ctx, x - 8, y + dy, x - 8 - (16 + i * 6), y + dy, "#7F98AE", 1.2));
+    ctx.restore();
+  }
+
   // ---- scene ------------------------------------------------------------
 
   function drawShadow(ctx, dims) {
@@ -839,11 +934,13 @@
   // has nothing to travel towards but distance.
   function drawNet(ctx, t) {
     const into = (t === undefined) ? 1 : t;
-    const home = (ANIM && ANIM.netClose) ? NET_CLOSE : NET.x;
+    const behind = Boolean(ANIM && ANIM.netBehind);
+    const home = behind ? CX : ((ANIM && ANIM.netClose) ? NET_CLOSE : NET.x);
+    const grow = behind ? 1.45 : 1;      // he has to fit in front of it
     // Starts just past the right edge, not miles beyond it: come in from too
     // far away and it spends the whole slide off screen, then pops.
     const cx = home + (1 - into) * ((LW + NET.w / 2) - home);
-    const w = NET.w * FIT, h = NET.h * FIT;
+    const w = NET.w * FIT * grow, h = NET.h * FIT * grow;
     const base = GROUND - 1, left = cx - w / 2, right = cx + w / 2, top = base - h;
     ctx.fillStyle = "rgba(255,255,255,.7)";
     ctx.fillRect(p(left), p(top), p(w), p(h));
@@ -1022,6 +1119,11 @@
 
   // The puck and the readout, which outlive the player on screen.
   function finishShot(ctx, dims, params, yaw) {
+    if (ANIM.save) {
+      if (ANIM.shot) drawSave(ctx, dims, params, yaw);
+      if (ANIM.goal) drawGoalText(ctx, ANIM.label);
+      return;
+    }
     if (ANIM.puckT === null) return puckRest(ctx, dims, params, yaw);
     drawPuck(ctx, dims, params, yaw, ANIM.puckT);
     if (ANIM.goal) drawGoalText(ctx, ANIM.label);
