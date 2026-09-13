@@ -297,7 +297,9 @@
     // ?debug renders the player at eight fixed angles so every side can be
     // checked at once. Built entirely in JS - nothing debug-related in the HTML.
     function buildDebugGrid() {
-      if (!new URLSearchParams(location.search).has("debug")) return;
+      const query = new URLSearchParams(location.search);
+      if (!query.has("debug")) return;
+      if (query.get("debug") === "reel") return buildReelStrip();
       const grid = document.createElement("div");
       grid.className = "cap-debug";
       for (let i = 0; i < 8; i++) {
@@ -310,47 +312,124 @@
       root.appendChild(grid);
     }
 
+    // ?debug=reel lays the highlight out as a filmstrip. Trying to judge the
+    // timing of a four-second animation by eye, one run at a time, is hopeless.
+    function buildReelStrip() {
+      reel = buildReel();
+      const grid = document.createElement("div");
+      grid.className = "cap-debug";
+      const frames = 16;
+      for (let i = 0; i < frames; i++) {
+        const thumb = document.createElement("canvas");
+        thumb.width = DRAW.LW * DRAW.S;
+        thumb.height = DRAW.LH * DRAW.S;
+        DRAW.render(thumb.getContext("2d"), params, SIDE_ON,
+          highlightAt((reel.end - 1) * i / (frames - 1)));
+        grid.appendChild(thumb);
+      }
+      root.appendChild(grid);
+    }
+
     // ---- highlight reel -------------------------------------------------
 
-    const HIGHLIGHT = { glide: 1200, wind: 1800, shot: 2000, puck: 2500, end: 3600 };
     const SIDE_ON = Math.PI / 2;   // the reel plays side on, facing the net
 
+    // The wrist shot every other position plays, unchanged.
+    const CLASSIC = { glide: 1200, wind: 1800, contact: 2000, land: 2500, end: 3600 };
+
+    let reel = null;               // the timeline for the shot being played
+
     function playHighlight() {
+      reel = buildReel();
       highlightStart = performance.now();
       status("");
     }
 
-    // The whole reel as a function of elapsed time: glide in, sink into the
-    // shot, sweep through it, watch the puck go in. Returns null once finished.
+    // A defenceman winds up and slaps it. The speed is rolled FIRST, because it
+    // is what decides everything after contact: a harder shot is in the air for
+    // less time, and the number on the end is the same number.
+    function buildReel() {
+      if (params.position !== "Defence") return Object.assign({ slap: false }, CLASSIC);
+      const speed = 70 + Math.round(Math.random() * 35);
+      const contact = 2300;
+      const flight = Math.round(105000 / speed);   // 70mph ~1500ms, 105mph ~1000ms
+      return {
+        slap: true,
+        label: speed + " mph!!",
+        glide: 1200,
+        wind: 1800,
+        hold: 2010,                // a beat at the top, or the windup flashes by
+        contact: contact,
+        solo: contact + 450,       // long enough to see the follow-through
+        land: contact + flight,
+        end: contact + flight + 1300
+      };
+    }
+
+    // The whole reel as a function of elapsed time. Returns null once finished.
     function highlightAt(ms) {
-      if (ms >= HIGHLIGHT.end) return null;
-      const anim = { shift: 0, crouch: 0, swing: 0, puckT: null, goal: false };
-      if (ms < HIGHLIGHT.glide) {
-        const t = ms / HIGHLIGHT.glide;
+      if (!reel || ms >= reel.end) return null;
+      const anim = {
+        shift: 0, crouch: 0, swing: 0, lift: 0,
+        puckT: null, goal: false, puckOnly: false,
+        arc: reel.slap ? 17 : 9, label: reel.label
+      };
+      if (ms < reel.glide) {
+        const t = ms / reel.glide;
         anim.shift = -55 * (1 - t * t * (3 - 2 * t));
         anim.crouch = 0.35 * t;
       } else {
         anim.crouch = 0.35;
       }
-      if (ms >= HIGHLIGHT.glide && ms < HIGHLIGHT.wind) {
-        const t = (ms - HIGHLIGHT.glide) / (HIGHLIGHT.wind - HIGHLIGHT.glide);
+      if (reel.slap) slapAt(ms, anim);
+      else wristAt(ms, anim);
+      if (ms >= reel.contact) {
+        anim.puckT = Math.min(1, (ms - reel.contact) / (reel.land - reel.contact));
+        anim.puckOnly = Boolean(reel.solo) && ms >= reel.solo;
+      }
+      anim.goal = ms >= reel.land;
+      return anim;
+    }
+
+    // Up and back over the shoulder, then down through the puck and high out
+    // the other side. The windup is slow and the swing is not: lift falls as
+    // 1 - t*t so the blade is quickest where it meets the puck.
+    function slapAt(ms, anim) {
+      if (ms >= reel.glide && ms < reel.wind) {
+        const t = (ms - reel.glide) / (reel.wind - reel.glide);
+        anim.crouch = 0.35 + 0.5 * t;
+        anim.lift = 2.6 * t;
+      } else if (ms >= reel.wind && ms < reel.hold) {
+        anim.crouch = 0.85;
+        anim.lift = 2.6;                    // held at the top
+      } else if (ms >= reel.hold && ms < reel.contact) {
+        const t = (ms - reel.hold) / (reel.contact - reel.hold);
+        anim.crouch = 0.85 + 0.15 * t;
+        anim.lift = 2.6 * (1 - t * t);
+      } else if (ms >= reel.contact) {
+        const t = Math.min(1, (ms - reel.contact) / 420);
+        anim.crouch = 1 - 0.5 * t;
+        anim.lift = -1.8 * t;          // a slapshot finishes high
+        anim.swing = 0.5 * t;
+      }
+    }
+
+    // Glide in, sink into the shot, sweep through it.
+    function wristAt(ms, anim) {
+      if (ms >= reel.glide && ms < reel.wind) {
+        const t = (ms - reel.glide) / (reel.wind - reel.glide);
         anim.crouch = 0.35 + 0.65 * t;      // sink into it
         anim.swing = -1.15 * t;
-      } else if (ms >= HIGHLIGHT.wind && ms < HIGHLIGHT.shot) {
-        const t = (ms - HIGHLIGHT.wind) / (HIGHLIGHT.shot - HIGHLIGHT.wind);
+      } else if (ms >= reel.wind && ms < reel.contact) {
+        const t = (ms - reel.wind) / (reel.contact - reel.wind);
         anim.crouch = 1;
         anim.swing = -1.15 + 2.5 * t;
-      } else if (ms >= HIGHLIGHT.shot) {
+      } else if (ms >= reel.contact) {
         // Rise back up out of the follow-through.
-        const t = Math.min(1, (ms - HIGHLIGHT.shot) / 900);
+        const t = Math.min(1, (ms - reel.contact) / 900);
         anim.crouch = 1 - 0.8 * t;
         anim.swing = 1.35;
       }
-      if (ms >= HIGHLIGHT.shot) {
-        anim.puckT = Math.min(1, (ms - HIGHLIGHT.shot) / (HIGHLIGHT.puck - HIGHLIGHT.shot));
-      }
-      anim.goal = ms >= HIGHLIGHT.puck;
-      return anim;
     }
 
     function frame(now) {

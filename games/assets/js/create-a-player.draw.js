@@ -579,8 +579,10 @@
     // it back the other way reads as a golf club.
     const toe = { x: heel.x - hand * 11, y: 2.5, z: heel.z + 4 };
 
-    const s = { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
-    return ANIM && ANIM.swing ? swingStick(s, ANIM.swing * hand) : s;
+    let s = { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
+    if (ANIM && ANIM.lift) s = liftStick(s, ANIM.lift);
+    if (ANIM && ANIM.swing) s = swingStick(s, ANIM.swing * hand);
+    return s;
   }
 
   // The goalie's stick stands on its blade out in front of him, knob just under
@@ -622,6 +624,23 @@
     const turn = pt => {
       const r = rotY(pt.x - pivot.x, pt.z - pivot.z, angle);
       return { x: pivot.x + r.x, y: pt.y, z: pivot.z + r.z };
+    };
+    return {
+      hand: s.hand, topHand: pivot,
+      butt: turn(s.butt), heel: turn(s.heel), toe: turn(s.toe), lowHand: turn(s.lowHand)
+    };
+  }
+
+  // A slapshot raises the stick in the VERTICAL plane, which the yaw sweep
+  // above cannot do - it only ever moves the blade sideways. Positive angle
+  // takes the blade up and back into the windup; negative finishes it high in
+  // front on the follow-through.
+  function liftStick(s, angle) {
+    const pivot = s.topHand;
+    const c = Math.cos(angle), sn = Math.sin(angle);
+    const turn = pt => {
+      const dy = pt.y - pivot.y, dz = pt.z - pivot.z;
+      return { x: pt.x, y: pivot.y + dy * c - dz * sn, z: pivot.z + dy * sn + dz * c };
     };
     return {
       hand: s.hand, topHand: pivot,
@@ -808,25 +827,32 @@
     L(ctx, left, top, right, top, "#E53935", 2.4);
   }
 
-  // Flies from wherever the blade finished its swing to the mouth of the net.
+  // Where the blade was at contact. Held, because a slapshot follow-through
+  // carries the blade a long way after the puck has gone and the puck would
+  // otherwise appear to set off from wherever the stick had got to.
+  let LAUNCH = null;
+
   function drawPuck(ctx, dims, params, yaw, t) {
-    const toe = proj3(stickPoints(dims, params).toe, yaw);
-    const sx = toe.sx + (NET.x - toe.sx) * t;
-    const sy = toe.sy + (GROUND - 9 - toe.sy) * t - Math.sin(t * Math.PI) * 9;
-    E(ctx, sx, sy, 3, 2.1, "#11181F");
+    if (!LAUNCH || t <= 0.02) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
+    const arc = (ANIM && ANIM.arc) || 9;
+    const size = (ANIM && ANIM.puckOnly) ? 1.5 : 1;
+    const sx = LAUNCH.sx + (NET.x - LAUNCH.sx) * t;
+    const sy = LAUNCH.sy + (GROUND - 9 - LAUNCH.sy) * t - Math.sin(t * Math.PI) * arc;
+    E(ctx, sx, sy, 3 * size, 2.1 * size, "#11181F");
   }
 
-  function drawGoalText(ctx) {
+  function drawGoalText(ctx, label) {
+    const text = label || "GOAL!";
     ctx.save();
-    ctx.font = "800 " + p(18) + "px " + FONT;
+    ctx.font = "800 " + p(text.length > 6 ? 15 : 18) + "px " + FONT;
     ctx.textAlign = "right";
     ctx.lineJoin = "round";
     ctx.lineWidth = p(3);
     ctx.strokeStyle = OUTLINE;
     const y = GROUND - NET.h * FIT - 12;
-    ctx.strokeText("GOAL!", p(LW - 8), p(y));
+    ctx.strokeText(text, p(LW - 8), p(y));
     ctx.fillStyle = "#FDD835";
-    ctx.fillText("GOAL!", p(LW - 8), p(y));
+    ctx.fillText(text, p(LW - 8), p(y));
     ctx.restore();
   }
 
@@ -873,12 +899,21 @@
       ctx.clearRect(0, 0, p(LW), p(LH));
       drawIce(ctx);
     }
-    if (shadow) drawShadow(ctx, dims);
+    // Once the shot is away the reel cuts to the puck alone, so the player is
+    // simply not drawn - no shadow under him either.
+    const solo = Boolean(ANIM && ANIM.puckOnly);
+    if (shadow && !solo) drawShadow(ctx, dims);
     if (ANIM) drawNet(ctx);
 
+    if (!solo) drawFigure(ctx, dims, params, yaw);
+    if (ANIM) finishShot(ctx, dims, params, yaw);
+    else LAUNCH = null;
+    ctx.restore();
+  }
+
+  function drawFigure(ctx, dims, params, yaw) {
     const torso = Object.assign({}, dims.torso, { style: dims.bodyStyle, color: params.jerseyColor });
     const head = Object.assign({}, dims.head, { style: dims.headStyle, color: params.skinColor });
-
     const parts = bodyParts(ctx, dims, params, yaw).concat([
       slabPart(ctx, torso, yaw),
       jerseyPart(ctx, dims, params, yaw),
@@ -889,10 +924,12 @@
     ]).concat(armParts(ctx, dims, params, yaw));
     depthSort(parts);
     parts.forEach(part => part.draw());
+  }
 
-    if (ANIM && ANIM.puckT !== null) drawPuck(ctx, dims, params, yaw, ANIM.puckT);
-    if (ANIM && ANIM.goal) drawGoalText(ctx);
-    ctx.restore();
+  // The puck and the readout, which outlive the player on screen.
+  function finishShot(ctx, dims, params, yaw) {
+    if (ANIM.puckT !== null) drawPuck(ctx, dims, params, yaw, ANIM.puckT);
+    if (ANIM.goal) drawGoalText(ctx, ANIM.label);
   }
 
   // CX and GROUND are exported so a caller compositing several players lines
