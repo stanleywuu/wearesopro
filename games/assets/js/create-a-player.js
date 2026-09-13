@@ -2,9 +2,9 @@
 
 (function () {
 
-  const D = window.CAP_DATA, DRAW = window.CAP_DRAW;
+  const D = window.CAP_DATA, DRAW = window.CAP_DRAW, CODE = window.CAP_CODE;
   const canvas = document.getElementById("cap-canvas");
-  if (!canvas || !D || !DRAW) return;
+  if (!canvas || !D || !DRAW || !CODE) return;
 
   const ctx = canvas.getContext("2d");
   canvas.width = DRAW.LW * DRAW.S;
@@ -15,38 +15,7 @@
   const STORE_KEY = "cap-player";
   const SHARE_KEY = "p";
 
-  const params = {
-    bodyShape: "ellipsoid",
-    headShape: "ellipsoid",
-    bodyWidth: D.sliders.bodyWidth.value,
-    bodyHeight: D.sliders.bodyHeight.value,
-    bodyContour: D.sliders.bodyContour.value,
-    headWidth: D.sliders.headWidth.value,
-    headHeight: D.sliders.headHeight.value,
-    headContour: D.sliders.headContour.value,
-    skinColor: D.skinColors[0],
-    jerseyColor: D.jerseyColors[0],
-    trimColor: D.trimColors[0],
-    sockColor: D.jerseyColors[0],
-    helmetColor: D.helmetColors[0],
-    helmetStyle: "visor",
-    handedness: "left",
-    name: "",
-    number: "",
-    position: D.positions[0],
-    phrase: ""
-  };
-
-  // The colour fields, paired with the preset palette each one defaults from.
-  // Custom colours are allowed too, so a shared link is validated by format
-  // rather than by membership of these lists.
-  const PALETTES = [
-    ["skinColor", D.skinColors],
-    ["jerseyColor", D.jerseyColors],
-    ["trimColor", D.trimColors],
-    ["sockColor", D.jerseyColors],
-    ["helmetColor", D.helmetColors]
-  ];
+  const params = CODE.defaults();
 
   let yaw = 0.5;
   let statusTimer = 0;
@@ -230,7 +199,7 @@
   function loadSaved() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      if (raw) Object.assign(params, JSON.parse(raw));
+      if (raw) Object.assign(params, CODE.sanitize(JSON.parse(raw)));
     } catch (e) {
       // A blocked or corrupt store just means we start from the defaults.
     }
@@ -248,73 +217,13 @@
 
   // ---- share links ------------------------------------------------------
 
-  // The link used to carry base64 of the whole JSON blob, which ran past 400
-  // characters. Now the player is a fixed-order, "~"-separated list: an enum
-  // is its index, a slider its offset from the minimum, and a palette colour
-  // a single digit. A typical player fits in well under a hundred characters.
-  const SHARE_VERSION = "1";
-  const SLIDER_KEYS = Object.keys(D.sliders);
-
-  function encodeColor(value, list) {
-    const idx = list.indexOf(value);
-    return idx >= 0 ? String(idx) : String(value).replace("#", "");
-  }
-
-  function decodeColor(field, list) {
-    return /^\d$/.test(field) ? list[Number(field)] : "#" + field;
-  }
-
-  function encodeParams() {
-    const fields = [
-      D.shapes.findIndex(s => s.id === params.bodyShape),
-      D.shapes.findIndex(s => s.id === params.headShape)
-    ];
-    SLIDER_KEYS.forEach(key => fields.push(params[key] - D.sliders[key].min));
-    PALETTES.forEach(entry => fields.push(encodeColor(params[entry[0]], entry[1])));
-    fields.push(
-      D.helmets.findIndex(h => h.id === params.helmetStyle),
-      D.handedness.findIndex(h => h.id === params.handedness),
-      D.positions.indexOf(params.position),
-      params.name, params.number, params.phrase
-    );
-    // Empty name/number/phrase at the end are just dead weight in the URL.
-    while (fields.length && fields[fields.length - 1] === "") fields.pop();
-    return SHARE_VERSION + "~" + fields.join("~");
-  }
-
-  // Returns the same shape of object the old JSON links did, so sanitizeShared
-  // stays the one place a shared player is validated.
-  function decodeParams(code) {
-    const fields = code.split("~");
-    if (fields.shift() !== SHARE_VERSION) return JSON.parse(fromBase64Url(code));
-    let i = 0;
-    const next = () => (fields[i++] || "");
-    const id = (list, field) => (list[Number(field)] || {}).id;
-    const raw = { bodyShape: id(D.shapes, next()), headShape: id(D.shapes, next()) };
-    SLIDER_KEYS.forEach(key => { raw[key] = Number(next()) + D.sliders[key].min; });
-    PALETTES.forEach(entry => { raw[entry[0]] = decodeColor(next(), entry[1]); });
-    raw.helmetStyle = id(D.helmets, next());
-    raw.handedness = id(D.handedness, next());
-    raw.position = D.positions[Number(next())];
-    raw.name = next();
-    raw.number = next();
-    raw.phrase = next();
-    return raw;
-  }
-
-  // Links shared before the compact format are still base64 of the JSON.
-  function fromBase64Url(code) {
-    const bin = atob(code.replace(/-/g, "+").replace(/_/g, "/"));
-    return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
-  }
-
   // Percent escapes make a link look like spam and some chat clients stop
   // linkifying at one, so the two that free text actually produces are undone:
   // a space rides as "+" (URLSearchParams decodes that back to a space) and a
   // comma is legal in a query value as-is. A typed "+" still escapes to %2B and
   // survives the round trip.
   function shareUrl() {
-    const code = encodeURIComponent(encodeParams())
+    const code = encodeURIComponent(CODE.encode(params))
       .replace(/%20/g, "+").replace(/%2C/g, ",");
     return location.origin + location.pathname + "?" + SHARE_KEY + "=" + code;
   }
@@ -347,7 +256,7 @@
     const code = new URLSearchParams(location.search).get(SHARE_KEY);
     if (!code) return false;
     try {
-      Object.assign(params, sanitizeShared(decodeParams(code)));
+      Object.assign(params, CODE.sanitize(CODE.decode(code)));
       return true;
     } catch (e) {
       return false;   // a mangled link just leaves the defaults in place
@@ -385,44 +294,6 @@
     query.delete(SHARE_KEY);
     const rest = query.toString();
     history.replaceState(null, "", location.pathname + (rest ? "?" + rest : ""));
-  }
-
-  // A shared link is untrusted input, so every field is whitelisted: ids and
-  // colours must come from the data file, numbers are clamped to their slider
-  // range, and free text is length-capped.
-  function sanitizeShared(raw) {
-    if (!raw || typeof raw !== "object") return {};
-    const out = {};
-    const option = (key, list) => {
-      if (list.some(o => o.id === raw[key])) out[key] = raw[key];
-    };
-    option("bodyShape", D.shapes);
-    option("headShape", D.shapes);
-    option("helmetStyle", D.helmets);
-    option("handedness", D.handedness);
-    Object.keys(D.sliders).forEach(key => {
-      const spec = D.sliders[key], value = Number(raw[key]);
-      if (Number.isFinite(value)) out[key] = Math.min(spec.max, Math.max(spec.min, Math.round(value)));
-    });
-    PALETTES.forEach(entry => {
-      if (isHexColor(raw[entry[0]])) out[entry[0]] = raw[entry[0]];
-    });
-    if (D.positions.indexOf(raw.position) >= 0) out.position = raw.position;
-    out.name = capText(raw.name, 14);
-    out.phrase = capText(raw.phrase, 48);
-    out.number = capText(raw.number, 2).replace(/[^0-9]/g, "");
-    return out;
-  }
-
-  // Custom colours mean a shared link is no longer restricted to the palette,
-  // so the format is what gets checked. Colours only ever reach the canvas as
-  // a fillStyle, never the DOM, and anything else is dropped.
-  function isHexColor(value) {
-    return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value);
-  }
-
-  function capText(value, max) {
-    return typeof value === "string" ? value.slice(0, max) : "";
   }
 
   function randomize() {
