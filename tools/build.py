@@ -32,7 +32,6 @@ SITE = "https://wearesopro.ca"
 #   badge    flag shown in the menus only, e.g. "New"
 PAGES = [
     {"path": "index.html",                 "label": "Home"},
-    {"path": "teamupdates.html",           "label": "Team Updates"},
     {"path": "notes.html",                 "label": "Editor&rsquo;s Notes"},
 
     {"path": "notes/pipeline.html",        "label": "The Pipeline",
@@ -56,6 +55,7 @@ PAGES = [
     {"path": "games/create-a-player.html", "label": "Create A Player",
      "section": "games", "badge": "New"},
 
+    {"path": "teamupdates.html",           "label": "Team Updates"},
     {"path": "links.html",                 "label": "Get the Book"},
     {"path": "feedback.html",              "label": "Feedback"},
     {"path": "experiments.html"},
