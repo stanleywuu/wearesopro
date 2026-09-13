@@ -1,17 +1,25 @@
 #!/bin/sh
-# Enforces the rule that RULES.md states: generated output must be current and
+# Enforces the rule RULES.md states: generated output must be current and
 # internal links must resolve. Installed with `make hooks`.
 #
-# This does not stage anything for you. If generation changes a file, the commit
-# stops so you can look at the diff and stage it yourself.
+# sitemap.xml is a pure artifact nobody edits by hand, so a regenerated one is
+# staged for you — otherwise every page edit on a new day would need two goes at
+# the commit. The nav inside pages is different: it only changes when PAGES or
+# the templates change, which is deliberate work, so that stops the commit for
+# you to look at.
 
 set -e
 
 python3 tools/build.py
 
-stale=$(git diff --name-only -- sitemap.xml '*.html')
+if ! git diff --quiet -- sitemap.xml; then
+  git add sitemap.xml
+  echo "pre-commit: staged a regenerated sitemap.xml"
+fi
+
+stale=$(git diff --name-only -- '*.html')
 if [ -n "$stale" ]; then
-  echo "pre-commit: 'make site' changed generated output that is not staged:"
+  echo "pre-commit: 'make site' changed the nav in pages that are not staged:"
   echo "$stale" | sed 's/^/  /'
   echo
   echo "Review the diff, 'git add' those files, and commit again."
