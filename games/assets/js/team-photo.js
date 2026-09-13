@@ -763,6 +763,7 @@
     input.type = "text";
     input.placeholder = "Paste a player code or link";
     input.autocomplete = "off";
+    input.setAttribute("aria-label", "Player code or Create A Player link");
     const go = document.createElement("button");
     go.type = "button";
     go.className = "button";

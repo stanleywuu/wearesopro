@@ -195,7 +195,13 @@
 }
 
 .tp-advanced { margin-top: .75rem; font-size: .9rem; }
-.tp-advanced > summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.tp-advanced > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  min-height: 44px;
+  line-height: 44px;
+}
 .tp-advanced-row { display: flex; gap: .5rem; margin-top: .5rem; }
 .tp-advanced-row input { flex: 1 1 auto; padding: .45rem .6rem; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); }
 
@@ -203,6 +209,9 @@
 .tp-pick-wrap { position: relative; flex: 0 0 auto; }
 .tp-pick-wrap .tp-pick { width: 76px; }
 
+/* Small on purpose - it sits on the corner of a thumbnail - but the tap area
+   is pushed out to 44px with a transparent overlay, so a thumb does not have
+   to find a 22px dot. */
 .tp-pick-x {
   position: absolute;
   top: -6px;
@@ -219,13 +228,14 @@
   font-size: 1rem;
   cursor: pointer;
 }
-.tp-pick-x:hover, .tp-pick-x:focus-visible { background: #B3261E; color: #fff; outline: none; }
+.tp-pick-x::after { content: ""; position: absolute; inset: -11px; }
+.tp-pick-x:hover, .tp-pick-x:focus-visible { background: #B3261E; color: #fff; }
 
 /* The offer inside the status pill. */
 .tp-undo {
   margin-left: .5rem;
-  padding: .1rem .55rem;
-  min-height: 0;
+  padding: .35rem .8rem;
+  min-height: 36px;
   border-radius: 999px;
   border: 1px solid currentColor;
   background: none;

@@ -68,6 +68,12 @@ img{max-width:100%;height:auto;display:block}
 .button,button{display:inline-block;border:1px solid rgba(0,0,0,.15);background:transparent;color:var(--text);padding:.6rem 1rem;border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s,transform .05s}
 button:hover,.button:hover{background:rgba(22,104,196,.10);border-color:var(--accent)}
 .button:active,button:active{transform:translateY(1px)}
+/* Focus was styled on three components and nowhere else, which left every
+   button and link on the site with no visible ring for keyboard users. */
+a:focus-visible,button:focus-visible,.button:focus-visible,
+input:focus-visible,select:focus-visible,summary:focus-visible{
+  outline:2px solid var(--ring); outline-offset:2px
+}
 input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.15);background:#FAFCFF;color:var(--text)}
 .note,.muted{color:var(--muted)}
 
