@@ -378,7 +378,8 @@
       const anim = {
         shift: 0, crouch: 0, swing: 0, lift: 0,
         puckT: null, goal: false, pan: 0,
-        arc: reel.slap ? 17 : 9, net: 1, label: reel.label
+        arc: 9, net: 1, label: reel.label,
+        puckHold: Boolean(reel.slap), netClose: Boolean(reel.slap)
       };
       if (ms < reel.glide) {
         const t = ms / reel.glide;

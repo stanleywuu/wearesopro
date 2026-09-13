@@ -810,16 +810,21 @@
 
   // ---- highlight scenery ------------------------------------------------
 
-  const NET = { x: LW - 30, w: 36, h: 30 };
+  const NET = { x: LW - 36, w: 54, h: 42 };
+
+  // Where the net comes to rest when the camera is riding along with the puck:
+  // out at the middle of the frame, so it closes on a puck sitting there.
+  const NET_CLOSE = CX + 8;
 
   // t is how far the net has come into frame: 0 is off the right edge entirely,
-  // 1 is in its place. The shot from the point starts with no net on screen at
-  // all, so the puck has nothing to travel towards but distance.
+  // 1 is parked. A point shot starts with no net on screen at all, so the puck
+  // has nothing to travel towards but distance.
   function drawNet(ctx, t) {
     const into = (t === undefined) ? 1 : t;
-    // Starts just past the right edge, not miles beyond it: slide it in from
-    // too far away and it spends the whole slide off screen, then pops.
-    const cx = NET.x + (1 - into) * ((LW - NET.x) + NET.w);
+    const home = (ANIM && ANIM.netClose) ? NET_CLOSE : NET.x;
+    // Starts just past the right edge, not miles beyond it: come in from too
+    // far away and it spends the whole slide off screen, then pops.
+    const cx = home + (1 - into) * ((LW + NET.w / 2) - home);
     const w = NET.w * FIT, h = NET.h * FIT;
     const base = GROUND - 1, left = cx - w / 2, right = cx + w / 2, top = base - h;
     ctx.fillStyle = "rgba(255,255,255,.7)";
@@ -859,16 +864,41 @@
       const back = t - i * 0.04;
       if (back > 0) puckAt(ctx, puckX(back), puckY(back), size * (1 - i * 0.18), 0.13 * (4 - i));
     }
-    puckAt(ctx, puckX(t), puckY(t), size, 1);
+    const x = puckX(t), y = puckY(t);
+    if (ANIM && ANIM.puckHold && t > CRUISE_IN) drawStreaks(ctx, x, y, t);
+    puckAt(ctx, x, y, size, 1);
   }
 
+  // Held in the middle of the frame with the camera travelling alongside, the
+  // way a cartoon follows a thrown thing: the puck stops moving across the
+  // screen and the world comes to it instead.
+  const CRUISE_IN = 0.18;         // how much of the flight it takes to get there
+  const CRUISE_Y = GROUND - 40;   // how high it rides
+
   function puckX(t) {
-    return LAUNCH.sx + (NET.x - LAUNCH.sx) * t;
+    if (!ANIM || !ANIM.puckHold) return LAUNCH.sx + (NET.x - LAUNCH.sx) * t;
+    return LAUNCH.sx + (CX - LAUNCH.sx) * Math.min(1, t / CRUISE_IN);
   }
 
   function puckY(t) {
-    const arc = (ANIM && ANIM.arc) || 9;
-    return LAUNCH.sy + (GROUND - 9 - LAUNCH.sy) * t - Math.sin(t * Math.PI) * arc;
+    if (!ANIM || !ANIM.puckHold) {
+      const arc = (ANIM && ANIM.arc) || 9;
+      return LAUNCH.sy + (GROUND - 9 - LAUNCH.sy) * t - Math.sin(t * Math.PI) * arc;
+    }
+    const lead = Math.min(1, t / CRUISE_IN);
+    return LAUNCH.sy + (CRUISE_Y - LAUNCH.sy) * lead;
+  }
+
+  // Speed lines trailing off behind it. They flicker on a cycle so the puck
+  // does not look pinned to the glass.
+  function drawStreaks(ctx, x, y, t) {
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    [-7, 0, 7].forEach((dy, i) => {
+      const len = 14 + 8 * Math.abs(Math.sin(t * 26 + i));
+      L(ctx, x - 7, y + dy, x - 7 - len, y + dy, "#7F98AE", 1.3);
+    });
+    ctx.restore();
   }
 
   function puckAt(ctx, sx, sy, size, alpha) {
