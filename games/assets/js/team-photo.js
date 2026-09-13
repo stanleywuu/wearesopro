@@ -810,20 +810,89 @@
   // touches the saved team.
   function seedForDebug() {
     if (!new URLSearchParams(location.search).has("debug")) return;
-    const goalie = goalieIndex();
-    team.players = team.players.map((code, i) => {
-      if (code) return code;
-      const player = CODE.random();
-      // The goalie spot gets a goalie, so the debug fill shows the real layout.
-      if (i === goalie) {
+    const roll = roller();
+    team.players = team.players.map((code, i) => code || CODE.encode(roll(i)));
+  }
+
+  // ---- random team ------------------------------------------------------
+
+  // Fills the empty spots, which destroys nothing. Only a team with every spot
+  // already taken has anything to lose, and that one asks first.
+  function randomTeam() {
+    const filled = team.players.filter(Boolean).length;
+    const replacing = filled === team.size;
+    if (replacing && !confirm("Every spot is taken. Re-roll all " + filled + " players?")) return;
+    const first = team.players.map((_, i) => playerAt(i)).find(Boolean);
+    const roll = roller((!replacing && first) ? kitOf(first) : randomKit(), keptNames(replacing));
+    team.players = team.players.map((code, i) =>
+      (code && !replacing) ? code : CODE.encode(roll(i)));
+    saveTeam();
+    refresh();
+    status(replacing ? "New team rolled." : "Filled the empty spots.");
+  }
+
+  // One kit for everyone. A dozen players in a dozen different jerseys is a
+  // pile of strangers, not a team.
+  function randomKit() {
+    const pick = list => list[Math.floor(Math.random() * list.length)];
+    const jersey = pick(D.jerseyColors);
+    return {
+      jerseyColor: jersey,
+      sockColor: jersey,
+      trimColor: pick(D.trimColors),
+      helmetColor: pick(D.helmetColors)
+    };
+  }
+
+  function kitOf(player) {
+    return {
+      jerseyColor: player.jerseyColor,
+      sockColor: player.sockColor,
+      trimColor: player.trimColor,
+      helmetColor: player.helmetColor
+    };
+  }
+
+  // Hands out random players in one kit, with names and numbers dealt rather
+  // than drawn each time - nobody wants three Stanleys, two of them wearing 41.
+  function roller(kit, taken) {
+    const outfit = kit || randomKit();
+    const name = dealer(D.randomNames, taken || []);
+    const number = dealer(numbers(), []);
+    return function (i) {
+      const player = Object.assign(CODE.random(), outfit);
+      player.name = name();
+      player.number = number();
+      if (i === goalieIndex()) {
         player.position = "Goalie";
         player.helmetStyle = "mask";
       } else if (player.position === "Goalie") {
         player.position = skaterPosition();
         player.helmetStyle = "visor";
       }
-      return CODE.encode(player);
-    });
+      return player;
+    };
+  }
+
+  // Deals without repeating until the pool runs dry, then simply repeats.
+  function dealer(pool, used) {
+    const left = pool.filter(item => used.indexOf(item) < 0);
+    return function () {
+      if (!left.length) return pool[Math.floor(Math.random() * pool.length)];
+      return left.splice(Math.floor(Math.random() * left.length), 1)[0];
+    };
+  }
+
+  function numbers() {
+    const list = [];
+    for (let n = 1; n <= 99; n++) list.push(String(n));
+    return list;
+  }
+
+  // Names already on the ice, so filling empty spots does not duplicate one.
+  function keptNames(replacing) {
+    if (replacing) return [];
+    return team.players.map((_, i) => playerAt(i)).filter(Boolean).map(p => p.name);
   }
 
   function skaterPosition() {
@@ -845,6 +914,7 @@
     document.getElementById("tp-share").addEventListener("click", share);
     document.getElementById("tp-copy").addEventListener("click",
       () => copy(encodeTeam(), "Team code copied - paste it here any time to rebuild this team"));
+    document.getElementById("tp-random").addEventListener("click", randomTeam);
     document.getElementById("tp-reset").addEventListener("click", reset);
     document.getElementById("tp-add").addEventListener("click", () => {
       const input = document.getElementById("tp-paste-input");
