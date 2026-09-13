@@ -308,9 +308,15 @@
     return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
   }
 
+  // Percent escapes make a link look like spam and some chat clients stop
+  // linkifying at one, so the two that free text actually produces are undone:
+  // a space rides as "+" (URLSearchParams decodes that back to a space) and a
+  // comma is legal in a query value as-is. A typed "+" still escapes to %2B and
+  // survives the round trip.
   function shareUrl() {
-    return location.origin + location.pathname + "?" + SHARE_KEY + "=" +
-      encodeURIComponent(encodeParams());
+    const code = encodeURIComponent(encodeParams())
+      .replace(/%20/g, "+").replace(/%2C/g, ",");
+    return location.origin + location.pathname + "?" + SHARE_KEY + "=" + code;
   }
 
   // The phone's own share sheet. navigator.share only exists in a secure
@@ -325,12 +331,16 @@
       .catch(err => { if (err && err.name !== "AbortError") showLink(url); });
   }
 
-  // Put the link in the address bar without navigating. Actually loading it
-  // reloaded the whole page, which flickered for no gain — the URL is the only
-  // thing that needed to change.
+  // No share sheet, so the link is copied instead. It also goes into the address
+  // bar either way: that is the fallback when the clipboard is refused, and it
+  // costs nothing when the copy works. Actually loading the URL would reload the
+  // whole page and flicker for no gain, so only the address bar changes.
   function showLink(url) {
     history.replaceState(null, "", url);
-    status("Link ready - copy it from the address bar");
+    if (!navigator.clipboard) return status("Link ready - copy it from the address bar");
+    navigator.clipboard.writeText(url)
+      .then(() => status("Link copied - paste it to a teammate"))
+      .catch(() => status("Link ready - copy it from the address bar"));
   }
 
   function loadShared() {
