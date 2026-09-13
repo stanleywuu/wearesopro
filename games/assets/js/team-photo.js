@@ -10,6 +10,7 @@
   const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR;
 
   const STORE_KEY = "cap-team";
+  const SHARE_KEY = "t";
   const MIN_SIZE = 6, MAX_SIZE = 16, DEFAULT_SIZE = 12;
 
   // Photo geometry, in canvas pixels.
@@ -89,6 +90,150 @@
     } catch (e) {
       return null;
     }
+  }
+
+  // ---- team codes -------------------------------------------------------
+
+  // Length-framed, not delimiter-separated: a team carries free text (team
+  // name, player names, catch-phrases) that can contain any character at all,
+  // so there is no separator left to split on safely. Each part rides as
+  // "<length>~<text>~", which needs no escaping and cannot be broken by what
+  // anyone types.
+  const TEAM_VERSION = "T1";
+
+  function encodeTeam() {
+    const parts = [team.name, team.sub].concat(team.players.map(code => code || ""));
+    return TEAM_VERSION + "~" + team.size + "~" +
+      parts.map(part => part.length + "~" + part + "~").join("");
+  }
+
+  // Returns a raw team object; cleanTeam() is still what validates it.
+  function decodeTeam(code) {
+    const text = String(code).trim();
+    if (text.slice(0, 3) !== TEAM_VERSION + "~") throw new Error("not a team code");
+    let i = 3;
+    const num = () => {
+      const j = text.indexOf("~", i);
+      if (j < 0) throw new Error("truncated team code");
+      const n = Number(text.slice(i, j));
+      if (!Number.isFinite(n) || n < 0) throw new Error("bad length");
+      i = j + 1;
+      return n;
+    };
+    const str = () => {
+      const n = num();
+      const out = text.substr(i, n);
+      if (out.length !== n) throw new Error("truncated team code");
+      i += n + 1;
+      return out;
+    };
+    const size = num();
+    const name = str(), sub = str();
+    const players = [];
+    while (i < text.length) players.push(str() || null);
+    return { v: 1, name: name, sub: sub, size: size, players: players };
+  }
+
+  // Percent escapes make a link look like spam and some chat clients stop
+  // linkifying at one, so the two that free text actually produces are undone -
+  // the same tidy-up the single-player share link does.
+  function shareUrl() {
+    const code = encodeURIComponent(encodeTeam())
+      .replace(/%20/g, "+").replace(/%2C/g, ",");
+    return location.origin + location.pathname + "?" + SHARE_KEY + "=" + code;
+  }
+
+  // A link someone else sent must not quietly replace the team on this device,
+  // so it is shown but not saved until they say so.
+  function loadShared() {
+    const code = new URLSearchParams(location.search).get(SHARE_KEY);
+    if (!code) return false;
+    try {
+      team = cleanTeam(decodeTeam(code));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ---- export -----------------------------------------------------------
+
+  function share() {
+    const url = shareUrl();
+    if (!navigator.share) return copy(url, "Link copied - paste it to a teammate");
+    navigator.share({ title: "Our team photo", url: url })
+      .catch(err => { if (err && err.name !== "AbortError") copy(url, "Link copied"); });
+  }
+
+  function copy(text, message) {
+    if (!navigator.clipboard) return status("Copy failed - no clipboard on this browser");
+    navigator.clipboard.writeText(text)
+      .then(() => status(message))
+      .catch(() => status("Copy failed - try again"));
+  }
+
+  function download() {
+    canvas.toBlob(blob => {
+      if (!blob) return status("Could not make the image");
+      saveBlob(blob, fileName("team-photo"));
+      status("Photo saved");
+    }, "image/png");
+  }
+
+  function saveBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function fileName(kind) {
+    const slug = (team.name || "our-team").toLowerCase().replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "").slice(0, 30);
+    return kind + "-" + (slug || "our-team") + ".png";
+  }
+
+  // ---- paste ------------------------------------------------------------
+
+  // Takes a whole team code, a single player code, or the Create A Player link
+  // a teammate sent - whichever it is, it is validated before it is kept.
+  function addFromPaste(text) {
+    const value = (text || "").trim();
+    if (!value) return status("Paste a code or a link first");
+    if (value.slice(0, 3) === TEAM_VERSION + "~") return replaceTeam(value);
+    const code = validCode(playerCodeFrom(value));
+    if (!code) return status("That does not look like a player - check the code or link");
+    const spot = team.players.indexOf(null);
+    if (spot < 0) return status("Every spot is taken. Make room, or add more players.");
+    team.players[spot] = code;
+    saveTeam();
+    refresh();
+    status("Added to spot " + (spot + 1) + ".");
+  }
+
+  function playerCodeFrom(value) {
+    if (value.indexOf("?") < 0) return value;
+    try {
+      return new URLSearchParams(value.slice(value.indexOf("?") + 1)).get("p") || value;
+    } catch (e) {
+      return value;
+    }
+  }
+
+  function replaceTeam(code) {
+    try {
+      team = cleanTeam(decodeTeam(code));
+    } catch (e) {
+      return status("That team code is damaged - copy the whole thing and try again");
+    }
+    saveTeam();
+    syncPanel();
+    refresh();
+    status("Team loaded.");
   }
 
   // ---- layout -----------------------------------------------------------
@@ -287,8 +432,27 @@
 
     modal.hidden = false;
     document.body.style.overflow = "hidden";
+    modal.addEventListener("keydown", trapFocus);
     const first = editor.el("canvas");
     if (first) first.focus();
+  }
+
+  // Tab must not wander out of the dialog and behind the backdrop, where a
+  // keyboard user would be typing into something they cannot see.
+  function trapFocus(e) {
+    if (e.key !== "Tab") return;
+    const able = e.currentTarget.querySelectorAll(
+      "button, input, select, textarea, canvas[tabindex], [tabindex]:not([tabindex='-1'])");
+    const list = Array.from(able).filter(node => node.offsetParent !== null || node === document.activeElement);
+    if (!list.length) return;
+    const first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   }
 
   function addModalButtons() {
@@ -319,6 +483,7 @@
     const modal = document.getElementById("tp-modal");
     if (editor) editor.destroy();
     editor = null;
+    modal.removeEventListener("keydown", trapFocus);
     modal.hidden = true;
     document.body.style.overflow = "";
     if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -357,8 +522,10 @@
     body.textContent = "";
 
     team = loadTeam();
+    const shared = loadShared();
     seedForDebug();
     bindPanel();
+    if (shared) offerToKeep();
     document.getElementById("tp-close").addEventListener("click", closeModal);
     document.getElementById("tp-modal").addEventListener("click", e => {
       if (e.target.id === "tp-modal") closeModal();
@@ -367,6 +534,32 @@
       if (e.key === "Escape" && !document.getElementById("tp-modal").hidden) closeModal();
     });
     refresh();
+  }
+
+  // Arriving on someone else's link shows their team without touching the one
+  // saved here - keeping it is a deliberate press.
+  function offerToKeep() {
+    const keep = document.createElement("button");
+    keep.type = "button";
+    keep.className = "button is-keep";
+    keep.textContent = "Save this team to my device";
+    keep.addEventListener("click", () => {
+      saveTeam();
+      keep.remove();
+      dropShareParam();
+      status("Saved. This is your team now.");
+    });
+    document.querySelector(".tp-actions").prepend(keep);
+    status("You are looking at a shared team. Nothing here is saved until you say so.");
+  }
+
+  // Once it is their team, the code comes out of the address bar so a reload or
+  // a copied URL is their own work. Any other param (?debug) is left alone.
+  function dropShareParam() {
+    const query = new URLSearchParams(location.search);
+    query.delete(SHARE_KEY);
+    const rest = query.toString();
+    history.replaceState(null, "", location.pathname + (rest ? "?" + rest : ""));
   }
 
   // ?debug drops a random player into every empty spot so the line-up can be
@@ -381,13 +574,29 @@
     const name = document.getElementById("tp-name");
     const sub = document.getElementById("tp-sub");
     const size = document.getElementById("tp-size");
-    name.value = team.name;
-    sub.value = team.sub;
     for (let n = MIN_SIZE; n <= MAX_SIZE; n++) size.add(new Option(n + " players", n));
-    size.value = team.size;
     name.addEventListener("input", () => { team.name = name.value; saveTeam(); refresh(); });
     sub.addEventListener("input", () => { team.sub = sub.value; saveTeam(); refresh(); });
     size.addEventListener("change", () => resize(Number(size.value), size));
+
+    document.getElementById("tp-download").addEventListener("click", download);
+    document.getElementById("tp-share").addEventListener("click", share);
+    document.getElementById("tp-copy").addEventListener("click",
+      () => copy(encodeTeam(), "Team code copied - paste it here any time to rebuild this team"));
+    document.getElementById("tp-add").addEventListener("click", () => {
+      const input = document.getElementById("tp-paste-input");
+      addFromPaste(input.value);
+      input.value = "";
+    });
+    syncPanel();
+  }
+
+  // Called again whenever the whole team is replaced, so it only ever writes
+  // values - the options and listeners above are built once.
+  function syncPanel() {
+    document.getElementById("tp-name").value = team.name;
+    document.getElementById("tp-sub").value = team.sub;
+    document.getElementById("tp-size").value = team.size;
   }
 
   // Shrinking can throw players away, so it asks first and puts the control

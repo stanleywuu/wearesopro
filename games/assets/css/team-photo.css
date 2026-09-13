@@ -122,3 +122,11 @@
   .tp-modal { padding: 0; }
   .tp-modal-card { border-radius: 0; min-height: 100%; }
 }
+
+/* The one action on a shared team that changes anything on this device. */
+.tp-actions .is-keep {
+  background: var(--brand, #1E88E5);
+  border-color: var(--brand, #1E88E5);
+  color: #fff;
+  font-weight: 700;
+}
