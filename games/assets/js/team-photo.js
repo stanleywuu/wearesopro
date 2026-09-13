@@ -794,7 +794,7 @@
     saveTeam();
     closeModal();
     refresh();
-    status("Saved to spot " + (openIndex + 1) + ".");
+    status("Saved");
   }
 
   function closeModal() {

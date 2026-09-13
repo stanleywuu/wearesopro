@@ -333,5 +333,9 @@
   flex-wrap: wrap;
   gap: .5rem;
   justify-content: center;
-  margin-top: .75rem;
 }
+
+/* The stage reserves a line for the status pill so a message does not shove
+   the layout around. In the modal nothing writes to it, so that reserved line
+   was just a hole between the two button rows. */
+.tp-modal .cap-status:not(.show) { display: none; }
