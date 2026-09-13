@@ -107,7 +107,10 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 /* Feature — a banner that says what it is. Yellow ribbon across the top
    carries the "New" flag, so it reads as an announcement rather than a
    mystery strip of navy. Loud, but only ~150px tall. */
+/* The whole card is one link, so a tap anywhere on it opens the game. */
 .feature{
+  display:block;
+  text-decoration:none;
   border:3px solid var(--ink);
   border-radius:var(--radius);
   background:#15497A;
@@ -141,7 +144,11 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
   padding:.5rem 1.1rem;border-radius:999px;
   box-shadow:3px 3px 0 rgba(0,0,0,.35);
 }
-.feature-cta:hover{box-shadow:4px 4px 0 rgba(0,0,0,.45);text-decoration:none}
+/* The button is a span now - the card around it is the link - so it needs the
+   hover and focus states of the card, not its own. */
+.feature:hover{text-decoration:none}
+.feature:hover .feature-cta{box-shadow:4px 4px 0 rgba(0,0,0,.45)}
+.feature:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
 
 /* Article panel — used by the notes pages, the games and thanks/feedback */
 .article{
