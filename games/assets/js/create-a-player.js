@@ -4,7 +4,7 @@
 
 (function () {
 
-  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR;
+  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR, TEAM = window.CAP_TEAM;
 
   const STORE_KEY = "cap-player";
   const SHARE_KEY = "p";
@@ -15,7 +15,7 @@
 
   function init() {
     const root = document.querySelector(".cap-wrap");
-    if (!root || !CODE || !EDITOR) return;
+    if (!root || !CODE || !EDITOR || !TEAM) return;
 
     const params = CODE.defaults();
     loadSaved(params);
@@ -25,6 +25,7 @@
     if (!editor) return;
 
     addShareButton();
+    addTeamButton();
     if (fromLink) collapseEditor();
   }
 
@@ -50,6 +51,47 @@
         // Storage blocked or full; the player simply will not persist.
       }
     }, SAVE_DELAY);
+  }
+
+  // ---- the team ---------------------------------------------------------
+
+  function addTeamButton() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button";
+    button.textContent = "Add to team";
+    button.addEventListener("click", addToTeam);
+    editor.el("host-actions").appendChild(button);
+  }
+
+  // Drops this player into the roster the Team Photo page reads. A goalie goes
+  // to the goalie's spot; everyone else takes the first gap. The link to go and
+  // look is only worth offering once there is something to look at.
+  function addToTeam() {
+    const team = TEAM.load();
+    let spot;
+    try {
+      spot = TEAM.add(team, CODE.encode(editor.params));
+    } catch (e) {
+      return editor.status("Could not add that player");
+    }
+    if (spot < 0) return editor.status("Your team is full - open the team photo to make room");
+    TEAM.save(team);
+    const filled = team.players.filter(Boolean).length;
+    editor.status("Added to spot " + (spot + 1) + " - " + filled + " on the team");
+    showTeamLink();
+  }
+
+  // A real link in the markup, not a line of status text: it has to be
+  // clickable, and it stays put once it is there.
+  function showTeamLink() {
+    const host = editor.el("host-footer");
+    if (host.querySelector(".cap-team-link")) return;
+    const link = document.createElement("a");
+    link.className = "button cap-team-link";
+    link.href = "/games/team-photo.html";
+    link.textContent = "See the team photo";
+    host.appendChild(link);
   }
 
   // ---- share links ------------------------------------------------------

@@ -7,11 +7,10 @@
 (function () {
 
   const D = window.CAP_DATA, DRAW = window.CAP_DRAW;
-  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR;
+  const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR, TEAM = window.CAP_TEAM;
 
-  const STORE_KEY = "cap-team";
   const SHARE_KEY = "t";
-  const MIN_SIZE = 6, MAX_SIZE = 16, DEFAULT_SIZE = 12;
+  const MIN_SIZE = TEAM.MIN_SIZE, MAX_SIZE = TEAM.MAX_SIZE;
 
   // Photo geometry, in canvas pixels. The width is not fixed: it is whatever the
   // team needs at a shoulder-to-shoulder spacing, so six players huddle up
@@ -61,62 +60,16 @@
   let statusTimer = 0;
 
   // ---- team state -------------------------------------------------------
+  //
+  // The roster itself lives in CAP_TEAM (team-store.js), shared with the
+  // "Add to team" button on Create A Player.
 
-  function blankTeam() {
-    return { v: 1, name: "", sub: "", size: DEFAULT_SIZE, players: new Array(DEFAULT_SIZE).fill(null) };
-  }
-
-  // Anything out of storage or off a link is untrusted: the size is clamped,
-  // the text capped, and every player code re-validated by the codec.
-  function cleanTeam(raw) {
-    const out = blankTeam();
-    if (!raw || typeof raw !== "object") return out;
-    out.name = typeof raw.name === "string" ? raw.name.slice(0, 24) : "";
-    out.sub = typeof raw.sub === "string" ? raw.sub.slice(0, 32) : "";
-    const size = Math.round(Number(raw.size));
-    out.size = Number.isFinite(size) ? Math.min(MAX_SIZE, Math.max(MIN_SIZE, size)) : DEFAULT_SIZE;
-    const list = Array.isArray(raw.players) ? raw.players : [];
-    out.players = new Array(out.size).fill(null).map((_, i) => validCode(list[i]));
-    return out;
-  }
-
-  // A code is kept only if it round-trips through the whitelist, so nothing
-  // unvalidated ever reaches the renderer.
-  function validCode(code) {
-    if (typeof code !== "string" || !code) return null;
-    try {
-      return CODE.encode(CODE.load(code));
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function loadTeam() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      return cleanTeam(raw ? JSON.parse(raw) : null);
-    } catch (e) {
-      return blankTeam();      // blocked or corrupt storage starts empty
-    }
-  }
-
-  function saveTeam() {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(team));
-    } catch (e) {
-      // Storage blocked or full; the team simply will not persist.
-    }
-  }
-
-  function playerAt(i) {
-    const code = team.players[i];
-    if (!code) return null;
-    try {
-      return CODE.load(code);
-    } catch (e) {
-      return null;
-    }
-  }
+  function blankTeam() { return TEAM.blank(); }
+  function cleanTeam(raw) { return TEAM.clean(raw); }
+  function validCode(code) { return TEAM.validCode(code); }
+  function loadTeam() { return TEAM.load(); }
+  function saveTeam() { TEAM.save(team); }
+  function playerAt(i) { return TEAM.playerAt(team, i); }
 
   // ---- team codes -------------------------------------------------------
 
@@ -337,9 +290,8 @@
     if (value.slice(0, 3) === TEAM_VERSION + "~") return replaceTeam(value);
     const code = validCode(playerCodeFrom(value));
     if (!code) return status("That does not look like a player - check the code or link");
-    const spot = team.players.indexOf(null);
+    const spot = TEAM.add(team, code);
     if (spot < 0) return status("Every spot is taken. Make room, or add more players.");
-    team.players[spot] = code;
     saveTeam();
     refresh();
     status("Added to spot " + (spot + 1) + ".");
@@ -368,18 +320,11 @@
 
   // ---- layout -----------------------------------------------------------
 
-  // The front row always holds an odd number, because the middle of the front
-  // row is the goalie's spot and a row with an even count has no middle.
-  function frontCount(size) {
-    const half = Math.floor(size / 2);
-    return Math.min(size - 1, half % 2 === 0 ? half + 1 : half);
-  }
-
   // Back row first, front row second, in slot order, so moving a player between
   // rows is just a matter of where they sit in the list. The two rows have
   // different counts and different spacings, so they interleave on their own.
   function rows() {
-    const front = frontCount(team.size);
+    const front = TEAM.frontCount(team.size);
     const back = team.size - front;
     return [
       Object.assign({ index: 0, from: 0, count: back }, place(BACK_DEPTH, BACK_RISE)),
@@ -396,10 +341,8 @@
     };
   }
 
-  // Front row, dead centre. Every team picture ever taken.
   function goalieIndex() {
-    const list = rows();
-    return list[1].from + (list[1].count - 1) / 2;
+    return TEAM.goalieIndex(team.size);
   }
 
   // Wide enough for the widest row and no wider.
@@ -754,7 +697,7 @@
     canvas = document.getElementById("tp-canvas");
     slotBox = document.getElementById("tp-slots");
     statusBox = document.getElementById("tp-status");
-    if (!canvas || !D || !DRAW || !CODE || !EDITOR) return;
+    if (!canvas || !D || !DRAW || !CODE || !EDITOR || !TEAM) return;
 
     canvas.width = W;
     canvas.height = H;

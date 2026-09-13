@@ -330,3 +330,6 @@
   .cap-slot input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; }
   .cap-slot input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; }
 }
+
+/* Appears under the stage once a player has been added to the team. */
+.cap-team-link { display: inline-block; margin-top: .6rem; text-decoration: none; }
