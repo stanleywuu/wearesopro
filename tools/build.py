@@ -26,26 +26,47 @@ SITE = "https://wearesopro.ca"
 
 # Every real page, in nav order. (path, nav label, include-in-nav)
 # Utility pages are still in the sitemap but do not need a nav link.
+# Every real page. One entry per page, and the only place a link is declared.
+#   path    file, relative to the repo root
+#   label   text in the generated site-map nav at the foot of every page
+#   nav     include in that site-map nav
+#   section which dropdown/drawer menu it belongs to ("notes", "games", or None)
+#   menu    menu wording when it differs from label; falls back to label
+#   badge   optional flag shown in the menus only, e.g. "New"
 PAGES = [
-    ("index.html",                   "Home",                   True),
-    ("teamupdates.html",             "Team Updates",           True),
-    ("notes.html",                   "Editor&rsquo;s Notes",    True),
-    ("notes/pipeline.html",          "The Pipeline",           True),
-    ("notes/spreadsheet.html",       "The Spreadsheet",        True),
-    ("notes/faqs.html",              "FAQs",                   True),
-    ("games.html",                   "Games &amp; Quizzes",    True),
-    ("games/create-a-player.html",   "Create A Player",        True),
-    ("games/chirp.html",             "Teammate or Coworker",   True),
-    ("games/quotes.html",            "Who Said What",          True),
-    ("games/whowas.html",            "Who&rsquo;s This Early Bird", True),
-    ("games/adopt.html",             "Tommy The Goalie",       True),
-    ("games/fighter.html",           "Goalie Brawl",           True),
-    ("links.html",                   "Get the Book",           True),
-    ("feedback.html",                "Feedback",               True),
-    ("experiments.html",             None,                     False),
-    ("thanks.html",                  None,                     False),
-    ("404.html",                     None,                     False),
+    {"path": "index.html",                 "label": "Home",                  "nav": True},
+    {"path": "teamupdates.html",           "label": "Team Updates",          "nav": True},
+    {"path": "notes.html",                 "label": "Editor&rsquo;s Notes",  "nav": True},
+
+    {"path": "notes/pipeline.html",        "label": "The Pipeline",          "nav": True,
+     "section": "notes", "menu": "The pipeline that built everything"},
+    {"path": "notes/spreadsheet.html",     "label": "The Spreadsheet",       "nav": True,
+     "section": "notes", "menu": "The infamous Spreadsheet"},
+    {"path": "notes/faqs.html",            "label": "FAQs",                  "nav": True,
+     "section": "notes", "menu": "Frequently Asked Questions"},
+
+    {"path": "games.html",                 "label": "Games &amp; Quizzes",   "nav": True},
+    {"path": "games/chirp.html",           "label": "Teammate or Coworker",  "nav": True,
+     "section": "games"},
+    {"path": "games/quotes.html",          "label": "Who Said What",         "nav": True,
+     "section": "games", "menu": "Who said what?"},
+    {"path": "games/whowas.html",          "label": "Who&rsquo;s This Early Bird", "nav": True,
+     "section": "games", "menu": "Who&rsquo;s this Early Bird?"},
+    {"path": "games/adopt.html",           "label": "Tommy The Goalie",      "nav": True,
+     "section": "games"},
+    {"path": "games/fighter.html",         "label": "Goalie Brawl",          "nav": True,
+     "section": "games"},
+    {"path": "games/create-a-player.html", "label": "Create A Player",       "nav": True,
+     "section": "games", "badge": "New"},
+
+    {"path": "links.html",                 "label": "Get the Book",          "nav": True},
+    {"path": "feedback.html",              "label": "Feedback",              "nav": True},
+    {"path": "experiments.html",           "label": None,                    "nav": False},
+    {"path": "thanks.html",                "label": None,                    "nav": False},
+    {"path": "404.html",                   "label": None,                    "nav": False},
 ]
+
+NAV_PARTIAL = "partials/nav.html"
 
 TEMPLATES = pathlib.Path(__file__).resolve().parent / "templates"
 
@@ -63,8 +84,8 @@ def markers():
 def nav_html():
     item = template("site-link.html").rstrip("\n")
     links = "\n".join(
-        item.replace("{{href}}", "/" + path).replace("{{label}}", label)
-        for path, label, in_nav in PAGES if in_nav
+        item.replace("{{href}}", "/" + page["path"]).replace("{{label}}", page["label"])
+        for page in PAGES if page["nav"]
     )
     return template("site-links.html").replace("{{links}}", links)
 
@@ -84,10 +105,49 @@ def insert(source, block, start, end):
     return source + block
 
 
+def menu_html(section):
+    """The <li> rows for one dropdown/drawer menu, from the same PAGES list."""
+    item = template("nav-item.html").rstrip("\n")
+    rows = []
+    for page in PAGES:
+        if page.get("section") != section:
+            continue
+        label = page.get("menu", page["label"])
+        if page.get("badge"):
+            label += ' <span class="badge">%s</span>' % page["badge"]
+        rows.append(item.replace("{{href}}", "/" + page["path"])
+                        .replace("{{label}}", label))
+    return "\n".join(rows)
+
+
+def write_menus(root):
+    """Rewrite the menu lists inside partials/nav.html.
+
+    The dropdown and the mobile drawer use identical <li> markup, so both copies
+    are filled from one list and a new game only has to be declared once.
+    """
+    partial = root / NAV_PARTIAL
+    source = partial.read_text(encoding="utf-8")
+    updated = source
+    for section in ("notes", "games"):
+        start = "<!-- nav:%s:start -->" % section
+        end = "<!-- nav:%s:end -->" % section
+        if start not in updated:
+            print("  no %s marker in %s, skipped" % (section, NAV_PARTIAL))
+            continue
+        block = "%s\n%s\n%s" % (start, menu_html(section), end)
+        pattern = re.escape(start) + r".*?" + re.escape(end)
+        updated = re.sub(pattern, lambda _: block, updated, flags=re.S)
+    if updated != source:
+        partial.write_text(updated, encoding="utf-8")
+    print("menus written into", NAV_PARTIAL)
+
+
 def write_navs(root):
     block = nav_html()
     start, end = markers()
-    for path, _, _ in PAGES:
+    for entry in PAGES:
+        path = entry["path"]
         page = root / path
         if not page.exists():
             print("  missing, skipped:", path)
@@ -123,7 +183,8 @@ def last_modified(root, path):
 def write_sitemap(root):
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for path, _, _ in PAGES:
+    for entry in PAGES:
+        path = entry["path"]
         if path == "404.html" or not (root / path).exists():
             continue
         loc = SITE + "/" + ("" if path == "index.html" else path)
@@ -142,7 +203,8 @@ def check(root):
     """Report what a crawler would trip over. Does not write anything."""
     problems = []
     start, _ = markers()
-    for path, _, _ in PAGES:
+    for entry in PAGES:
+        path = entry["path"]
         page = root / path
         if not page.exists():
             problems.append("missing page: " + path)
@@ -169,6 +231,7 @@ def main():
     if "--check" in sys.argv:
         raise SystemExit(check(root))
     write_navs(root)
+    write_menus(root)
     write_sitemap(root)
 
 
