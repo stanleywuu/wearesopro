@@ -10,6 +10,11 @@ Source: original project brief (`Prompt`), `README.md`, and accumulated feedback
 
 ## Security
 - No inline `<script>` or `<style>` — all JS/CSS must live in external files (CSP-enforced; see `CLAUDE.md` Security section).
+- **Never build HTML from a string that contains data you did not write.** Anything from
+  a URL, `localStorage`, a form, a pasted code or a remote endpoint goes in via
+  `textContent`, `.value`, `setAttribute`, or canvas `fillText` — never `innerHTML`.
+  `innerHTML` is for markup this repo authors, and only that. `make check` enforces that
+  every page carries its CSP meta, but CSP is the seatbelt, not the brakes.
 - External links use `rel="noopener noreferrer"`.
 - Netlify Forms: every form needs a honeypot field.
 - Follow standard web security best practices when applicable (sanitize/escape any user-influenced content, avoid `eval`/`innerHTML` with untrusted input, etc.).

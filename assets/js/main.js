@@ -162,15 +162,20 @@ function initAnnouncements(endpoint){
         list.innerHTML = `<li class="ann-empty">My mind is empty</li>`;
         return;
       }
-      list.innerHTML = announcements.map(a => {
-        // Format timestamp nicely
-        const dt = a.timestamp ? new Date(a.timestamp) : null;
-        const dateStr = dt && !isNaN(dt) ? dt.toLocaleString() : '';
-        const msg = (a.message || '').toString();
-        return `
-          <div class="ann-message">${msg}</div>
-          `
-      }).join('');
+      // Announcement text comes back from a remote endpoint, so it is inserted
+      // as TEXT, never as markup. It used to be interpolated into innerHTML,
+      // which made whatever that endpoint returned into live HTML on every
+      // page of the site. The page CSP stopped it becoming script, but CSP is
+      // the seatbelt here, not the brakes.
+      list.textContent = '';
+      announcements.forEach(a => {
+        const msg = (a && a.message != null) ? String(a.message) : '';
+        if (!msg) return;
+        const row = document.createElement('div');
+        row.className = 'ann-message';
+        row.textContent = msg;
+        list.appendChild(row);
+      });
     })
     .catch(() => {
       widget.classList.add('ann-error');

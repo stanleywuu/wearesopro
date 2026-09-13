@@ -210,6 +210,10 @@ def check(root):
         source = page.read_text(encoding="utf-8")
         if start not in source:
             problems.append("no generated nav: " + path)
+        # The CSP is per page, so a page that forgets it silently loses the one
+        # thing standing between a bad string and a running script.
+        if "Content-Security-Policy" not in source:
+            problems.append("no Content-Security-Policy meta: " + path)
         for target in re.findall(r'href="(/[^"#?]*)"', source):
             if target.startswith("/assets") or target.startswith("/games/assets"):
                 continue
