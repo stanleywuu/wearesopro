@@ -9,6 +9,7 @@
   const D = window.CAP_DATA, DRAW = window.CAP_DRAW;
   const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR;
   const TEAM = window.CAP_TEAM, PLAYERS = window.CAP_PLAYERS;
+  const GALLERY = window.CAP_GALLERY;
 
   const SHARE_KEY = "t";
   const MIN_SIZE = TEAM.MIN_SIZE, MAX_SIZE = TEAM.MAX_SIZE;
@@ -671,69 +672,17 @@
     return modalButton("Import from Gallery", "", openPicker);
   }
 
+  // Picking somebody for this slot. Deleting is deliberately not offered here:
+  // on a page with a team in front of you it reads as "off the team".
   function openPicker() {
-    closePicker();
-    const card = document.querySelector(".tp-modal-card");
-    const panel = document.createElement("div");
-    panel.className = "tp-gallery";
-    panel.appendChild(pickerHead());
-    panel.appendChild(pickerGrid());
-    card.appendChild(panel);
-    const first = panel.querySelector(".tp-pick");
-    if (first) first.focus();
+    GALLERY.open({
+      into: document.querySelector(".tp-modal-card"),
+      onPick: useSaved
+    });
   }
 
   function closePicker() {
-    const open = document.querySelector(".tp-gallery");
-    if (open) open.remove();
-  }
-
-  function pickerHead() {
-    const head = document.createElement("div");
-    head.className = "tp-gallery-head";
-    const title = document.createElement("h3");
-    title.textContent = "Someone you already made";
-    const back = document.createElement("button");
-    back.type = "button";
-    back.className = "button";
-    back.textContent = "Back";
-    back.addEventListener("click", closePicker);
-    head.appendChild(title);
-    head.appendChild(back);
-    return head;
-  }
-
-  function pickerGrid() {
-    const grid = document.createElement("div");
-    grid.className = "tp-gallery-grid";
-    PLAYERS.list().forEach(entry => grid.appendChild(pickerButton(entry)));
-    if (!PLAYERS.list().length) {
-      const empty = document.createElement("p");
-      empty.className = "muted";
-      empty.textContent = "Nobody saved yet. Build someone and they show up here.";
-      grid.appendChild(empty);
-    }
-    return grid;
-  }
-
-  // A tile is a wrapper, not a button, because the remove control is a button
-  // of its own and one cannot sit inside another.
-  function pickerButton(entry) {
-    const player = safeLoad(entry.code);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tp-pick";
-    const thumb = document.createElement("canvas");
-    thumb.width = DRAW.LW * DRAW.S;
-    thumb.height = DRAW.LH * DRAW.S;
-    if (player) DRAW.render(thumb.getContext("2d"), player, 0.35);
-    button.appendChild(thumb);
-    const name = document.createElement("span");
-    name.textContent = player ? (player.name || player.position) : "player";
-    button.appendChild(name);
-    button.setAttribute("aria-label", "Use " + (player && player.name ? player.name : "this player"));
-    if (player) button.addEventListener("click", () => { useSaved(player); closePicker(); });
-    return button;
+    GALLERY.close();
   }
 
   function safeLoad(code) {
@@ -830,7 +779,7 @@
     canvas = document.getElementById("tp-canvas");
     slotBox = document.getElementById("tp-slots");
     statusBox = document.getElementById("tp-status");
-    if (!canvas || !D || !DRAW || !CODE || !EDITOR || !TEAM || !PLAYERS) return;
+    if (!canvas || !D || !DRAW || !CODE || !EDITOR || !TEAM || !PLAYERS || !GALLERY) return;
 
     canvas.width = W;
     canvas.height = H;
@@ -851,7 +800,7 @@
     });
     document.addEventListener("keydown", e => {
       if (e.key !== "Escape" || document.getElementById("tp-modal").hidden) return;
-      if (document.querySelector(".tp-gallery")) return closePicker();
+      if (GALLERY.isOpen()) return closePicker();
       closeModal();
     });
     refresh();

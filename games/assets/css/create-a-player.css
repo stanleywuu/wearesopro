@@ -1,4 +1,5 @@
 .cap-wrap {
+  position: relative;   /* the saved-players panel sits over it */
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -345,3 +346,144 @@
   font-weight: 700;
 }
 .cap-card-link:hover { background: var(--accent); color: #fff; }
+
+/* ---- saved-player picker ----
+   A panel over whatever opened it, from a button. It used to be a strip across
+   the top of the builder, which put a shelf in front of the thing you came to
+   do. */
+
+.cap-gallery {
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.cap-gallery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(30, 136, 229, .2);
+}
+.cap-gallery-head h3 { margin: 0; font-size: 1rem; }
+
+.cap-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: .75rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.cap-pick {
+  width: 100%;
+  display: grid;
+  gap: .15rem;
+  padding: .25rem;
+  border: 1px solid rgba(30, 136, 229, .25);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.cap-pick:hover, .cap-pick:focus-visible { border-color: var(--accent); background: rgba(22, 104, 196, .08); outline: none; }
+.cap-pick canvas { width: 100%; height: auto; display: block; }
+.cap-pick span {
+  font-size: .7rem; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+
+/* Deleting says the word. An icon in this position was read as "remove from
+   the team" when the panel lived on the team page. */
+.cap-pick-del {
+  width: 100%;
+  margin-top: .25rem;
+  padding: .3rem;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(179, 38, 30, .3);
+  background: none;
+  color: #B3261E;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cap-pick-del:hover, .cap-pick-del:focus-visible { background: #B3261E; color: #fff; }
+
+.cap-pick-wrap { display: grid; }
+
+/* ---- saved-player picker ----
+   A panel over whatever opened it, from a button. It used to be a strip across
+   the top of the builder, which put a shelf in front of the thing you came to
+   do. */
+
+.cap-gallery {
+  position: absolute;
+  inset: 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.cap-gallery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(30, 136, 229, .2);
+}
+.cap-gallery-head h3 { margin: 0; font-size: 1rem; }
+
+.cap-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: .75rem;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.cap-pick {
+  width: 100%;
+  display: grid;
+  gap: .15rem;
+  padding: .25rem;
+  border: 1px solid rgba(30, 136, 229, .25);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.cap-pick:hover, .cap-pick:focus-visible { border-color: var(--accent); background: rgba(22, 104, 196, .08); outline: none; }
+.cap-pick canvas { width: 100%; height: auto; display: block; }
+.cap-pick span {
+  font-size: .7rem; font-weight: 600; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+
+/* Deleting says the word. An icon here was read as "remove from the team" when
+   this panel lived on the team page. */
+.cap-pick-wrap { display: grid; }
+.cap-pick-del {
+  width: 100%;
+  margin-top: .25rem;
+  padding: .3rem;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(179, 38, 30, .3);
+  background: none;
+  color: #B3261E;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cap-pick-del:hover, .cap-pick-del:focus-visible { background: #B3261E; color: #fff; }

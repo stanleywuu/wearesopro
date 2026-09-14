@@ -163,56 +163,6 @@
 
 .tp-more-body { display: grid; gap: 1rem; padding-top: 1rem; }
 
-/* ---- saved-player picker ----
-   A panel over the modal, opened from a button. It used to be a strip across
-   the top of the builder, which put a shelf in front of the thing you came to
-   do. */
-
-.tp-gallery {
-  position: absolute;
-  inset: 0;
-  background: var(--surface);
-  border-radius: var(--radius);
-  display: flex;
-  flex-direction: column;
-  z-index: 1;
-}
-
-.tp-gallery-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: .75rem 1rem;
-  border-bottom: 1px solid rgba(30, 136, 229, .2);
-}
-.tp-gallery-head h3 { margin: 0; font-size: 1rem; }
-
-.tp-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
-  gap: .75rem;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.tp-pick {
-  width: 100%;
-  display: grid;
-  gap: .15rem;
-  padding: .25rem;
-  border: 1px solid rgba(30, 136, 229, .25);
-  border-radius: 12px;
-  background: var(--surface);
-  cursor: pointer;
-}
-.tp-pick:hover, .tp-pick:focus-visible { border-color: var(--accent); background: rgba(22, 104, 196, .08); outline: none; }
-.tp-pick canvas { width: 100%; height: auto; display: block; }
-.tp-pick span {
-  font-size: .7rem; font-weight: 600; color: var(--text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
 /* The one action the modal exists for. Both containers are listed because the
    slot actions moved out of the builder's own row into a row of their own. */
 .cap-actions .is-primary, .cap-actions .is-primary:hover,
@@ -252,68 +202,6 @@
 }
 .tp-more > summary::-webkit-details-marker { display: none; }
 .tp-more > summary::after { content: " \25BE"; }
-.tp-more[open] > summary::after { content: " \25B4"; }
-.tp-more > summary:hover { background: rgba(22, 104, 196, .08); border-color: var(--accent); }
-
-.tp-more-body { display: grid; gap: 1rem; padding-top: 1rem; }
-
-/* ---- saved-player picker ----
-   A panel over the modal, opened from a button. It used to be a strip across
-   the top of the builder, which put a shelf in front of the thing you came to
-   do. */
-
-.tp-gallery {
-  position: absolute;
-  inset: 0;
-  background: var(--surface);
-  border-radius: var(--radius);
-  display: flex;
-  flex-direction: column;
-  z-index: 1;
-}
-
-.tp-gallery-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: .75rem 1rem;
-  border-bottom: 1px solid rgba(30, 136, 229, .2);
-}
-.tp-gallery-head h3 { margin: 0; font-size: 1rem; }
-
-.tp-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
-  gap: .75rem;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.tp-pick {
-  width: 100%;
-  display: grid;
-  gap: .15rem;
-  padding: .25rem;
-  border: 1px solid rgba(30, 136, 229, .25);
-  border-radius: 12px;
-  background: var(--surface);
-  cursor: pointer;
-}
-.tp-pick:hover, .tp-pick:focus-visible { border-color: var(--accent); background: rgba(22, 104, 196, .08); outline: none; }
-.tp-pick canvas { width: 100%; height: auto; display: block; }
-.tp-pick span {
-  font-size: .7rem; font-weight: 600; color: var(--text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-/* The one action the modal exists for. */
-.cap-actions .is-primary, .cap-actions .is-primary:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 700;
-}
 
 .tp-advanced { margin-top: .75rem; font-size: .9rem; }
 .tp-advanced > summary {

@@ -6,6 +6,7 @@
 
   const CODE = window.CAP_CODE, EDITOR = window.CAP_EDITOR;
   const TEAM = window.CAP_TEAM, PLAYERS = window.CAP_PLAYERS;
+  const GALLERY = window.CAP_GALLERY;
 
   const STORE_KEY = "cap-player";
   const SHARE_KEY = "p";
@@ -19,7 +20,7 @@
 
   function init() {
     const root = document.querySelector(".cap-wrap");
-    if (!root || !CODE || !EDITOR || !TEAM || !PLAYERS) return;
+    if (!root || !CODE || !EDITOR || !TEAM || !PLAYERS || !GALLERY) return;
 
     const params = CODE.defaults();
     loadSaved(params);
@@ -32,6 +33,7 @@
 
     addShareButton();
     addTeamButton();
+    addGalleryButton(root);
     if (fromLink) collapseEditor();
   }
 
@@ -73,6 +75,37 @@
         // Storage blocked or full; the player simply will not persist.
       }
     }, SAVE_DELAY);
+  }
+
+  // ---- saved players ----------------------------------------------------
+
+  // The place to manage the collection. Deleting lives here and nowhere else:
+  // this page has no team on it, so "delete" can only mean one thing.
+  function addGalleryButton(root) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button";
+    button.textContent = "Saved players";
+    button.addEventListener("click", () => GALLERY.open({
+      into: root,
+      title: "Your saved players",
+      canDelete: true,
+      onPick: openSaved,
+      onStatus: editor.status
+    }));
+    editor.el("host-actions").appendChild(button);
+  }
+
+  // Opening one puts it back in the builder as the player being worked on, so
+  // editing it updates that entry rather than making a second copy.
+  // NOT loadSaved: that name already belongs to the localStorage read below,
+  // and a second declaration quietly replaced it.
+  function openSaved(player, entry) {
+    Object.assign(editor.params, player);
+    playerId = entry.id;
+    keeping = true;
+    editor.sync();
+    editor.status("Loaded " + (player.name || "player") + ". Changes are saved as you go.");
   }
 
   // ---- the team ---------------------------------------------------------
