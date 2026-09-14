@@ -733,13 +733,17 @@
     // Gloves take a darker shade of the jersey rather than the lettering
     // colour — white lettering is right on a jersey, wrong on a glove.
     const gloveColor = shade(params.jerseyColor, -0.4);
-    // Which shoulder owns which hand. The shoulder AWAY from the blade takes
-    // the top hand and stays tucked; the one on the blade's side reaches down
-    // to the lower hand and extends. Flipping handSign moved the shoulders
-    // without moving the grips, which left the wrong arm doing the work.
+    // Which shoulder owns which hand. Both grips sit on the blade's side of the
+    // body, so the shoulder on THAT side takes the top hand and stays tucked,
+    // and the far shoulder reaches across for the lower hand. Exactly one arm
+    // crosses the chest, which is how a stick is actually held.
+    //
+    // Pairing them the other way round sends both arms to the far side and
+    // they cross each other - the far one reaching up to the high hand, the
+    // near one down to the low hand.
     return [
-      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[0], blocker: true },
-      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[1], blocker: false }
+      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[0], blocker: true },
+      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[1], blocker: false }
     ].map(pair => {
       const a = proj3(pair.shoulder, yaw);
       const e = proj3(elbowFor(pair.shoulder, pair.grip), yaw);

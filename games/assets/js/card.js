@@ -33,11 +33,20 @@
     ctx = canvas.getContext("2d");
 
     fillPlate();
-    document.getElementById("card-replay").addEventListener("click", play);
-    document.getElementById("card-edit").href =
-      "/games/create-a-player.html?" + SHARE_KEY + "=" + shareCode();
+    // Both optional. The reel loops on its own, so a replay button is a nicety
+    // and the card must not die without one - it threw on a missing element and
+    // took the whole card down with it.
+    wire("card-replay", function (el) { el.addEventListener("click", play); });
+    wire("card-edit", function (el) {
+      el.href = "/games/create-a-player.html?" + SHARE_KEY + "=" + shareCode();
+    });
     play();
     requestAnimationFrame(frame);
+  }
+
+  function wire(id, apply) {
+    const el = document.getElementById(id);
+    if (el) apply(el);
   }
 
   // The code in the URL is untrusted like any other, so it goes through the
