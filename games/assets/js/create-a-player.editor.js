@@ -109,30 +109,38 @@
       input.type = "color";
       input.value = params[key];
       input.setAttribute("aria-label", key + ", custom colour");
-      input.addEventListener("input", () => {
-        label.dataset.color = input.value;
-        label.style.background = input.value;
-        selectSwatch(box, key, input.value);
-      });
+      input.addEventListener("input", () => selectSwatch(box, key, input.value));
       label.appendChild(input);
       box.appendChild(label);
     }
 
+    // Every path that changes a colour comes through here, so the row is put
+    // back in order in one place.
     function selectSwatch(box, key, color) {
       params[key] = color;
-      box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
+      syncSwatchRow(box, color);
       touch();
     }
 
     // A colour that is not one of the presets belongs to that row's picker, so
     // the picker is the swatch that shows as active.
+    //
+    // The picker also has to be told what the player is wearing even when a
+    // preset wins, because a colour input fires nothing when you choose the
+    // colour it already holds: leave yesterday's custom colour sitting in it
+    // and that is the one colour you can never pick again.
     function syncSwatchRow(box, color) {
       const custom = box.querySelector(".cap-swatch-custom");
       const preset = D[box.dataset.palette].indexOf(color) >= 0;
-      if (custom && !preset) {
-        custom.dataset.color = color;
-        custom.style.background = color;
+      if (custom) {
         custom.querySelector("input").value = color;
+        if (preset) {
+          delete custom.dataset.color;
+          custom.style.background = "";
+        } else {
+          custom.dataset.color = color;
+          custom.style.background = color;
+        }
       }
       box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
     }
