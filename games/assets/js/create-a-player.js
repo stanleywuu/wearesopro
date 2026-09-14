@@ -130,10 +130,10 @@
     } catch (e) {
       return editor.status("Could not add that player");
     }
-    if (spot < 0) return editor.status("Your team is full - open the team photo to make room");
+    if (spot < 0) return editor.status("Your team is full - open the team photo to edit");
     TEAM.save(team);
     const filled = team.players.filter(Boolean).length;
-    editor.status("Added to spot " + (spot + 1) + " - " + filled + " on the team");
+    editor.status("Added to the current team");
     showTeamLink();
   }
 
