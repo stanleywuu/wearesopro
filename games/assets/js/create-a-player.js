@@ -95,18 +95,13 @@
   // The place to manage the collection. Deleting lives here and nowhere else:
   // this page has no team on it, so "delete" can only mean one thing.
   function addGalleryButton(root) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "button";
-    button.textContent = "Saved players";
-    button.addEventListener("click", () => GALLERY.open({
+    editor.el("host-links").appendChild(linkButton("Saved players", () => GALLERY.open({
       into: root,
       title: "Your saved players",
       canDelete: true,
       onPick: openSaved,
       onStatus: editor.status
-    }));
-    editor.el("host-actions").appendChild(button);
+    })));
   }
 
   // Opening one puts it back in the builder as the player being worked on, so
@@ -128,12 +123,27 @@
   // is the answer, and the only way to say "someone new" out loud. Randomize
   // also starts a new player, but nobody reaches for it to get a blank sheet.
   function addNewButton() {
+    editor.el("host-links").appendChild(linkButton("New player", startNewPlayer));
+  }
+
+  // The two controls about WHICH player you are on. They are buttons - they do
+  // something - but they are not what you came to the page for, so they read as
+  // links under the row that is.
+  function linkButton(label, run) {
+    const host = editor.el("host-links");
+    if (host.childNodes.length) {
+      const sep = document.createElement("span");
+      sep.className = "cap-sep";
+      sep.setAttribute("aria-hidden", "true");
+      sep.textContent = "\u00B7";
+      host.appendChild(sep);
+    }
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "button";
-    button.textContent = "New player";
-    button.addEventListener("click", startNewPlayer);
-    editor.el("host-actions").appendChild(button);
+    button.className = "cap-link";
+    button.textContent = label;
+    button.addEventListener("click", run);
+    return button;
   }
 
   // A fresh id first: the player on screen keeps its own gallery entry, and
@@ -282,7 +292,7 @@
     cardLink.className = "button cap-card-link";
     cardLink.textContent = "View hockey card";
     refreshCardLink();
-    editor.el("host-footer").appendChild(cardLink);
+    editor.el("host-actions").appendChild(cardLink);
   }
 
   function refreshCardLink() {

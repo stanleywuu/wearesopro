@@ -8,12 +8,16 @@
     <p data-el="bubble" class="cap-bubble" hidden></p>
     <canvas data-el="canvas" tabindex="0" aria-label="Your created hockey player, drag to rotate"></canvas>
     <p data-el="caption" class="cap-caption" aria-live="polite"></p>
-    <div class="cap-actions">
+    <!-- Three rows, three jobs: what acts on the picture, what sends the player
+         somewhere, and which player you are on. Only the first belongs to the
+         builder - the other two are host slots, empty in the team modal. -->
+    <div class="cap-actions cap-actions-play">
       <button type="button" data-el="random" class="button">Randomize</button>
       <button type="button" data-el="highlight" class="button">Highlight</button>
-      <span data-el="host-actions"></span>
     </div>
+    <div class="cap-actions cap-actions-main" data-el="host-actions"></div>
     <p data-el="status" class="cap-status" aria-live="polite"></p>
+    <div class="cap-links" data-el="host-links"></div>
     <div data-el="host-footer"></div>
   </div>
 

@@ -27,7 +27,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 
 ## partials/ (included via `data-include`, see `assets/js/main.js`)
 - `partials/nav.html` — Main site navigation. The dropdown and drawer link lists are **generated** from `PAGES` between `nav:notes` / `nav:games` markers — edit `tools/build.py`, not the lists.
-- `partials/player-editor.html` — **The** player builder markup (stage, canvas, tabs, all controls), shared by `games/create-a-player.html` and the slot modal on `games/team-photo.html`. Driven by `CAP_EDITOR.mount()`; elements addressed by `data-el`, never by id. `[data-el="host-actions"]` / `[data-el="host-footer"]` are empty slots each host page fills with its own buttons. See `.claude/RULES.md`, "One builder, two mounts".
+- `partials/player-editor.html` — **The** player builder markup (stage, canvas, tabs, all controls), shared by `games/create-a-player.html` and the slot modal on `games/team-photo.html`. Driven by `CAP_EDITOR.mount()`; elements addressed by `data-el`, never by id. `[data-el="host-actions"]` / `[data-el="host-links"]` / `[data-el="host-footer"]` are empty slots each host page fills with its own buttons - the main action row, the quiet "which player" links, and whatever comes after. See `.claude/RULES.md`, "One builder, two mounts".
 - `partials/nav-noscript.html` — **Unused.** Was included inside `<noscript>` via `data-include`, which cannot work (the include needs JS); replaced by the generated `.site-links` nav.
 - `partials/sidebar.html` — Sidebar (poll widgets, etc.).
 - `partials/footer.html` — Site footer.

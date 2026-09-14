@@ -26,6 +26,7 @@
    Save/Cancel in the team modal) in here. Empty on a page that has none, and an
    empty one must not push the layout around. */
 [data-el="host-actions"]:empty,
+[data-el="host-links"]:empty,
 [data-el="host-footer"]:empty { display: none; }
 
 .cap-controls {
@@ -205,7 +206,52 @@
   gap: .4rem;
 }
 
-.cap-actions .button { font-size: .85rem; }
+.cap-actions .button {
+  font-family: inherit;      /* an <a> inherits the page font, a <button> does not */
+  font-size: .85rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Randomize and Highlight play with the picture in front of you - worth having,
+   never the thing you came to do, so they carry less weight than the row under
+   them. */
+.cap-actions-play .button {
+  font-size: .8rem;
+  background: transparent;
+  border-color: rgba(30, 136, 229, .35);
+  color: var(--muted);
+}
+.cap-actions-play .button:hover { color: var(--accent); border-color: var(--accent); }
+
+.cap-actions-main { margin-top: .15rem; }
+
+/* Which player you are on. Buttons, because they do something, but styled as
+   plain links: two more outlined boxes here and the row above stops reading as
+   the main one. */
+.cap-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: .15rem;
+  margin-top: .2rem;
+}
+
+.cap-link {
+  background: none;
+  border: none;
+  padding: .35rem .5rem;
+  min-height: 32px;          /* still a tap target, however small it looks */
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cap-link:hover { text-decoration: none; }
+.cap-sep { color: var(--muted); font-size: .8rem; }
 
 .cap-status {
   margin: 0;
