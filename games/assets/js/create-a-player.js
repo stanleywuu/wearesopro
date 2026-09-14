@@ -41,6 +41,7 @@
     editor = EDITOR.mount(root, params, { onChange: onChange, onNew: newPlayer });
     if (!editor) return;
 
+    addNewButton();
     addShareButton();
     addTeamButton();
     addGalleryButton(root);
@@ -118,6 +119,43 @@
     keeping = true;
     editor.sync();
     editor.status("Loaded " + (player.name || "player") + ". Changes are saved as you go.");
+  }
+
+  // ---- a new player -----------------------------------------------------
+
+  // Everything is saved as you go, which leaves one question unanswered: is
+  // this edit changing the player I just built, or starting someone new? This
+  // is the answer, and the only way to say "someone new" out loud. Randomize
+  // also starts a new player, but nobody reaches for it to get a blank sheet.
+  function addNewButton() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button";
+    button.textContent = "New player";
+    button.addEventListener("click", startNewPlayer);
+    editor.el("host-actions").appendChild(button);
+  }
+
+  // A fresh id first: the player on screen keeps its own gallery entry, and
+  // everything typed from here lands in a new one.
+  function startNewPlayer() {
+    newPlayer();
+    editEnabled();
+    Object.assign(editor.params, CODE.defaults());
+    editor.sync();
+    queueSave(editor.params);
+    refreshCardLink();
+    editor.status("Started a new player. The last one is under Saved players.");
+  }
+
+  // Leaving the collapsed view a shared link opens in. Pressing New player
+  // there means the same thing as pressing "Make your player": this is mine now.
+  function editEnabled() {
+    document.documentElement.classList.remove(SHARED);
+    const collapsed = document.querySelector(".cap-edit");
+    if (collapsed) collapsed.remove();
+    keeping = true;
+    dropShareParam();
   }
 
   // ---- the team ---------------------------------------------------------
@@ -227,11 +265,8 @@
     button.textContent = "Make your player";
     button.setAttribute("aria-expanded", "false");
     button.addEventListener("click", () => {
-      document.documentElement.classList.remove(SHARED);
-      button.remove();
-      keeping = true;
       newPlayer();
-      dropShareParam();
+      editEnabled();
     });
     editor.el("host-footer").appendChild(button);
   }
