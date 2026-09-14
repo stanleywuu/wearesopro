@@ -143,7 +143,7 @@
     editor.sync();
     queueSave(editor.params);
     refreshCardLink();
-    editor.status("New player, same kit. The last one is under Saved players.");
+    editor.status("Saved. New player created.");
   }
 
   // Leaving the collapsed view a shared link opens in. Pressing New player
