@@ -561,12 +561,35 @@
       clearTimeout(statusTimer);
     }
 
+    // The quiet row under the status line: controls that do something but are
+    // not what the page is for. Both mounts build one, so the row - and the
+    // separator that keeps it reading as a line of links - lives here.
+    function addLink(label, run) {
+      const host = el("host-links");
+      if (!host) return null;
+      if (host.childNodes.length) {
+        const sep = document.createElement("span");
+        sep.className = "cap-sep";
+        sep.setAttribute("aria-hidden", "true");
+        sep.textContent = "\u00B7";
+        host.appendChild(sep);
+      }
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "cap-link";
+      button.textContent = label;
+      button.addEventListener("click", run);
+      host.appendChild(button);
+      return button;
+    }
+
     return {
       params: params,
       root: root,
       el: el,
       status: status,
       sync: syncControls,
+      addLink: addLink,
       destroy: destroy
     };
   }

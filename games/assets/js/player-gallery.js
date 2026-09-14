@@ -4,6 +4,10 @@
 // load somebody back in and to manage the collection - deleting only happens
 // there, because on a page with a team in front of you "remove" reads as
 // "off the team" no matter what the button says.
+//
+// With onNew it works the other way round too: the same grid becomes a place to
+// save TO - pick a player to save over, or the New slot at the front to keep
+// this one beside them.
 
 (function () {
 
@@ -13,7 +17,7 @@
   let panel = null;
   let options = {};
 
-  // opts: { into, title, onPick, canDelete, onStatus }
+  // opts: { into, title, onPick, onNew, canDelete, onStatus }
   function open(opts) {
     close();
     options = opts || {};
@@ -54,6 +58,7 @@
     const box = document.createElement("div");
     box.className = "cap-gallery-grid";
     const saved = PLAYERS.list();
+    if (options.onNew) box.appendChild(newTile());
     if (!saved.length) {
       const empty = document.createElement("p");
       empty.className = "muted";
@@ -69,6 +74,32 @@
   function refresh() {
     if (!panel) return;
     panel.replaceChild(grid(), panel.querySelector(".cap-gallery-grid"));
+  }
+
+  // Every other slot here is somebody, so saving means saving OVER them. This
+  // is the slot that is nobody yet - first in the grid, where an empty spot on
+  // the shelf would be.
+  function newTile() {
+    const wrap = document.createElement("div");
+    wrap.className = "cap-pick-wrap";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cap-pick cap-pick-new";
+    const mark = document.createElement("span");
+    mark.className = "cap-pick-plus";
+    mark.setAttribute("aria-hidden", "true");
+    mark.textContent = "+";
+    const name = document.createElement("span");
+    name.textContent = "New";
+    button.appendChild(mark);
+    button.appendChild(name);
+    button.setAttribute("aria-label", "Save as a new player");
+    button.addEventListener("click", function () {
+      close();
+      if (options.onNew) options.onNew();
+    });
+    wrap.appendChild(button);
+    return wrap;
   }
 
   function tile(entry) {

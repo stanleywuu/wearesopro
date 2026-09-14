@@ -632,18 +632,6 @@
     }
   }
 
-  // Is this exact player already on the shelf? Codes are compared after a round
-  // trip, since that is the form the gallery keeps them in.
-  function inGallery(code) {
-    const want = reEncode(code);
-    return Boolean(want) && PLAYERS.list().some(function (entry) { return reEncode(entry.code) === want; });
-  }
-
-  function reEncode(code) {
-    const player = safeLoad(code);
-    return player ? CODE.encode(player) : "";
-  }
-
   // The middle of the front row is the goalie's, so a player built there starts
   // as one - gear, mask and the rest pose - rather than as a centre they have to
   // remember to change.
@@ -656,13 +644,14 @@
     return params;
   }
 
-  // Randomize and Highlight belong to the builder and stay in its row. These
-  // three are about the slot rather than the player, so they get their own row
-  // underneath.
+  // One button for the thing you came to do, one to back out. Everything else
+  // about the slot is a link above them: two buttons that both say "save" make
+  // you read before you press.
   function addModalButtons() {
+    editor.addLink("Import from Gallery", openPicker);
+    editor.addLink("Save as", saveAs);
     const row = document.createElement("div");
     row.className = "tp-modal-actions";
-    row.appendChild(pickerButtonEl());
     row.appendChild(modalButton("Save to team", "is-primary", saveSlot));
     row.appendChild(modalButton("Cancel", "", closeModal));
     editor.el("host-footer").appendChild(row);
@@ -675,13 +664,6 @@
     button.textContent = label;
     button.addEventListener("click", run);
     return button;
-  }
-
-  // Everyone you have already built. Opened from a button rather than sitting
-  // across the top of the modal: it is a thing you go to when you want it, not
-  // a shelf in front of the builder.
-  function pickerButtonEl() {
-    return modalButton("Import from Gallery", "", openPicker);
   }
 
   // Picking somebody for this slot. Deleting is deliberately not offered here:
@@ -750,18 +732,37 @@
     return safeLoad(playerCodeFrom(value));
   }
 
-  // The team page only ever ADDS to your saved players. Editing a player here
-  // is editing the team's copy of him - the builder never edits your team, so
-  // this must not edit your gallery. Somebody new goes in as a new entry; an
-  // unchanged re-save adds nothing, since a byte-identical twin is only noise.
+  // A slot holds a copy. Nothing here is associated with the player it came
+  // from, so a save writes the team and only the team - the same way the
+  // builder never writes your team. Keeping someone is the link above.
   function saveSlot() {
-    const code = CODE.encode(editor.params);
-    team.players[openIndex] = code;
-    if (!inGallery(code)) PLAYERS.remember(PLAYERS.newId(), code);
+    team.players[openIndex] = CODE.encode(editor.params);
     saveTeam();
     closeModal();
     refresh();
     status("Saved");
+  }
+
+  // "Save as": the same panel as Import, opened as a destination instead of a
+  // source. Pick somebody to save over, or the New slot to keep this player
+  // beside them. The only path from this page into your saved players, and only
+  // on a press - the modal stays open, because this is not the thing you came
+  // in to do.
+  function saveAs() {
+    const code = CODE.encode(editor.params);
+    GALLERY.open({
+      into: document.querySelector(".tp-modal-card"),
+      title: "Save as",
+      onNew: function () { keep(PLAYERS.newId(), code, "Saved as a new player"); },
+      onPick: function (player, entry) {
+        keep(entry.id, code, "Saved over " + (player.name || "that player"));
+      }
+    });
+  }
+
+  function keep(id, code, message) {
+    PLAYERS.remember(id, code);
+    editor.status(message);
   }
 
   function closeModal() {

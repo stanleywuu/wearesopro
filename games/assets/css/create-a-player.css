@@ -481,6 +481,18 @@
 
 .cap-pick-wrap { display: grid; }
 
+/* The slot that is nobody yet. Dashed, so it reads as a space to fill rather
+   than as a player with no picture. */
+.cap-pick-new { border-style: dashed; border-color: rgba(30, 136, 229, .5); }
+.cap-pick-plus {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 180 / 200;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
 /* ---- saved-player picker ----
    A panel over whatever opened it, from a button. It used to be a strip across
    the top of the builder, which put a shelf in front of the thing you came to
