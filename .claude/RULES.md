@@ -110,6 +110,25 @@ copies. Add a control once and both get it.
 - Included markup arrives after deferred page scripts run, so anything that needs it
   listens for `partials:ready` (dispatched by `main.js` once the includes resolve).
 
+## Previewing locally
+
+There is no build step, so a plain static server over the repo root is the whole
+preview. Always use **port 8899** - that is the address the user opens to test
+alongside, and a different port means they are looking at nothing.
+
+```
+python3 -m http.server 8899 --bind 0.0.0.0 --directory .
+```
+
+- Start it in the **background** and leave it running for the rest of the session.
+  Say the URL once it is up: `http://localhost:8899/...`, or `http://<LAN-IP>:8899/...`
+  from a phone (`hostname -I` for the address).
+- Check whether 8899 is already serving before starting another one, and never kill
+  a server this session did not start.
+- Preview only: nothing about the deploy depends on it. `navigator.share` and
+  anything else needing a secure context will not work over plain http - that needs
+  the deployed https site.
+
 ## Keeping this repo self-describing
 - If you add, remove, or repurpose a file, update `.claude/FILES.md` in the same change.
 - If you establish a new non-obvious convention, add it here.
