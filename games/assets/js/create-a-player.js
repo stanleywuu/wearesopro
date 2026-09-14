@@ -131,14 +131,19 @@
 
   // A fresh id first: the player on screen keeps its own gallery entry, and
   // everything typed from here lands in a new one.
+  //
+  // The build stays put. A team is twelve people in the same kit, and mixing
+  // that colour again for every one of them is the work nobody wants; what
+  // cannot carry over is who they are, so the name, number and catch-phrase go
+  // back to blank and the rest is a starting point you can change or randomize.
   function startNewPlayer() {
     newPlayer();
     editEnabled();
-    Object.assign(editor.params, CODE.defaults());
+    Object.assign(editor.params, { name: "", number: "", phrase: "" });
     editor.sync();
     queueSave(editor.params);
     refreshCardLink();
-    editor.status("Started a new player. The last one is under Saved players.");
+    editor.status("New player, same kit. The last one is under Saved players.");
   }
 
   // Leaving the collapsed view a shared link opens in. Pressing New player
