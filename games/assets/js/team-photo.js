@@ -58,7 +58,6 @@
   let editor = null;            // the live mount while the modal is open
   let editorTemplate = "";      // pristine builder markup, re-stamped per open
   let openIndex = -1;
-  let slotPlayerId = "";        // which gallery entry the open modal is editing
   let lastFocus = null;
   let statusTimer = 0;
 
@@ -603,8 +602,7 @@
     lastFocus = document.activeElement;
 
     const params = playerAt(i) || newPlayerFor(i);
-    slotPlayerId = galleryIdFor(team.players[i]) || PLAYERS.newId();
-    editor = EDITOR.mount(body.querySelector(".cap-wrap"), params, { onNew: newGalleryId });
+    editor = EDITOR.mount(body.querySelector(".cap-wrap"), params, {});
     if (!editor) return;
     addModalButtons();
     addAdvanced();
@@ -634,27 +632,16 @@
     }
   }
 
-  // A slot already holding somebody you have built keeps that gallery entry, so
-  // editing them updates the one player instead of leaving an older twin behind.
-  // Codes are compared after a round trip, since that is the form the gallery
-  // keeps them in.
-  function galleryIdFor(code) {
-    if (!code) return "";
+  // Is this exact player already on the shelf? Codes are compared after a round
+  // trip, since that is the form the gallery keeps them in.
+  function inGallery(code) {
     const want = reEncode(code);
-    if (!want) return "";
-    const hit = PLAYERS.list().filter(function (entry) { return reEncode(entry.code) === want; })[0];
-    return hit ? hit.id : "";
+    return Boolean(want) && PLAYERS.list().some(function (entry) { return reEncode(entry.code) === want; });
   }
 
   function reEncode(code) {
     const player = safeLoad(code);
     return player ? CODE.encode(player) : "";
-  }
-
-  // Randomize is a different person, not an edit of this one, so they get their
-  // own row in the gallery rather than overwriting whoever was in the slot.
-  function newGalleryId() {
-    slotPlayerId = PLAYERS.newId();
   }
 
   // The middle of the front row is the goalie's, so a player built there starts
@@ -720,8 +707,7 @@
 
   // Drops the saved player into the open editor rather than straight into the
   // slot, so they can still be tweaked before being saved to the team.
-  function useSaved(player, entry) {
-    slotPlayerId = (entry && entry.id) || PLAYERS.newId();
+  function useSaved(player) {
     Object.assign(editor.params, player);
     editor.sync();
     status("Loaded. Change anything you like, then save to the team.");
@@ -764,12 +750,14 @@
     return safeLoad(playerCodeFrom(value));
   }
 
-  // Into the slot AND into the gallery: somebody built here is somebody you
-  // built, and they belong in Import from Gallery like anyone else.
+  // The team page only ever ADDS to your saved players. Editing a player here
+  // is editing the team's copy of him - the builder never edits your team, so
+  // this must not edit your gallery. Somebody new goes in as a new entry; an
+  // unchanged re-save adds nothing, since a byte-identical twin is only noise.
   function saveSlot() {
     const code = CODE.encode(editor.params);
     team.players[openIndex] = code;
-    PLAYERS.remember(slotPlayerId, code);
+    if (!inGallery(code)) PLAYERS.remember(PLAYERS.newId(), code);
     saveTeam();
     closeModal();
     refresh();
@@ -786,7 +774,6 @@
     document.body.style.overflow = "";
     if (lastFocus && lastFocus.focus) lastFocus.focus();
     openIndex = -1;
-    slotPlayerId = "";
   }
 
   // ---- page -------------------------------------------------------------
