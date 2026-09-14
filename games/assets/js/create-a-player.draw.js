@@ -368,6 +368,7 @@
     // A mask is a whole shell, not a cap: it wraps the face too, so it is drawn
     // around the head's centre rather than seated on the brow.
     const mask = params.helmetStyle === "mask";
+    const style = dims.headStyle;
     const mc = project(hr.x, head.y, hr.z);
     // A dome caps the skull, so it can sit at a fixed shallow depth and still
     // read. A mask wraps the whole head, so it has to sort in FRONT of the head
@@ -376,8 +377,8 @@
       d: mask ? hr.z + 0.5 : 0.1,
       draw: () => {
         ctx.beginPath();
-        if (mask) ctx.ellipse(p(mc.sx), p(mc.sy), p(hw * 1.04), p(head.ry * 1.14 * mc.k), 0, 0, Math.PI * 2);
-        else ctx.ellipse(p(c.sx), p(c.sy), p(hw), p(hh), 0, Math.PI, 2 * Math.PI);
+        if (mask) helmetShell(ctx, style, mc.sx, mc.sy, hw * 1.04, head.ry * 1.14 * mc.k);
+        else helmetDome(ctx, style, c.sx, c.sy, hw, hh);
         ctx.closePath();
         ctx.fillStyle = slabFill(ctx, mask ? mc.sx : c.sx, hw, params.helmetColor, yaw);
         ctx.fill();
@@ -390,6 +391,21 @@
         if (params.helmetStyle === "visor") drawVisor(ctx, dims, yaw);
       }
     };
+  }
+
+  // A blocky head needs a blocky lid: a round dome leaves the top corners of
+  // the skull bare. Both shapes follow the head's own taper and corner
+  // rounding, so the helmet reads as a shell built for that head.
+  function helmetDome(ctx, style, cx, cy, hw, hh) {
+    if (style.boxy) return pathBox(ctx, cx, cy - hh / 2, hw, hh / 2, style.taper, style.round);
+    ctx.ellipse(p(cx), p(cy), p(hw), p(hh), 0, Math.PI, 2 * Math.PI);
+  }
+
+  // The mask wraps the whole head rather than capping it, so it is the head's
+  // outline again, one size up.
+  function helmetShell(ctx, style, cx, cy, hw, hh) {
+    if (style.boxy) return pathBox(ctx, cx, cy, hw, hh, style.taper, style.round);
+    ctx.ellipse(p(cx), p(cy), p(hw), p(hh), 0, 0, Math.PI * 2);
   }
 
   // The cage goes on in facePart, not here: it has to land on top of the eyes,
