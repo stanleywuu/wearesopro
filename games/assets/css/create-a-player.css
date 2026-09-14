@@ -377,7 +377,14 @@
   .cap-debug { grid-template-columns: repeat(2, 1fr); }
 
   /* Bigger tap targets on touch screens. */
-  .cap-swatch { width: 30px; height: 30px; }
+  .cap-swatch { width: 32px; height: 32px; }
+
+  /* A colour row cannot shrink below its swatches, so on a phone the one-row
+     rule held the whole controls column wider than the screen and the page
+     scrolled sideways - with the picker, last in the row, off the edge. The
+     label goes above the colours and the row is allowed to wrap. */
+  .cap-slot-wide { grid-template-columns: 1fr; }
+  .cap-slot-wide .cap-swatches { flex-wrap: wrap; gap: .4rem; }
   .cap-opt, .cap-tab { padding: .55rem .2rem; }
   .cap-actions .button { padding: .5rem .9rem; }
   .cap-slot input[type="range"] { height: 10px; }
