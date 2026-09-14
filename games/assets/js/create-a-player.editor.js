@@ -109,14 +109,19 @@
       input.type = "color";
       input.value = params[key];
       input.setAttribute("aria-label", key + ", custom colour");
-      // Tapping this swatch means what tapping any other one in the row means:
-      // wear that colour. The picker opening on top of it is how you change it.
-      // The tap has to do the applying itself, because a colour input says
-      // nothing when you choose the shade it already holds - and that shade is
-      // exactly the one you want when you are kitting out a second player in
-      // the same jersey.
-      label.addEventListener("click", () => {
-        if (label.dataset.color) selectSwatch(box, key, label.dataset.color);
+      // Tap to wear it, tap again to change it.
+      //
+      // A colour input says nothing when you choose the shade it already holds,
+      // so re-wearing your own colour had to become a plain tap - and on a
+      // phone the system colour sheet opening on top of that tap is a sheet you
+      // then have to dismiss for nothing. So the first tap on a colour you are
+      // not wearing just puts it on; the sheet is what you get when you tap the
+      // colour you already have, which is when you actually want to mix.
+      label.addEventListener("click", e => {
+        const shown = label.dataset.color;
+        if (!shown || shown === params[key]) return;
+        e.preventDefault();
+        selectSwatch(box, key, shown);
       });
       input.addEventListener("input", () => selectSwatch(box, key, input.value));
       label.appendChild(input);
