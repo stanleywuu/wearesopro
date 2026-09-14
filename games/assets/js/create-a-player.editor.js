@@ -109,6 +109,15 @@
       input.type = "color";
       input.value = params[key];
       input.setAttribute("aria-label", key + ", custom colour");
+      // Tapping this swatch means what tapping any other one in the row means:
+      // wear that colour. The picker opening on top of it is how you change it.
+      // The tap has to do the applying itself, because a colour input says
+      // nothing when you choose the shade it already holds - and that shade is
+      // exactly the one you want when you are kitting out a second player in
+      // the same jersey.
+      label.addEventListener("click", () => {
+        if (label.dataset.color) selectSwatch(box, key, label.dataset.color);
+      });
       input.addEventListener("input", () => selectSwatch(box, key, input.value));
       label.appendChild(input);
       box.appendChild(label);
@@ -123,24 +132,16 @@
     }
 
     // A colour that is not one of the presets belongs to that row's picker, so
-    // the picker is the swatch that shows as active.
-    //
-    // The picker also has to be told what the player is wearing even when a
-    // preset wins, because a colour input fires nothing when you choose the
-    // colour it already holds: leave yesterday's custom colour sitting in it
-    // and that is the one colour you can never pick again.
+    // the picker is the swatch that shows as active. It goes on showing that
+    // colour after the player moves off it - a mixed colour is work, and the
+    // next player in the same kit needs it to still be there.
     function syncSwatchRow(box, color) {
       const custom = box.querySelector(".cap-swatch-custom");
       const preset = D[box.dataset.palette].indexOf(color) >= 0;
-      if (custom) {
+      if (custom && !preset) {
+        custom.dataset.color = color;
+        custom.style.background = color;
         custom.querySelector("input").value = color;
-        if (preset) {
-          delete custom.dataset.color;
-          custom.style.background = "";
-        } else {
-          custom.dataset.color = color;
-          custom.style.background = color;
-        }
       }
       box.querySelectorAll(".cap-swatch").forEach(b => b.classList.toggle("active", b.dataset.color === color));
     }
