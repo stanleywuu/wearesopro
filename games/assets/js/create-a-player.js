@@ -23,6 +23,7 @@
 
   let editor = null;
   let saveTimer = 0;
+  let cardLink = null;       // its href has to track the player as it changes
   let playerId = null;       // which gallery entry this player is
   let started = false;       // the mount fires one change of its own; ignore it
   let keeping = true;        // false while looking at somebody else's player
@@ -43,6 +44,7 @@
     addShareButton();
     addTeamButton();
     addGalleryButton(root);
+    addCardLink();
     if (fromLink) collapseEditor();
   }
 
@@ -53,6 +55,7 @@
   // and neither does a shared player you have only looked at.
   function onChange(params) {
     queueSave(params);
+    refreshCardLink();
     if (!started) {
       started = true;
       return;
@@ -221,9 +224,8 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "button cap-edit";
-    button.textContent = "Make it your own";
+    button.textContent = "Make your player";
     button.setAttribute("aria-expanded", "false");
-    addCardLink();
     button.addEventListener("click", () => {
       document.documentElement.classList.remove(SHARED);
       button.remove();
@@ -234,14 +236,22 @@
     editor.el("host-footer").appendChild(button);
   }
 
-  // The card is the best thing to do with somebody else's player, so on a
-  // shared link it is the highlighted action - ahead of building your own.
+  // Always, not just on a shared link: having built somebody, their card is
+  // the thing you want to see. It sits in its own row under the stage rather
+  // than lengthening a row of five buttons.
+  //
+  // The href is rebuilt on every change - a link carrying the code as it was
+  // when the page loaded would quietly show an older player.
   function addCardLink() {
-    const link = document.createElement("a");
-    link.className = "button cap-card-link";
-    link.href = "/games/card.html?" + SHARE_KEY + "=" + shareCode();
-    link.textContent = "View hockey card";
-    editor.el("host-footer").appendChild(link);
+    cardLink = document.createElement("a");
+    cardLink.className = "button cap-card-link";
+    cardLink.textContent = "View hockey card";
+    refreshCardLink();
+    editor.el("host-footer").appendChild(cardLink);
+  }
+
+  function refreshCardLink() {
+    if (cardLink) cardLink.href = "/games/card.html?" + SHARE_KEY + "=" + shareCode();
   }
 
   function shareCode() {
