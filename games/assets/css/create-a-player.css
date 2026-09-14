@@ -343,14 +343,24 @@
 .cap-team-link { display: inline-block; margin-top: .6rem; text-decoration: none; }
 
 /* On a shared link, the card is the thing worth doing. */
+/* The footer row mixes an <a> with a <button>, and the site's base button rule
+   sets padding and colour but not the font - so a button keeps the browser's
+   13.3px Arial while an anchor inherits the page's 16px. Pinning the font here
+   makes the two the same size instead of the link towering over the button. */
+[data-el="host-footer"] .button {
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  line-height: 1.2;      /* the anchor inherits 1.5, the button uses UA normal */
+  margin-top: .6rem;
+}
+
 .cap-card-link {
   display: inline-block;
-  margin-top: .6rem;
   text-decoration: none;
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
-  font-weight: 700;
 }
 .cap-card-link:hover { background: var(--accent); color: #fff; }
 
