@@ -397,9 +397,9 @@
   }
 
   // The zooms are worked out across the whole team at once, so one player's
-  // height is always relative to the rest.
-  // For now every player is the same height and perspective alone decides who
-  // is bigger. Height variation comes later, and comes on top of this.
+  // height is always relative to the rest. uniformFit puts every build on the
+  // same baseline and then applies that player's height slider on top, so a
+  // short player is short here without taking up any less of the line-up.
   function measureTeam() {
     groupFits = {};
     team.players.forEach((code, i) => {

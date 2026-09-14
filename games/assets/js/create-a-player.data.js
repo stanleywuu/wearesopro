@@ -15,7 +15,11 @@ window.CAP_DATA = {
     bodyContour:  { min: 0,  max: 100, value: 50 },
     headWidth:    { min: 60, max: 150, value: 100 },
     headHeight:   { min: 60, max: 150, value: 100 },
-    headContour:  { min: 0,  max: 100, value: 50 }
+    headContour:  { min: 0,  max: 100, value: 50 },
+    // Overall stature: scales the whole figure about the ice, so a short player
+    // keeps his proportions and his feet. Added after v1, so the codec carries
+    // it at the END of the share code (see TAIL_SLIDERS).
+    height:       { min: 70, max: 130, value: 100 }
   },
 
   // Appended, never reordered: a share code carries the INDEX of the choice.

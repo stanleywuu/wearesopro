@@ -928,7 +928,7 @@
   // ---- scene ------------------------------------------------------------
 
   function drawShadow(ctx, dims) {
-    const w = dims.torso.rx * 1.6;
+    const w = dims.torso.rx * 1.6 * FIT;
     ctx.save();
     ctx.globalAlpha = 0.18;
     // CX + SHIFT, not CX: the shadow belongs to the player, and when the camera
@@ -1070,8 +1070,22 @@
 
   // ---- entry point ------------------------------------------------------
 
-  function autoFit(topY) {
-    return Math.min(1.45, (GROUND - TOP_MARGIN) / topY);
+  // The height slider scales the whole figure about the ice, so the feet stay
+  // put and the proportions hold. It is deliberately NOT part of topY: the fit
+  // is worked out for a standard-height build and the stature applied on top,
+  // which is what lets a short player look short instead of being zoomed back
+  // up to the frame.
+  const HEIGHT_MAX = 1.3;   // the height slider's max, as a factor
+
+  function heightFactor(params) {
+    const h = Number(params.height);
+    return Number.isFinite(h) ? h / 100 : 1;
+  }
+
+  // Frame sized for the tallest build there is, so a tall player has somewhere
+  // to be tall rather than having his head cropped.
+  function autoFit(params, topY) {
+    return Math.min(1.45, (GROUND - TOP_MARGIN) / (topY * HEIGHT_MAX)) * heightFactor(params);
   }
 
   // Every player scaled to exactly the same rendered height, whatever their
@@ -1080,7 +1094,7 @@
   // else" is the whole point. Perspective, not the sliders, is what makes one
   // player smaller than another in a group shot.
   function uniformFit(params) {
-    return (GROUND - TOP_MARGIN) / computeDims(params).topY;
+    return (GROUND - TOP_MARGIN) / computeDims(params).topY * heightFactor(params);
   }
 
   // opts.background === false draws the figure alone, on whatever is already
@@ -1101,7 +1115,7 @@
     // The camera follows the puck, so the shooter slides out of frame to the
     // left rather than being cut away. PAN_MAX is far enough to clear the edge.
     SHIFT = ANIM ? ANIM.shift - PAN_MAX * (ANIM.pan || 0) : 0;
-    FIT = (opts && opts.fit) ? opts.fit : autoFit(dims.topY);
+    FIT = (opts && opts.fit) ? opts.fit : autoFit(params, dims.topY);
     ctx.save();
     if (background) {
       ctx.clearRect(0, 0, p(LW), p(LH));

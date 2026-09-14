@@ -22,6 +22,11 @@
 
   const SLIDER_KEYS = Object.keys(D.sliders);
 
+  // Sliders added after v1. They ride at the END of the share code, so codes
+  // already out in the world keep decoding; everything else keeps its v1 slot.
+  const TAIL_SLIDERS = ["height"];
+  const CODE_SLIDERS = SLIDER_KEYS.filter(key => TAIL_SLIDERS.indexOf(key) < 0);
+
   // A fresh player every call - callers mutate what they get back.
   function defaults() {
     return {
@@ -33,6 +38,7 @@
       headWidth: D.sliders.headWidth.value,
       headHeight: D.sliders.headHeight.value,
       headContour: D.sliders.headContour.value,
+      height: D.sliders.height.value,
       skinColor: D.skinColors[0],
       jerseyColor: D.jerseyColors[0],
       trimColor: D.trimColors[0],
@@ -101,7 +107,7 @@
       D.shapes.findIndex(s => s.id === params.bodyShape),
       D.shapes.findIndex(s => s.id === params.headShape)
     ];
-    SLIDER_KEYS.forEach(key => fields.push(params[key] - D.sliders[key].min));
+    CODE_SLIDERS.forEach(key => fields.push(params[key] - D.sliders[key].min));
     PALETTES.forEach(entry => fields.push(encodeColor(params[entry[0]], entry[1])));
     fields.push(
       D.helmets.findIndex(h => h.id === params.helmetStyle),
@@ -109,6 +115,12 @@
       D.positions.indexOf(params.position),
       params.name, params.number, params.phrase
     );
+    // A tail slider left at its default goes out empty, so the trim below can
+    // still drop empty text fields sitting in front of it.
+    TAIL_SLIDERS.forEach(key => {
+      const spec = D.sliders[key];
+      fields.push(params[key] === spec.value ? "" : params[key] - spec.min);
+    });
     // Empty name/number/phrase at the end are just dead weight in the URL.
     while (fields.length && fields[fields.length - 1] === "") fields.pop();
     return SHARE_VERSION + "~" + fields.join("~");
@@ -123,7 +135,7 @@
     const next = () => (fields[i++] || "");
     const id = (list, field) => (list[Number(field)] || {}).id;
     const raw = { bodyShape: id(D.shapes, next()), headShape: id(D.shapes, next()) };
-    SLIDER_KEYS.forEach(key => { raw[key] = Number(next()) + D.sliders[key].min; });
+    CODE_SLIDERS.forEach(key => { raw[key] = Number(next()) + D.sliders[key].min; });
     PALETTES.forEach(entry => { raw[entry[0]] = decodeColor(next(), entry[1]); });
     raw.helmetStyle = id(D.helmets, next());
     raw.handedness = id(D.handedness, next());
@@ -131,6 +143,12 @@
     raw.name = next();
     raw.number = next();
     raw.phrase = next();
+    // Missing from an older code: that player was built before the slider, so
+    // the default stands rather than min.
+    TAIL_SLIDERS.forEach(key => {
+      const field = next();
+      raw[key] = field === "" ? D.sliders[key].value : Number(field) + D.sliders[key].min;
+    });
     return raw;
   }
 
