@@ -624,6 +624,13 @@
     return dims.rest ? goalieStick(dims, params) : stickPoints(dims, params);
   }
 
+  // The shaft sorts at the depth of the hands holding it, pulled back a little
+  // so it passes behind them. Both sticks use it, and the gloves are placed
+  // relative to it, so the hands cannot end up on the wrong side of the shaft.
+  function stickDepth(s, yaw) {
+    return rotY(s.topHand.x, s.topHand.z, yaw).z - 3;
+  }
+
   // Where the shaft thickens into the paddle: a point on the shaft at a fixed
   // height, so the wide part is the same length whatever angle the stick is at.
   function paddleTop(s) {
@@ -733,6 +740,7 @@
     // Gloves take a darker shade of the jersey rather than the lettering
     // colour — white lettering is right on a jersey, wrong on a glove.
     const gloveColor = shade(params.jerseyColor, -0.4);
+    const shaft = stickDepth(s, yaw);
     // Which shoulder owns which hand. Both grips sit on the blade's side of the
     // body, so the shoulder on THAT side takes the top hand and stays tucked,
     // and the far shoulder reaches across for the lower hand. Exactly one arm
@@ -754,16 +762,24 @@
       // body only shows one. The far arm now keeps its own negative depth and
       // the torso covers it.
       const depth = (a.d + b.d) / 2;
-      return {
-        d: depth >= 0 ? depth + 3 : depth,
-        draw: () => {
-          drawArm(ctx, a, e, b, 8, params.jerseyColor);
-          if (!dims.goalie) return drawGlove(ctx, b, gloveColor);
-          if (pair.blocker) drawBlocker(ctx, b, gloveColor, params.trimColor);
-          else drawTrapper(ctx, b, gloveColor, params.trimColor);
+      return [
+        {
+          d: depth >= 0 ? depth + 3 : depth,
+          draw: () => drawArm(ctx, a, e, b, 8, params.jerseyColor)
+        },
+        {
+          // The hand is its own part so it can sort onto the shaft while the
+          // arm keeps its own depth - the arm averages the shoulder, which is
+          // behind, and that average was dragging the glove under the stick.
+          d: Math.max(b.d, shaft) + 2,
+          draw: () => {
+            if (!dims.goalie) return drawGlove(ctx, b, gloveColor);
+            if (pair.blocker) drawBlocker(ctx, b, gloveColor, params.trimColor);
+            else drawTrapper(ctx, b, gloveColor, params.trimColor);
+          }
         }
-      };
-    });
+      ];
+    }).reduce((all, pair) => all.concat(pair), []);
   }
 
   // A slab of a blocker on the stick hand and a fat round trapper on the other:
@@ -801,11 +817,8 @@
     const b = proj3(s.butt, yaw);
     const h = proj3(s.heel, yaw);
     const t = proj3(s.toe, yaw);
-    // Sort by the rotated depth at the hands, just behind the arms, so the
-    // gloves read as gripping the shaft rather than the shaft crossing them.
-    const grip = rotY(s.topHand.x, s.topHand.z, yaw);
     return {
-      d: grip.z - 3,
+      d: stickDepth(s, yaw),
       draw: () => {
         ctx.lineCap = "round";
         L(ctx, b.sx, b.sy, h.sx, h.sy, OUTLINE, 3.6);
@@ -824,9 +837,8 @@
     const m = proj3(paddleTop(s), yaw);
     const h = proj3(s.heel, yaw);
     const t = proj3(s.toe, yaw);
-    const grip = rotY(s.topHand.x, s.topHand.z, yaw);
     return {
-      d: grip.z - 3,
+      d: stickDepth(s, yaw),
       draw: () => {
         ctx.lineCap = "round";
         L(ctx, b.sx, b.sy, m.sx, m.sy, OUTLINE, 4.0);
