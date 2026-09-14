@@ -37,10 +37,17 @@
   gap: 1rem;
 }
 
-/* The "Make it your own" button sits under the stage, so a collapsed column
-   holds nothing but the hidden editor - leaving it in place would park an
-   empty column beside the player. */
-.cap-controls.collapsed { display: none; }
+/* A shared link opens collapsed: the title and the controls go, the player
+   stays. Driven off a class on the document element, set before the included
+   markup arrives, so this is the first thing painted rather than a correction
+   applied after the full layout has already been drawn.
+
+   The controls COLUMN stays in the flex line with its contents hidden. It has
+   no background of its own, so it is invisible either way, and keeping it means
+   its flex-basis holds the stage exactly where it sits in the full layout -
+   dropping it out let the lone stage re-centre and the canvas jumped sideways. */
+.cap-shared #cap-intro,
+.cap-shared [data-el="editor"] { display: none; }
 
 .cap-editor {
   display: flex;

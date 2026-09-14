@@ -11,6 +11,15 @@
   const STORE_KEY = "cap-player";
   const SHARE_KEY = "p";
   const SAVE_DELAY = 700;
+  const SHARED = "cap-shared";
+
+  // Set now, not on partials:ready. The builder's markup arrives with the
+  // includes, and collapsing it after that has already been painted is what
+  // made the canvas visibly jump. On the document element the rule is waiting
+  // before the markup it applies to exists.
+  if (new URLSearchParams(location.search).has(SHARE_KEY)) {
+    document.documentElement.classList.add(SHARED);
+  }
 
   let editor = null;
   let saveTimer = 0;
@@ -209,22 +218,14 @@
   // pitch goes with it — it is an instruction for a builder, and this visitor
   // is not one yet — and comes back if they decide to make their own.
   function collapseEditor() {
-    const controls = editor.el("controls");
-    const panel = editor.el("editor");
-    const intro = document.getElementById("cap-intro");
     const button = document.createElement("button");
     button.type = "button";
     button.className = "button cap-edit";
     button.textContent = "Make it your own";
     button.setAttribute("aria-expanded", "false");
-    panel.hidden = true;
-    intro.hidden = true;
-    controls.classList.add("collapsed");
     addCardLink();
     button.addEventListener("click", () => {
-      panel.hidden = false;
-      intro.hidden = false;
-      controls.classList.remove("collapsed");
+      document.documentElement.classList.remove(SHARED);
       button.remove();
       keeping = true;
       newPlayer();
