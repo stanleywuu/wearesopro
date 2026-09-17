@@ -26,6 +26,7 @@
       <div class="cap-tabs" role="tablist" aria-label="Player options">
         <button class="cap-tab" role="tab" id="tab-shape" aria-controls="panel-shape" data-tab="shape">Shape</button>
         <button class="cap-tab" role="tab" id="tab-kit" aria-controls="panel-kit" data-tab="kit">Kit</button>
+        <button class="cap-tab" role="tab" id="tab-face" aria-controls="panel-face" data-tab="face">Face</button>
         <button class="cap-tab" role="tab" id="tab-info" aria-controls="panel-info" data-tab="info">Info</button>
       </div>
 
@@ -65,6 +66,19 @@
           <legend>Helmet</legend>
           <div class="cap-slot cap-slot-wide"><span>Colour</span><div class="cap-swatches" data-swatch="helmetColor" data-palette="helmetColors"></div></div>
           <div class="cap-slot"><span>Face</span><div class="cap-opts" data-options="helmetStyle" data-list="helmets"></div></div>
+        </fieldset>
+      </div>
+
+      <div class="cap-panel" id="panel-face" role="tabpanel" aria-labelledby="tab-face" data-panel="face">
+        <fieldset class="cap-group">
+          <legend>Hair</legend>
+          <div class="cap-slot cap-slot-wide"><span>Colour</span><div class="cap-swatches" data-swatch="hairColor" data-palette="hairColors"></div></div>
+          <div class="cap-slot cap-slot-wide"><span>Style</span><div class="cap-opts" data-options="hairStyle" data-list="hairStyles"></div></div>
+        </fieldset>
+
+        <fieldset class="cap-group">
+          <legend>Facial hair</legend>
+          <div class="cap-slot cap-slot-wide"><div class="cap-opts" data-options="faceHair" data-list="faceHairs"></div></div>
         </fieldset>
       </div>
 

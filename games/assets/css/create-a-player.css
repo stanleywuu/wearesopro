@@ -115,13 +115,16 @@
 
 .cap-opts {
   display: flex;
+  flex-wrap: wrap;
   gap: .4rem;
 }
 
 .cap-group > .cap-opts { margin-bottom: .8rem; }
 
+/* Six hair styles will not fit on one phone row the way three body shapes do,
+   so an option keeps a readable minimum and the row wraps under it. */
 .cap-opt {
-  flex: 1;
+  flex: 1 1 5rem;
   font-size: .85rem;
   padding: .35rem .2rem;
   border-radius: 999px;
