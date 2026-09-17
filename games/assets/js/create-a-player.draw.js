@@ -480,6 +480,25 @@
     ponytail: { sides: 0.16, fringe: 0, back: 0, tail: 1 }
   };
 
+  // A tapered lock: wide at the root, pointed at the tip, leaning by `lean` so
+  // a run of them reads as hair falling rather than a row of blobs.
+  function pathLock(ctx, x, y, w, h, lean) {
+    ctx.moveTo(p(x - w), p(y));
+    ctx.quadraticCurveTo(p(x - w * 0.55), p(y + h * 0.85), p(x + lean * w), p(y + h));
+    ctx.quadraticCurveTo(p(x + w * 0.55), p(y + h * 0.85), p(x + w), p(y));
+    ctx.quadraticCurveTo(p(x), p(y - h * 0.40), p(x - w), p(y));
+  }
+
+  function fillPath(ctx, color, lw) {
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(lw);
+    ctx.lineJoin = "round";
+    ctx.stroke();
+  }
+
   // Three pieces, because a lid hides them separately: the sides and fringe go
   // under a helmet and are swallowed whole by a goalie mask, while the flow out
   // the back shows under everything.
@@ -489,27 +508,34 @@
     const parts = [];
     if (params.helmetStyle !== "mask") {
       parts.push(hairSidesPart(ctx, dims, params, yaw, spec));
-      if (spec.fringe) parts.push(hairFringePart(ctx, dims, params, yaw, spec));
+      // A fringe only works on a bare face. The visor starts at the helmet rim
+      // with no gap under it, and the glass is semi-transparent, so a fringe
+      // behind one is a smudge across the eyes rather than hair.
+      if (spec.fringe && params.helmetStyle === "bare") {
+        parts.push(hairFringePart(ctx, dims, params, yaw, spec));
+      }
     }
     if (spec.back || spec.tail) parts.push(hairBackPart(ctx, dims, params, yaw, spec));
     return parts;
   }
 
-  // A patch at each side of the brow. Sorted between the head and the helmet,
-  // so the shell covers the top of each one and it reads as hair coming out
-  // from under the lid rather than stuck on over it.
+  // Lettuce: a lock hanging from under each ear cover. Anchored at the head's
+  // edge and slightly behind it, which is where hair actually escapes a helmet
+  // - and it keeps the face clear, since the middle of the head is taken by a
+  // semi-transparent visor that turns anything behind it into a smudge.
   function hairSidesPart(ctx, dims, params, yaw, spec) {
     const head = dims.head;
-    const y = head.y + head.ry * (0.04 - spec.sides * 0.45);
+    const top = head.y - head.ry * 0.30;
     return {
-      d: 0.05,
+      d: -head.rz * 0.35,
       draw: () => {
         [-1, 1].forEach(side => {
-          const r = rotY(head.x + side * head.rx * 0.78, head.z, yaw);
-          const c = project(r.x, y, r.z);
-          E(ctx, c.sx, c.sy, head.rx * 0.30 * c.k,
-            head.ry * (0.16 + spec.sides * 0.55) * c.k, params.hairColor);
-          outline(ctx, 1.1);
+          const r = rotY(head.x + side * head.rx * 0.92, head.z - head.rz * 0.35, yaw);
+          const c = project(r.x, top, r.z);
+          const w = head.rx * 0.22 * c.k;
+          ctx.beginPath();
+          pathLock(ctx, c.sx, c.sy, w, head.ry * (0.30 + spec.sides * 1.15) * c.k, side * 0.30);
+          fillPath(ctx, params.hairColor, 1.2);
         });
       }
     };
@@ -525,10 +551,16 @@
         const facing = Math.cos(yaw);
         if (facing < 0.15) return;
         const r = rotY(head.x, head.z + head.rz * 0.72, yaw);
-        const c = project(r.x, head.y + head.ry * 0.02, r.z);
-        E(ctx, c.sx, c.sy, head.rx * 0.66 * facing * c.k, head.ry * 0.14 * c.k,
-          params.hairColor);
-        outline(ctx, 1.1);
+        const c = project(r.x, head.y + head.ry * 0.10, r.z);
+        const half = head.rx * 0.62 * facing * c.k;
+        // Three locks with a parting, rather than one oval band: a fringe is
+        // the piece you see most of, and an oval reads as a sweatband.
+        [-1, 0, 1].forEach(n => {
+          ctx.beginPath();
+          pathLock(ctx, c.sx + n * half * 0.62, c.sy, half * 0.44,
+                   head.ry * (n ? 0.26 : 0.34) * c.k, n * 0.5);
+          fillPath(ctx, n ? shade(params.hairColor, -0.07) : params.hairColor, 1.1);
+        });
       }
     };
   }
@@ -544,9 +576,19 @@
     return {
       d: r.z,
       draw: () => {
-        E(ctx, c.sx, c.sy, head.rx * (tail ? 0.30 : 0.92) * c.k,
-          head.ry * (tail ? 0.55 : drop * 1.15) * c.k, shade(params.hairColor, -0.10));
+        const w = head.rx * (tail ? 0.30 : 0.92) * c.k;
+        const h = head.ry * (tail ? 0.55 : drop * 1.15) * c.k;
+        E(ctx, c.sx, c.sy, w, h, shade(params.hairColor, -0.10));
         outline(ctx, 1.2);
+        // The mass is one silhouette, so it needs a second shape to stop
+        // reading as a paper cut-out: a lit crown, and locks off the bottom.
+        E(ctx, c.sx, c.sy - h * 0.42, w * 0.78, h * 0.42, shade(params.hairColor, 0.10));
+        if (tail) return;
+        [-1, 1].forEach(side => {
+          ctx.beginPath();
+          pathLock(ctx, c.sx + side * w * 0.52, c.sy + h * 0.55, w * 0.30, h * 0.65, side * 0.4);
+          fillPath(ctx, shade(params.hairColor, -0.18), 1.1);
+        });
       }
     };
   }
