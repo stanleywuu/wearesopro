@@ -66,6 +66,18 @@
     toggle.addEventListener('click',open);
     drawer.addEventListener('click',e=>{ if(e.target.hasAttribute('data-close')) close(); });
     document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !drawer.hidden) close(); });
+    expandCurrentSection(drawer);
+  }
+
+  // Open the drawer section holding the page you are on; Games if none does.
+  function expandCurrentSection(drawer){
+    const here=location.pathname.replace(/\/index\.html$/,'/');
+    const groups=Array.from(drawer.querySelectorAll('details'));
+    if(!groups.length) return;
+    const mine=groups.find(d=>Array.from(d.querySelectorAll('a')).some(a=>a.getAttribute('href')===here));
+    const games=groups.find(d=>d.querySelector('a[href^="/games/"]'));
+    const pick=mine||games;
+    if(pick) pick.open=true;
   }
 
     // --- Collapsible Sidebar (mobile-first) ---
