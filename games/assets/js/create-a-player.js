@@ -71,7 +71,7 @@
   function loadSaved(params) {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      if (raw) Object.assign(params, CODE.sanitize(JSON.parse(raw)));
+      if (raw) Object.assign(params, CODE.fromStored(JSON.parse(raw)));
     } catch (e) {
       // A blocked or corrupt store just means we start from the defaults.
     }

@@ -242,11 +242,30 @@
     return typeof value === "string" ? value.slice(0, max) : "";
   }
 
-  // A whole player from a code, defaults filling anything the code did not
-  // carry. Throws on a code that will not parse at all - callers decide what a
-  // mangled code means.
+  // A player who does not say otherwise has no hair.
+  //
+  // He did not choose "none" - the field did not exist to choose - but every
+  // way in has to land on the same answer or the same player looks different
+  // depending on how he got here, and "none" is the one that keeps him looking
+  // the way he looked. It covers a v1 compact code, a pre-compact base64 one,
+  // a raw object out of the builder's autosave, and a code with rubbish in the
+  // tail. defaults() still starts a NEW player on "short".
+  const PRE_V2 = { hairStyle: "none", faceHair: "none" };
+
+  function merge(raw) {
+    return Object.assign(defaults(), PRE_V2, sanitize(raw));
+  }
+
+  // A whole player from a code. Throws on a code that will not parse at all -
+  // callers decide what a mangled code means.
   function load(code) {
-    return Object.assign(defaults(), sanitize(decode(code)));
+    return merge(decode(code));
+  }
+
+  // The same, for a player stored as a raw object rather than a code: the
+  // builder's own autosave is the one path that does that.
+  function fromStored(raw) {
+    return merge(raw);
   }
 
   window.CAP_CODE = {
@@ -257,7 +276,8 @@
     encode: encode,
     decode: decode,
     sanitize: sanitize,
-    load: load
+    load: load,
+    fromStored: fromStored
   };
 
 })();
