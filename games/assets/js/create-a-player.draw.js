@@ -387,7 +387,7 @@
         ctx.lineJoin = "round";
         ctx.stroke();
         if (mask) return;
-        drawEarLobes(ctx, c.sx, c.sy, hw, params.helmetColor);
+        drawEarLobes(ctx, c.sx, c.sy, hw, params.helmetColor, head.rx * c.k);
         if (params.helmetStyle === "visor") drawVisor(ctx, dims, yaw);
       }
     };
@@ -429,11 +429,20 @@
 
   // Painted relative to the shell rather than anchored in body space, so they
   // stay welded to the helmet instead of drifting across the face as it turns.
-  function drawEarLobes(ctx, cx, cy, hw, helmetColor) {
+  // Sized off the head rather than fixed: a cover drawn at a constant 2.8 units
+  // was a fifth of a default head and a ninth of a big one, which is what turned
+  // it into a dot. Off head.rx, not the silhouette width, so it does not shrink
+  // as he turns - it is a moulded cup, not a circle painted on.
+  //
+  // 0.152 / 0.195 are the old 2.8 / 3.6 over a DRAWN default head - the frame
+  // zoom counts too - so a default player comes out the same as before and only
+  // the builds either side of him change.
+  function drawEarLobes(ctx, cx, cy, hw, helmetColor, unit) {
     const color = shade(helmetColor, -0.22);
     [-1, 1].forEach(side => {
       ctx.beginPath();
-      ctx.ellipse(p(cx + side * hw * 0.88), p(cy + 1), p(2.8), p(3.6), 0, 0, Math.PI * 2);
+      ctx.ellipse(p(cx + side * hw * 0.88), p(cy + 1),
+                  p(unit * 0.152), p(unit * 0.195), 0, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = OUTLINE;
