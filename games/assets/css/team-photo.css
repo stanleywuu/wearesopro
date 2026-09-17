@@ -35,6 +35,9 @@
   outline: none;
 }
 
+/* A nameplate is a line of text, not a figure, so its hotspot hugs it. */
+.tp-plate { border-radius: 8px; }
+
 .tp-panel { display: grid; gap: 1rem; }
 
 .tp-fields, .tp-actions, .tp-paste {

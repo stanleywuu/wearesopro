@@ -52,6 +52,7 @@
 
   let team = null;
   let slots = [];               // the rect each player was drawn into
+  let plates = [];              // and the rect of their nameplate, down in the band
   let canvas, ctx, slotBox, statusBox;
   let paint = null;             // the ctx the scene is currently being painted into
   let groupFits = {};           // slot -> zoom, all worked out together
@@ -385,6 +386,7 @@
   function paintScene(target, banner) {
     paint = target;
     slots = [];
+    plates = [];
     measureTeam();
     drawRink();
     if (banner !== false) drawBanner();
@@ -538,6 +540,10 @@
       : (i === goalieIndex() ? "goalie spot" : "open spot");
     paint.fillText(fit(paint, text, room), slotX(row, n), y);
     paint.restore();
+    // The name is the other place you point at a player - on a phone it is an
+    // easier target than the figure, and in a huddled back row it is the only
+    // one that is not half behind somebody else.
+    plates[i] = { x: slotX(row, n) - room / 2, y: y - 14, w: room, h: 28 };
   }
 
   // "#7 Wheels" if it fits, then the name alone, then the number alone - a
@@ -586,7 +592,26 @@
         : what + ", " + (player.name || "unnamed") + ". Edit this player.");
       button.addEventListener("click", () => openSlot(i));
       slotBox.appendChild(button);
+      if (plates[i]) slotBox.appendChild(plateButton(plates[i], i, button.getAttribute("aria-label")));
     });
+  }
+
+  // The nameplate as a second way into the same slot. Same class, so it gets
+  // the same quiet highlight on hover; hidden from screen readers because the
+  // slot button already says everything this one would.
+  function plateButton(rect, i, label) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tp-slot tp-plate";
+    button.style.left = (rect.x / W * 100) + "%";
+    button.style.top = (rect.y / H * 100) + "%";
+    button.style.width = (rect.w / W * 100) + "%";
+    button.style.height = (rect.h / H * 100) + "%";
+    button.tabIndex = -1;
+    button.setAttribute("aria-hidden", "true");
+    button.title = label;
+    button.addEventListener("click", () => openSlot(i));
+    return button;
   }
 
   // ---- the builder modal ------------------------------------------------
