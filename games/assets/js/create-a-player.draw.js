@@ -467,6 +467,157 @@
     ctx.stroke();
   }
 
+  // ---- hair ---------------------------------------------------------------
+
+  // Everybody in here is wearing a helmet - "Bare" means a bare face, not a
+  // bare head - so a style is not a haircut, it is what escapes the bucket:
+  // the sides, a fringe at the brow, and whatever hangs out the back.
+  const HAIR = {
+    short:    { sides: 0.18, fringe: 0, back: 0 },
+    flow:     { sides: 0.55, fringe: 1, back: 0.55 },
+    mop:      { sides: 0.42, fringe: 1, back: 0.28 },
+    thinning: { sides: 0.06, fringe: 0, back: 0 },
+    ponytail: { sides: 0.16, fringe: 0, back: 0, tail: 1 }
+  };
+
+  // Three pieces, because a lid hides them separately: the sides and fringe go
+  // under a helmet and are swallowed whole by a goalie mask, while the flow out
+  // the back shows under everything.
+  function hairParts(ctx, dims, params, yaw) {
+    const spec = HAIR[params.hairStyle];
+    if (!spec) return [];
+    const parts = [];
+    if (params.helmetStyle !== "mask") {
+      parts.push(hairSidesPart(ctx, dims, params, yaw, spec));
+      if (spec.fringe) parts.push(hairFringePart(ctx, dims, params, yaw, spec));
+    }
+    if (spec.back || spec.tail) parts.push(hairBackPart(ctx, dims, params, yaw, spec));
+    return parts;
+  }
+
+  // A patch at each side of the brow. Sorted between the head and the helmet,
+  // so the shell covers the top of each one and it reads as hair coming out
+  // from under the lid rather than stuck on over it.
+  function hairSidesPart(ctx, dims, params, yaw, spec) {
+    const head = dims.head;
+    const y = head.y + head.ry * (0.04 - spec.sides * 0.45);
+    return {
+      d: 0.05,
+      draw: () => {
+        [-1, 1].forEach(side => {
+          const r = rotY(head.x + side * head.rx * 0.78, head.z, yaw);
+          const c = project(r.x, y, r.z);
+          E(ctx, c.sx, c.sy, head.rx * 0.30 * c.k,
+            head.ry * (0.16 + spec.sides * 0.55) * c.k, params.hairColor);
+          outline(ctx, 1.1);
+        });
+      }
+    };
+  }
+
+  // The bit that hangs in his eyes. Hung off the front of the head like the
+  // visor, so it narrows and slides round as he turns.
+  function hairFringePart(ctx, dims, params, yaw, spec) {
+    const head = dims.head;
+    return {
+      d: 0.05,
+      draw: () => {
+        const facing = Math.cos(yaw);
+        if (facing < 0.15) return;
+        const r = rotY(head.x, head.z + head.rz * 0.72, yaw);
+        const c = project(r.x, head.y + head.ry * 0.02, r.z);
+        E(ctx, c.sx, c.sy, head.rx * 0.66 * facing * c.k, head.ry * 0.14 * c.k,
+          params.hairColor);
+        outline(ctx, 1.1);
+      }
+    };
+  }
+
+  // The flow, or the tail. Anchored behind the head rather than on it, so it
+  // sorts away by itself as he turns instead of needing a facing test.
+  function hairBackPart(ctx, dims, params, yaw, spec) {
+    const head = dims.head;
+    const tail = Boolean(spec.tail);
+    const drop = tail ? 0.50 : spec.back;
+    const r = rotY(head.x, head.z - head.rz * (tail ? 1.05 : 0.70), yaw);
+    const c = project(r.x, head.y - head.ry * (0.10 + drop * 0.85), r.z);
+    return {
+      d: r.z,
+      draw: () => {
+        E(ctx, c.sx, c.sy, head.rx * (tail ? 0.30 : 0.92) * c.k,
+          head.ry * (tail ? 0.55 : drop * 1.15) * c.k, shade(params.hairColor, -0.10));
+        outline(ctx, 1.2);
+      }
+    };
+  }
+
+  // ---- facial hair --------------------------------------------------------
+
+  // Every style is a combination of three pieces: a band along the jaw, a patch
+  // under the lip, and a moustache. full thickens the jaw band into a beard.
+  const FACE_HAIR = {
+    stache:    { stache: 1 },
+    goatee:    { stache: 1, chin: 1 },
+    chinstrap: { jaw: 1 },
+    beard:     { stache: 1, chin: 1, jaw: 1, full: 1 },
+    chops:     { chops: 1 }
+  };
+
+  // Drawn with the face and before the cage, so it obeys the same facing rule
+  // the eyes do and a goalie's cage still lands on top of it.
+  function drawFaceHair(ctx, dims, params, yaw, facing, mask) {
+    const spec = FACE_HAIR[params.faceHair];
+    if (!spec) return;
+    const head = dims.head;
+    const color = shade(params.hairColor, -0.12);
+    const at = (zf, y) => {
+      const r = rotY(head.x, head.z + head.rz * zf, yaw);
+      return project(r.x, y, r.z);
+    };
+    // A mask covers the jaw, so a beard under one is only whatever shows
+    // through the opening - the band and the chops would sit on the shell.
+    if (spec.jaw && !mask) drawJawBand(ctx, head, at(0.55, head.y - head.ry * 0.26), facing, spec, color);
+    // Chops are the sides of a beard with the chin left out, so they are two
+    // patches down the cheeks rather than a band round the jaw.
+    if (spec.chops && !mask) [-1, 1].forEach(side => {
+      const r = rotY(head.x + side * head.rx * 0.62, head.z + head.rz * 0.45, yaw);
+      const c = project(r.x, head.y - head.ry * 0.38, r.z);
+      E(ctx, c.sx, c.sy, head.rx * 0.22 * facing * c.k, head.ry * 0.36 * c.k, color);
+      outline(ctx, 1.1);
+    });
+    if (spec.chin) {
+      const c = at(0.80, head.y - head.ry * 0.74);
+      E(ctx, c.sx, c.sy, head.rx * 0.20 * facing * c.k, head.ry * 0.15 * c.k, color);
+      outline(ctx, 1.1);
+    }
+    if (spec.stache) {
+      const c = at(0.84, head.y - head.ry * 0.44);
+      E(ctx, c.sx, c.sy, head.rx * 0.40 * facing * c.k, head.ry * 0.09 * c.k, color);
+      outline(ctx, 1.1);
+    }
+  }
+
+  // A crescent: the jaw line as the outer arc, the cheek line back as the
+  // inner one. Thin reads as a chinstrap, thick as a playoff beard.
+  function drawJawBand(ctx, head, c, facing, spec, color) {
+    const w = head.rx * 0.86 * facing * c.k;
+    const h = head.ry * 0.66 * c.k;
+    ctx.beginPath();
+    ctx.ellipse(p(c.sx), p(c.sy), p(w), p(h), 0, 0, Math.PI);
+    ctx.ellipse(p(c.sx), p(c.sy), p(w * (spec.full ? 0.62 : 0.80)),
+                p(h * (spec.full ? 0.42 : 0.80)), 0, Math.PI, 0, true);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    outline(ctx, 1.1);
+  }
+
+  function outline(ctx, lw) {
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(lw);
+    ctx.stroke();
+  }
+
   // Eyes and mouth live on the front of the head, so they vanish as it turns away.
   function facePart(ctx, dims, params, yaw) {
     const head = dims.head;
@@ -493,6 +644,7 @@
           const c = project(r.x, eyeY, r.z);
           E(ctx, c.sx, c.sy, 1.7 * c.k, 2.1 * c.k, OUTLINE);
         });
+        drawFaceHair(ctx, dims, params, yaw, facing, mask);
         if (mask) return drawCage(ctx, dims, yaw);
         const m = rotY(head.x, head.z + head.rz * 0.85, yaw);
         const mc = project(m.x, head.y - head.ry * 0.56, m.z);
@@ -1158,7 +1310,7 @@
       helmetPart(ctx, dims, params, yaw),
       facePart(ctx, dims, params, yaw),
       stickPart(ctx, dims, params, yaw)
-    ]).concat(armParts(ctx, dims, params, yaw));
+    ]).concat(armParts(ctx, dims, params, yaw), hairParts(ctx, dims, params, yaw));
     depthSort(parts);
     parts.forEach(part => part.draw());
   }
