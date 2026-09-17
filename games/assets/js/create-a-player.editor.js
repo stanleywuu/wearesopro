@@ -53,6 +53,17 @@
       });
     }
 
+    // Naming them is the first thing you do with a new player, and the field is
+    // behind a tab - so a host asking for a blank sheet gets the tab and the
+    // cursor together, rather than a name box nobody can see.
+    function startNaming() {
+      selectTab("info");
+      const name = el("name");
+      if (!name) return;
+      name.focus();
+      name.select();
+    }
+
     function buildOptionPickers() {
       root.querySelectorAll("[data-options]").forEach(box => {
         const key = box.dataset.options;
@@ -603,6 +614,7 @@
       el: el,
       status: status,
       sync: syncControls,
+      startNaming: startNaming,
       addLink: addLink,
       destroy: destroy
     };

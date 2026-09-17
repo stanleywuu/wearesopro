@@ -143,6 +143,7 @@
     editor.sync();
     queueSave(editor.params);
     refreshCardLink();
+    editor.startNaming();
     editor.status("Saved. New player created.");
   }
 
