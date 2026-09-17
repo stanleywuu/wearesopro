@@ -29,6 +29,25 @@ window.CAP_DATA = {
     { id: "mask",  label: "Goalie mask" }
   ],
 
+  // Appended, never reordered - the share code carries the index.
+  hairStyles: [
+    { id: "none",     label: "None" },
+    { id: "short",    label: "Short" },
+    { id: "flow",     label: "Flow" },
+    { id: "mop",      label: "Mop" },
+    { id: "thinning", label: "Thinning" },
+    { id: "ponytail", label: "Ponytail" }
+  ],
+
+  faceHairs: [
+    { id: "none",     label: "None" },
+    { id: "stache",   label: "Moustache" },
+    { id: "goatee",   label: "Goatee" },
+    { id: "chinstrap", label: "Chinstrap" },
+    { id: "beard",    label: "Playoff beard" },
+    { id: "chops",    label: "Mutton chops" }
+  ],
+
   handedness: [
     { id: "left",  label: "Left" },
     { id: "right", label: "Right" }
@@ -43,6 +62,7 @@ window.CAP_DATA = {
   jerseyColors: ["#1E88E5", "#0D47A1", "#E53935", "#43A047", "#FDD835", "#212121", "#FAFAFA"],
   trimColors:   ["#FFFFFF", "#212121", "#FDD835", "#E53935", "#1E88E5", "#43A047", "#9E9E9E"],
   helmetColors: ["#212121", "#FFFFFF", "#0D47A1", "#E53935", "#1E88E5", "#43A047", "#9E9E9E"],
+  hairColors:   ["#2B1B12", "#5A3A21", "#8D5524", "#C68642", "#D9A441", "#8E8E8E", "#EDEDED"],
 
   randomNames: [
     "Tommy", "Stanley", "Dale", "Ricky", "Wheels", "Bucket", "Chief", "Turbo",

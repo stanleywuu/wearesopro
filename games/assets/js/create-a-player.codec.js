@@ -20,6 +20,22 @@
     ["helmetColor", D.helmetColors]
   ];
 
+  // Colours added after v1. PALETTES fixes the v1 colour slots in the share
+  // code, so a new colour cannot join it - it rides at the tail instead.
+  const TAIL_PALETTES = [
+    ["hairColor", D.hairColors]
+  ];
+
+  const ALL_PALETTES = PALETTES.concat(TAIL_PALETTES);
+
+  // Enums added after v1, in the order they ride at the tail of the code. An
+  // id of "none" is the default, which is what lets them encode empty and be
+  // trimmed off a code that does not use them.
+  const TAIL_OPTIONS = [
+    ["hairStyle", D.hairStyles],
+    ["faceHair", D.faceHairs]
+  ];
+
   const SLIDER_KEYS = Object.keys(D.sliders);
 
   // Sliders added after v1. They ride at the END of the share code, so codes
@@ -45,6 +61,9 @@
       sockColor: D.jerseyColors[0],
       helmetColor: D.helmetColors[0],
       helmetStyle: "visor",
+      hairStyle: "short",
+      faceHair: "none",
+      hairColor: D.hairColors[0],
       handedness: "left",
       name: "",
       number: "",
@@ -79,6 +98,11 @@
       ? "mask"
       : pick(D.helmets.filter(h => h.id !== "mask")).id;
     out.phrase = pick(D.catchPhrases);
+    // Most beer leaguers are not clean shaven and not bearded either, so a
+    // random face lands on "none" more often than any single style.
+    out.hairStyle = pick(D.hairStyles).id;
+    out.faceHair = Math.random() < 0.45 ? "none" : pick(D.faceHairs).id;
+    out.hairColor = pick(D.hairColors);
     return out;
   }
 
@@ -121,6 +145,15 @@
       const spec = D.sliders[key];
       fields.push(params[key] === spec.value ? "" : params[key] - spec.min);
     });
+    // Same trick for the tail enums and colours: a player who changed nothing
+    // here adds nothing to the code.
+    TAIL_OPTIONS.forEach(entry => {
+      const idx = entry[1].findIndex(o => o.id === params[entry[0]]);
+      fields.push(idx <= 0 ? "" : idx);
+    });
+    TAIL_PALETTES.forEach(entry => {
+      fields.push(params[entry[0]] === entry[1][0] ? "" : encodeColor(params[entry[0]], entry[1]));
+    });
     // Empty name/number/phrase at the end are just dead weight in the URL.
     while (fields.length && fields[fields.length - 1] === "") fields.pop();
     return SHARE_VERSION + "~" + fields.join("~");
@@ -149,6 +182,15 @@
       const field = next();
       raw[key] = field === "" ? D.sliders[key].value : Number(field) + D.sliders[key].min;
     });
+    // Index 0 is "none" in both lists, so a code written before hair existed
+    // comes back bald and clean shaven - which is exactly how that player
+    // looked when the link was shared. A NEW player starts on "short" instead;
+    // that is defaults()'s job, not this one's.
+    TAIL_OPTIONS.forEach(entry => { raw[entry[0]] = id(entry[1], next()); });
+    TAIL_PALETTES.forEach(entry => {
+      const field = next();
+      raw[entry[0]] = field === "" ? entry[1][0] : decodeColor(field, entry[1]);
+    });
     return raw;
   }
 
@@ -174,11 +216,12 @@
     option("headShape", D.shapes);
     option("helmetStyle", D.helmets);
     option("handedness", D.handedness);
+    TAIL_OPTIONS.forEach(entry => option(entry[0], entry[1]));
     SLIDER_KEYS.forEach(key => {
       const spec = D.sliders[key], value = Number(raw[key]);
       if (Number.isFinite(value)) out[key] = Math.min(spec.max, Math.max(spec.min, Math.round(value)));
     });
-    PALETTES.forEach(entry => {
+    ALL_PALETTES.forEach(entry => {
       if (isHexColor(raw[entry[0]])) out[entry[0]] = raw[entry[0]];
     });
     if (D.positions.indexOf(raw.position) >= 0) out.position = raw.position;
@@ -207,7 +250,7 @@
   }
 
   window.CAP_CODE = {
-    PALETTES: PALETTES,
+    PALETTES: ALL_PALETTES,
     SLIDER_KEYS: SLIDER_KEYS,
     defaults: defaults,
     random: random,
