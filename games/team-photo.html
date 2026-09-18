@@ -32,6 +32,7 @@
   <script defer src="/games/assets/js/player-store.js"></script>
   <script defer src="/games/assets/js/create-a-player.draw.js"></script>
   <script defer src="/games/assets/js/player-gallery.js"></script>
+  <script defer src="/games/assets/js/backup.js"></script>
   <script defer src="/games/assets/js/create-a-player.editor.js"></script>
   <script defer src="/games/assets/js/team-photo.js"></script>
 </head>
@@ -78,8 +79,11 @@
           <summary>More</summary>
           <div class="tp-more-body">
             <div class="tp-actions">
+              <button type="button" id="tp-export" class="button">Export to a file</button>
+              <button type="button" id="tp-import" class="button">Import a file</button>
               <button type="button" id="tp-reset" class="button tp-danger">Start a new team</button>
             </div>
+            <p class="muted tp-note">A backup file holds this team and every player you have saved on this device, so you can move them to another browser or phone.</p>
 
             <div class="tp-paste">
               <label class="tp-field tp-field-wide">

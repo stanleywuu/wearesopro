@@ -17,13 +17,14 @@
   let panel = null;
   let options = {};
 
-  // opts: { into, title, onPick, onNew, canDelete, onStatus }
+  // opts: { into, title, onPick, onNew, canDelete, canBackup, onStatus }
   function open(opts) {
     close();
     options = opts || {};
     panel = document.createElement("div");
     panel.className = "cap-gallery";
     panel.appendChild(head());
+    if (options.canBackup) panel.appendChild(backupRow());
     panel.appendChild(grid());
     (options.into || document.body).appendChild(panel);
     const first = panel.querySelector(".cap-pick");
@@ -52,6 +53,55 @@
     bar.appendChild(title);
     bar.appendChild(back);
     return bar;
+  }
+
+  // Carrying the collection off this device and back on. It belongs on the
+  // screen that shows the collection, next to the one control that can destroy
+  // part of it.
+  function backupRow() {
+    const row = document.createElement("div");
+    row.className = "cap-gallery-backup";
+    row.appendChild(backupButton("Export to a file", exportAll));
+    row.appendChild(backupButton("Import a file", importFile));
+    const note = document.createElement("p");
+    note.className = "muted";
+    note.textContent = "Your players are only on this device. Export keeps a copy; import adds them back.";
+    row.appendChild(note);
+    return row;
+  }
+
+  function backupButton(label, run) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button";
+    button.textContent = label;
+    button.addEventListener("click", run);
+    return button;
+  }
+
+  function exportAll() {
+    const BACKUP = window.CAP_BACKUP;
+    if (!BACKUP) return say("Export is not available here");
+    const out = BACKUP.download();
+    say("Saved " + out.players + " player" + (out.players === 1 ? "" : "s")
+      + (out.team ? " and your team" : "") + " to a file");
+  }
+
+  // Players are merged in without asking - nothing is lost either way. The team
+  // is the one thing a file can overwrite, so that part asks.
+  function importFile() {
+    const BACKUP = window.CAP_BACKUP;
+    if (!BACKUP) return say("Import is not available here");
+    BACKUP.pick(function (result) {
+      if (!result.ok) return say(result.message);
+      refresh();
+      if (result.team && confirm("That file has a team of " + result.teamSize
+          + ". Replace the team saved on this device?")) {
+        BACKUP.restoreTeam(result.team);
+        return say(result.message + ". Team restored too.");
+      }
+      say(result.message);
+    });
   }
 
   function grid() {

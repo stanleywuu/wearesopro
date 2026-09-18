@@ -985,6 +985,8 @@
     document.getElementById("tp-share").addEventListener("click", share);
     document.getElementById("tp-random").addEventListener("click", randomTeam);
     document.getElementById("tp-reset").addEventListener("click", reset);
+    document.getElementById("tp-export").addEventListener("click", exportAll);
+    document.getElementById("tp-import").addEventListener("click", importFile);
     document.getElementById("tp-add").addEventListener("click", () => {
       const input = document.getElementById("tp-paste-input");
       addFromPaste(input.value);
@@ -999,6 +1001,40 @@
     document.getElementById("tp-name").value = team.name;
     document.getElementById("tp-sub").value = team.sub;
     document.getElementById("tp-size").value = team.size;
+  }
+
+  // ---- backup -----------------------------------------------------------
+
+  // One file for everything on this device - this team and every saved player -
+  // because localStorage is per-browser and there is no other way to carry them
+  // to a phone. CAP_BACKUP does the reading and validating; this decides what
+  // happens to the team, which is the one thing an import can overwrite.
+  function exportAll() {
+    const BACKUP = window.CAP_BACKUP;
+    if (!BACKUP) return status("Export is not available here");
+    const out = BACKUP.download();
+    status("Saved your team and " + out.players + " player"
+      + (out.players === 1 ? "" : "s") + " to a file");
+  }
+
+  function importFile() {
+    const BACKUP = window.CAP_BACKUP;
+    if (!BACKUP) return status("Import is not available here");
+    BACKUP.pick(function (result) {
+      if (!result.ok) return status(result.message);
+      if (!result.team) return status(result.message + ". No team in that file.");
+      const built = team.players.filter(Boolean).length;
+      const warning = built
+        ? "Replace this team with the one in the file? That drops " + built + " player"
+          + (built > 1 ? "s" : "") + " off the photo."
+        : "Put the team from that file on this page?";
+      if (!confirm(warning)) return status(result.message + ". Team left as it was.");
+      BACKUP.restoreTeam(result.team);
+      team = loadTeam();
+      syncPanel();
+      refresh();
+      status(result.message + ". Team restored.");
+    });
   }
 
   // Wipes the lot so another team can be built. It asks first, and it says how

@@ -572,3 +572,13 @@
   cursor: pointer;
 }
 .cap-pick-del:hover, .cap-pick-del:focus-visible { background: #B3261E; color: #fff; }
+
+/* Export / import, at the head of the saved players panel. */
+.cap-gallery-backup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(30, 136, 229, .2);
+}
+.cap-gallery-backup p { flex-basis: 100%; margin: 0; font-size: .85rem; }

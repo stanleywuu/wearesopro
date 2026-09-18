@@ -99,6 +99,7 @@
       into: root,
       title: "Your saved players",
       canDelete: true,
+      canBackup: true,
       onPick: openSaved,
       onStatus: editor.status
     }));
