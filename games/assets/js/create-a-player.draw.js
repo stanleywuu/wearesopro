@@ -479,23 +479,54 @@
   // ---- hair ---------------------------------------------------------------
 
   // Everybody in here is wearing a helmet - "Bare" means a bare face, not a
-  // bare head - so a style is not a haircut, it is what escapes the bucket:
-  // the sides, a fringe at the brow, and whatever hangs out the back.
+  // bare head - so a style is not a haircut, it is what escapes the bucket.
+  //
+  // It is ONE mass, not a set of pieces. The first cut hung a separate lock off
+  // each ear cover and a separate blob out the back, and they read as straps
+  // and a floating saucer because nothing joined them. This is a single shape
+  // sitting just behind the head, a size bigger than it and dropped a little,
+  // so what you see is exactly what escapes past the skull: the sides, the neck
+  // and the flow. The helmet covers its crown for free, since the dome is wider
+  // still and draws over it.
+  //
+  //   puff    - how much thicker than the skull the hair sits
+  //   drop    - how far the locks fall below it, in head heights
+  //   locks   - how many curved locks wrap the skull; the OUTLINE is made of
+  //             these, never of one shape, which is the whole point
+  //   curl    - how hard each lock bends as it falls
   const HAIR = {
-    short:    { sides: 0.18, fringe: 0, back: 0 },
-    flow:     { sides: 0.55, fringe: 1, back: 0.55 },
-    mop:      { sides: 0.42, fringe: 1, back: 0.28 },
-    thinning: { sides: 0.06, fringe: 0, back: 0 },
-    ponytail: { sides: 0.16, fringe: 0, back: 0, tail: 1 }
+    short:    { puff: 0.04, drop: 0.14, locks: 15, curl: 0.16, fringe: 0 },
+    flow:     { puff: 0.06, drop: 0.72, locks: 17, curl: 0.22, fringe: 1 },
+    mop:      { puff: 0.09, drop: 0.38, locks: 19, curl: 0.30, fringe: 1 },
+    thinning: { puff: 0.01, drop: 0.07, locks: 11, curl: 0.12, fringe: 0, thin: 1 },
+    ponytail: { puff: 0.04, drop: 0.12, locks: 13, curl: 0.14, fringe: 0, tail: 1 }
   };
 
-  // A tapered lock: wide at the root, pointed at the tip, leaning by `lean` so
-  // a run of them reads as hair falling rather than a row of blobs.
-  function pathLock(ctx, x, y, w, h, lean) {
-    ctx.moveTo(p(x - w), p(y));
-    ctx.quadraticCurveTo(p(x - w * 0.55), p(y + h * 0.85), p(x + lean * w), p(y + h));
-    ctx.quadraticCurveTo(p(x + w * 0.55), p(y + h * 0.85), p(x + w), p(y));
-    ctx.quadraticCurveTo(p(x), p(y - h * 0.40), p(x - w), p(y));
+  // A lock with a bend in it: tapered from a wide root to a point, and curved
+  // along the way so it wraps rather than hangs straight. dx/dy is the way it
+  // falls, bend is how far the tip swings off that line.
+  //
+  // Straight tapers were tried first and read as spikes glued round the head -
+  // hair is curves, and a head of it is curves overlapping each other.
+  function pathCurvedLock(ctx, x, y, dx, dy, len, wid, bend, tip) {
+    const t = tip === undefined ? 0.34 : tip;    // 0 is a spike, 1 a finger
+    const nx = -dy, ny = dx;                     // unit normal to the fall line
+    const mx = x + dx * len * 0.55, my = y + dy * len * 0.55;
+    const ex = x + dx * len + nx * bend * len;
+    const ey = y + dy * len + ny * bend * len;
+    const cx = mx + nx * bend * len * 0.6, cy = my + ny * bend * len * 0.6;
+    const tw = wid * t;
+    ctx.moveTo(p(x - nx * wid), p(y - ny * wid));
+    ctx.quadraticCurveTo(p(cx - nx * wid * 0.62), p(cy - ny * wid * 0.62),
+                         p(ex - nx * tw), p(ey - ny * tw));
+    // A rounded tip. Hair tapers, but a lock that comes to a point is a fang,
+    // and a ring of them is the sawtooth hem this keeps turning into.
+    ctx.quadraticCurveTo(p(ex + dx * tw * 1.5), p(ey + dy * tw * 1.5),
+                         p(ex + nx * tw), p(ey + ny * tw));
+    ctx.quadraticCurveTo(p(cx + nx * wid * 0.85), p(cy + ny * wid * 0.85),
+                         p(x + nx * wid), p(y + ny * wid));
+    ctx.quadraticCurveTo(p(x - dx * wid * 0.6), p(y - dy * wid * 0.6),
+                         p(x - nx * wid), p(y - ny * wid));
   }
 
   function fillPath(ctx, color, lw) {
@@ -508,50 +539,140 @@
     ctx.stroke();
   }
 
-  // Three pieces, because a lid hides them separately: the sides and fringe go
-  // under a helmet and are swallowed whole by a goalie mask, while the flow out
-  // the back shows under everything.
+  // Two parts, because a lid hides them differently: the hair itself sits
+  // behind the head and shows under every helmet, while a fringe hangs on the
+  // FRONT of it and a mask swallows it whole.
   function hairParts(ctx, dims, params, yaw) {
     const spec = HAIR[params.hairStyle];
     if (!spec) return [];
-    const parts = [];
-    if (params.helmetStyle !== "mask") {
-      parts.push(hairSidesPart(ctx, dims, params, yaw, spec));
-      // A fringe only works on a bare face. The visor starts at the helmet rim
-      // with no gap under it, and the glass is semi-transparent, so a fringe
-      // behind one is a smudge across the eyes rather than hair.
-      if (spec.fringe && params.helmetStyle === "bare") {
-        parts.push(hairFringePart(ctx, dims, params, yaw, spec));
-      }
+    const parts = [hairPart(ctx, dims, params, yaw, spec)];
+    // A fringe only works on a bare face. The visor starts at the helmet rim
+    // with no gap under it, and the glass is semi-transparent, so a fringe
+    // behind one is a smudge across the eyes rather than hair.
+    if (spec.fringe && params.helmetStyle === "bare") {
+      parts.push(hairFringePart(ctx, dims, params, yaw, spec));
     }
-    if (spec.back || spec.tail) parts.push(hairBackPart(ctx, dims, params, yaw, spec));
     return parts;
   }
 
-  // Lettuce: a lock hanging from under each ear cover. Anchored at the head's
-  // edge and slightly behind it, which is where hair actually escapes a helmet
-  // - and it keeps the face clear, since the middle of the head is taken by a
-  // semi-transparent visor that turns anything behind it into a smudge.
-  function hairSidesPart(ctx, dims, params, yaw, spec) {
+  // The hair: a ring of curved locks rooted on the skull, wrapping it from one
+  // temple round the back to the other, each one bending as it falls. A skull
+  // tight underfill sits behind them so no skin shows between - it is a filler
+  // and nothing more, which is why it is drawn INSIDE the locks: the silhouette
+  // has to be theirs. One shape with tufts on it is a wig, not hair.
+  function hairPart(ctx, dims, params, yaw, spec) {
     const head = dims.head;
-    const top = head.y - head.ry * 0.30;
+    const r = rotY(head.x, head.z - head.rz * 0.20, yaw);
+    const c = project(r.x, head.y, r.z);
+    const w = silWidth(head.rx * (1 + spec.puff), head.rz * (1 + spec.puff), yaw, 0) * c.k;
+    const h = head.ry * (1 + spec.puff) * c.k;
+    // Everything above the helmet rim belongs to the shell. Without the clip
+    // the hair paints over the back of the helmet and he turns round wearing
+    // nothing on his head.
+    const rim = project(r.x, head.y + head.ry * 0.08, r.z).sy;
     return {
-      d: -head.rz * 0.35,
+      d: r.z,
       draw: () => {
-        [-1, 1].forEach(side => {
-          const r = rotY(head.x + side * head.rx * 0.92, head.z - head.rz * 0.35, yaw);
-          const c = project(r.x, top, r.z);
-          const w = head.rx * 0.22 * c.k;
-          ctx.beginPath();
-          pathLock(ctx, c.sx, c.sy, w, head.ry * (0.30 + spec.sides * 1.15) * c.k, side * 0.30);
-          fillPath(ctx, params.hairColor, 1.2);
-        });
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(p(c.sx - w * 3), p(rim), p(w * 6), p(h * 6));
+        ctx.clip();
+        if (spec.tail) drawTail(ctx, params, c, w, h);
+        underFill(ctx, params, spec, c, w, h);
+        if (spec.thin) scalp(ctx, params, c, w, h);
+        innerLocks(ctx, params, spec, c, w, h);
+        drawLocks(ctx, dims, params, spec, c, w, h);
+        ctx.restore();
       }
     };
   }
 
-  // The bit that hangs in his eyes. Hung off the front of the head like the
-  // visor, so it narrows and slides round as he turns.
+  // The locks. Rooted at even angles round the skull - 0 is the nape, +-PI/2
+  // the temples - and each one falls on a blend of "straight down" and "out
+  // along the skull", so the ones at the sides sweep past the ears and the ones
+  // at the back fall down the neck. Alternating length and curl, because a run
+  // of identical locks is a scalloped hem again.
+  function drawLocks(ctx, dims, params, spec, c, w, h) {
+    const head = dims.head;
+    const n = spec.locks;
+    const hang = head.ry * spec.drop * c.k;
+    const shades = [0, -0.10, -0.05, -0.14];
+    for (let i = 0; i < n; i++) {
+      const a = (i / (n - 1) * 2 - 1) * Math.PI * 0.92;    // temple to temple
+      const nx = Math.sin(a), ny = Math.cos(a);
+      const deep = i % 2 ? 0.72 : 0.90;         // two layers, so they overlap
+      const x = c.sx + nx * w * deep;
+      const y = c.sy + ny * h * deep;
+      // Fall: down, leaning out along the skull's normal. Up at the temples
+      // that is almost sideways, at the nape it is straight down.
+      let dx = nx * 0.26, dy = ny * 0.10 + 0.98;
+      const m = Math.hypot(dx, dy);
+      dx /= m; dy /= m;
+      const vary = [1, 0.80, 0.93, 0.84, 0.97, 0.87][i % 6];
+      const len = (h * 0.30 + hang * (1 - Math.abs(a) / Math.PI * 0.55)) * vary;
+      ctx.beginPath();
+      pathCurvedLock(ctx, x, y, dx, dy, len, w * 0.19,
+                     -nx * spec.curl * (i % 2 ? 1.3 : 0.7));
+      // Only the outer layer is outlined. Outlining every lock turns the back
+      // of his head into a ring of separate fingers; the inner ones are there
+      // to give the mass its fall, and a line round each of them says "these
+      // are separate things" when they are one head of hair.
+      if (i % 2) {
+        ctx.closePath();
+        ctx.fillStyle = shade(params.hairColor, shades[i % 4]);
+        ctx.fill();
+      } else {
+        fillPath(ctx, shade(params.hairColor, shades[i % 4]), 0.9);
+      }
+    }
+  }
+
+  // Under the locks and a size smaller than the skull, so it never reaches the
+  // edge: all it does is stop skin showing between two locks from behind. The
+  // silhouette stays the locks'.
+  function underFill(ctx, params, spec, c, w, h) {
+    ctx.beginPath();
+    ctx.ellipse(p(c.sx), p(c.sy), p(w * 0.90), p(h * 0.90), 0, 0, Math.PI * 2);
+    ctx.fillStyle = shade(params.hairColor, -0.06);
+    ctx.fill();
+  }
+
+  // Strands falling down the inside of the mass. Seen from behind, the fill
+  // on its own is a flat slab - which is the thing that reads as a growth on
+  // the back of his head rather than hair. No outline: these are the fall of
+  // the hair, not its edge.
+  function innerLocks(ctx, params, spec, c, w, h) {
+    [-0.62, -0.24, 0.16, 0.54].forEach((t, i) => {
+      ctx.beginPath();
+      pathCurvedLock(ctx, c.sx + t * w * 0.9, c.sy - h * 0.75, t * 0.30, 0.95,
+                     h * (1.35 + (i % 2) * 0.35), w * 0.17, t * 0.22);
+      ctx.closePath();
+      ctx.fillStyle = shade(params.hairColor, i % 2 ? 0.07 : -0.11);
+      ctx.fill();
+    });
+  }
+
+  // Thinning can only show where the helmet is not: on top he is covered
+  // either way, so it is the scalp coming through at the back that says it.
+  function scalp(ctx, params, c, w, h) {
+    E(ctx, c.sx, c.sy - h * 0.30, w * 0.44, h * 0.24, params.skinColor);
+  }
+
+  // Gathered at the nape and hanging off it, behind the locks so the band reads
+  // as the thing holding it rather than a bead on his neck.
+  function drawTail(ctx, params, c, w, h) {
+    const x = c.sx, y = c.sy + h * 0.80;
+    ctx.beginPath();
+    pathCurvedLock(ctx, x, y, 0, 1, h * 1.30, w * 0.24, 0.12);
+    fillPath(ctx, shade(params.hairColor, -0.16), 1.3);
+    E(ctx, x, y, w * 0.20, h * 0.12, shade(params.hairColor, -0.30));
+    outline(ctx, 1.1);
+  }
+
+  // The bit that hangs out from under the rim. Hung off the front of the head
+  // like the visor, so it narrows and slides round as he turns - and stopped
+  // above the eyes: the first cut hung it to the cheekbones and it read as a
+  // bandit mask across the face.
   function hairFringePart(ctx, dims, params, yaw, spec) {
     const head = dims.head;
     return {
@@ -560,43 +681,16 @@
         const facing = Math.cos(yaw);
         if (facing < 0.15) return;
         const r = rotY(head.x, head.z + head.rz * 0.72, yaw);
-        const c = project(r.x, head.y + head.ry * 0.10, r.z);
-        const half = head.rx * 0.62 * facing * c.k;
-        // Three locks with a parting, rather than one oval band: a fringe is
-        // the piece you see most of, and an oval reads as a sweatband.
-        [-1, 0, 1].forEach(n => {
+        const c = project(r.x, head.y + head.ry * 0.06, r.z);
+        const half = head.rx * 0.78 * facing * c.k;
+        // A parting, then locks either side of it in one sweep, so the fringe
+        // joins the mass at the temples instead of sitting on the brow alone.
+        [-1.5, -0.75, 0, 0.75, 1.5].forEach((n, i) => {
+          const len = head.ry * (0.26 - Math.abs(n) * 0.04) * c.k;
           ctx.beginPath();
-          pathLock(ctx, c.sx + n * half * 0.62, c.sy, half * 0.44,
-                   head.ry * (n ? 0.26 : 0.34) * c.k, n * 0.5);
-          fillPath(ctx, n ? shade(params.hairColor, -0.07) : params.hairColor, 1.1);
-        });
-      }
-    };
-  }
-
-  // The flow, or the tail. Anchored behind the head rather than on it, so it
-  // sorts away by itself as he turns instead of needing a facing test.
-  function hairBackPart(ctx, dims, params, yaw, spec) {
-    const head = dims.head;
-    const tail = Boolean(spec.tail);
-    const drop = tail ? 0.50 : spec.back;
-    const r = rotY(head.x, head.z - head.rz * (tail ? 1.05 : 0.70), yaw);
-    const c = project(r.x, head.y - head.ry * (0.10 + drop * 0.85), r.z);
-    return {
-      d: r.z,
-      draw: () => {
-        const w = head.rx * (tail ? 0.30 : 0.92) * c.k;
-        const h = head.ry * (tail ? 0.55 : drop * 1.15) * c.k;
-        E(ctx, c.sx, c.sy, w, h, shade(params.hairColor, -0.10));
-        outline(ctx, 1.2);
-        // The mass is one silhouette, so it needs a second shape to stop
-        // reading as a paper cut-out: a lit crown, and locks off the bottom.
-        E(ctx, c.sx, c.sy - h * 0.42, w * 0.78, h * 0.42, shade(params.hairColor, 0.10));
-        if (tail) return;
-        [-1, 1].forEach(side => {
-          ctx.beginPath();
-          pathLock(ctx, c.sx + side * w * 0.52, c.sy + h * 0.55, w * 0.30, h * 0.65, side * 0.4);
-          fillPath(ctx, shade(params.hairColor, -0.18), 1.1);
+          pathCurvedLock(ctx, c.sx + n * half * 0.42, c.sy, n * 0.22, 0.97, len,
+                         half * 0.26, n * 0.30);
+          fillPath(ctx, i % 2 ? shade(params.hairColor, -0.07) : params.hairColor, 1.1);
         });
       }
     };
@@ -616,6 +710,11 @@
 
   // Drawn with the face and before the cage, so it obeys the same facing rule
   // the eyes do and a goalie's cage still lands on top of it.
+  //
+  // Face landmarks, in head heights from the head's centre: the helmet rim sits
+  // at +0.08, the eyes at -0.16, the mouth at -0.56 and the chin at -1.00.
+  // Every piece below is placed off those, which is what keeps a beard on the
+  // jaw instead of across the cheekbones.
   function drawFaceHair(ctx, dims, params, yaw, facing, mask) {
     const spec = FACE_HAIR[params.faceHair];
     if (!spec) return;
@@ -627,18 +726,13 @@
     };
     // A mask covers the jaw, so a beard under one is only whatever shows
     // through the opening - the band and the chops would sit on the shell.
-    if (spec.jaw && !mask) drawJawBand(ctx, head, at(0.55, head.y - head.ry * 0.26), facing, spec, color);
-    // Chops are the sides of a beard with the chin left out, so they are two
-    // patches down the cheeks rather than a band round the jaw.
-    if (spec.chops && !mask) [-1, 1].forEach(side => {
-      const r = rotY(head.x + side * head.rx * 0.62, head.z + head.rz * 0.45, yaw);
-      const c = project(r.x, head.y - head.ry * 0.38, r.z);
-      E(ctx, c.sx, c.sy, head.rx * 0.22 * facing * c.k, head.ry * 0.36 * c.k, color);
-      outline(ctx, 1.1);
-    });
-    if (spec.chin) {
-      const c = at(0.80, head.y - head.ry * 0.74);
-      E(ctx, c.sx, c.sy, head.rx * 0.20 * facing * c.k, head.ry * 0.15 * c.k, color);
+    if (spec.jaw && !mask) drawJawBand(ctx, head, at(0.55, head.y - head.ry * 0.30), facing, spec, color);
+    if (spec.chops && !mask) drawChops(ctx, head, yaw, facing, color);
+    if (spec.chin && !spec.full) {
+      // Under the lip, not on the point of the chin: the patch of a goatee
+      // sits between the mouth (-0.56) and the jaw.
+      const c = at(0.80, head.y - head.ry * 0.72);
+      E(ctx, c.sx, c.sy, head.rx * 0.19 * facing * c.k, head.ry * 0.16 * c.k, color);
       outline(ctx, 1.1);
     }
     if (spec.stache) {
@@ -648,15 +742,49 @@
     }
   }
 
-  // A crescent: the jaw line as the outer arc, the cheek line back as the
-  // inner one. Thin reads as a chinstrap, thick as a playoff beard.
+  // Chops are the sides of a beard with the chin left out: a lock down each
+  // side of the face from the ear towards the jaw, ON the silhouette edge and
+  // wide enough to read as hair. Drawn as locks rather than ovals so they taper
+  // the way sideburns do - a pair of ovals parked on the cheeks read as two
+  // blobs stuck to his face, and a pair of thin ones as dangling thread.
+  function drawChops(ctx, head, yaw, facing, color) {
+    [-1, 1].forEach(side => {
+      const r = rotY(head.x + side * head.rx * 0.86, head.z + head.rz * 0.22, yaw);
+      if (r.z <= -head.rz * 0.2) return;       // gone round the back with the ear
+      const c = project(r.x, head.y - head.ry * 0.02, r.z);
+      ctx.beginPath();
+      // Curving in towards the jaw as it falls, so a chop follows the cheek
+      // instead of hanging off the ear like a tassel.
+      pathCurvedLock(ctx, c.sx, c.sy, -side * 0.12, 0.99, head.ry * 0.60 * c.k,
+                     head.rx * 0.19 * c.k * (0.45 + facing * 0.55), -side * 0.22);
+      fillPath(ctx, color, 1.1);
+    });
+  }
+
+  // A crescent along the jaw: the outer arc is the jaw line itself, so it hugs
+  // the head's own outline, and the inner arc is where it stops. Thin reads as
+  // a chinstrap, thick as a playoff beard.
+  //
+  // Sized to land ON the chin (-1.00): centred at -0.30 with a height of 0.70
+  // puts the bottom of the arc exactly there. The first cut was a size too
+  // small and sat across the mouth with bare skin under it.
+  //
+  // A chinstrap stops short of the ears (ENDS), or the two tips ride up the
+  // cheeks and the strap reads as a hook painted on the face once he turns. A
+  // full beard goes all the way up, because that is where sideburns are.
+  const ENDS = Math.PI * 0.14;
+
   function drawJawBand(ctx, head, c, facing, spec, color) {
-    const w = head.rx * 0.86 * facing * c.k;
-    const h = head.ry * 0.66 * c.k;
+    const w = head.rx * 0.90 * facing * c.k;
+    const h = head.ry * 0.70 * c.k;
+    const full = Boolean(spec.full);
+    const a = full ? 0 : ENDS;
+    // Full means full: a playoff beard is a solid mass from under the mouth to
+    // the chin, not a band with a bare patch inside it.
+    const iw = w * (full ? 0.46 : 0.78), ih = h * (full ? 0.12 : 0.80);
     ctx.beginPath();
-    ctx.ellipse(p(c.sx), p(c.sy), p(w), p(h), 0, 0, Math.PI);
-    ctx.ellipse(p(c.sx), p(c.sy), p(w * (spec.full ? 0.62 : 0.80)),
-                p(h * (spec.full ? 0.42 : 0.80)), 0, Math.PI, 0, true);
+    ctx.ellipse(p(c.sx), p(c.sy), p(w), p(h), 0, a, Math.PI - a);
+    ctx.ellipse(p(c.sx), p(c.sy), p(iw), p(ih), 0, Math.PI - a, a, true);
     ctx.closePath();
     ctx.fillStyle = color;
     ctx.fill();
