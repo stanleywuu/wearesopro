@@ -27,7 +27,7 @@ SITE = "https://wearesopro.ca"
 # Every page, and the only place a link is declared. Only "path" is required.
 #   path     file, relative to the repo root
 #   label    text in the site map at the foot of every page; no label = not listed
-#   section  which menu it belongs to: "notes", "games", or absent for neither
+#   section  which menu it belongs to: "notes", "games", "team", or absent
 #   menu     menu wording, when it should differ from label
 #   badge    flag shown in the menus only, e.g. "New"
 #   icon     emoji shown in the menus, so a long list is scannable
@@ -62,7 +62,19 @@ PAGES = [
     # player's share view. Listed here only so the sitemap knows about it.
     {"path": "games/card.html"},
 
-    {"path": "team/updates.html",          "label": "Team Updates"},
+    {"path": "team.html",                  "label": "The Team"},
+    {"path": "team/stanley.html",          "label": "Stanley",
+     "section": "team", "icon": "✍️"},
+    {"path": "team/tommy.html",            "label": "Tommy The Goalie",
+     "section": "team", "menu": "Tommy", "icon": "🥅"},
+    {"path": "team/stephanie.html",        "label": "Stephanie",
+     "section": "team", "icon": "📣"},
+    {"path": "team/dale.html",             "label": "Dale",
+     "section": "team", "icon": "🚌"},
+    {"path": "team/ricky.html",            "label": "Ricky",
+     "section": "team", "icon": "📢"},
+    {"path": "team/updates.html",          "label": "Team Updates",
+     "section": "team", "menu": "Recent Updates", "icon": "📰"},
     {"path": "links.html",                 "label": "Get the Book"},
     {"path": "feedback.html",              "label": "Feedback"},
     {"path": "experiments.html"},
@@ -131,7 +143,7 @@ def write_menus(root):
     partial = root / NAV_PARTIAL
     source = partial.read_text(encoding="utf-8")
     updated = source
-    for section in ("notes", "games"):
+    for section in ("notes", "games", "team"):
         start = "<!-- nav:%s:start -->" % section
         end = "<!-- nav:%s:end -->" % section
         if start not in updated:
