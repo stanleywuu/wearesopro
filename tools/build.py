@@ -62,7 +62,7 @@ PAGES = [
     # player's share view. Listed here only so the sitemap knows about it.
     {"path": "games/card.html"},
 
-    {"path": "teamupdates.html",           "label": "Team Updates"},
+    {"path": "team/updates.html",          "label": "Team Updates"},
     {"path": "links.html",                 "label": "Get the Book"},
     {"path": "feedback.html",              "label": "Feedback"},
     {"path": "experiments.html"},
