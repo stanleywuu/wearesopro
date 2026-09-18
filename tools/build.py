@@ -63,6 +63,8 @@ PAGES = [
     {"path": "games/card.html"},
 
     {"path": "team.html",                  "label": "The Team"},
+    {"path": "team/updates.html",          "label": "Team Updates",
+     "section": "team", "menu": "Recent Updates", "icon": "📰"},
     {"path": "team/stanley.html",          "label": "Stanley",
      "section": "team", "icon": "✍️"},
     {"path": "team/tommy.html",            "label": "Tommy The Goalie",
@@ -73,8 +75,6 @@ PAGES = [
      "section": "team", "icon": "🚌"},
     {"path": "team/ricky.html",            "label": "Ricky",
      "section": "team", "icon": "📢"},
-    {"path": "team/updates.html",          "label": "Team Updates",
-     "section": "team", "menu": "Recent Updates", "icon": "📰"},
     {"path": "links.html",                 "label": "Get the Book"},
     {"path": "feedback.html",              "label": "Feedback"},
     {"path": "experiments.html"},
