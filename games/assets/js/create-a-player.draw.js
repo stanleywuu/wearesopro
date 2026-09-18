@@ -614,10 +614,15 @@
     const scallop = spec.wave * (1 - Math.abs(t) * 0.4)
       * Math.sin((t + 1) * Math.PI * spec.locks);
     const hang = skull + spec.fall * (0.65 + 0.35 * Math.abs(t)) + scallop;
+    // Where the hair stops on his face. The rim is at -0.08 in this scale and
+    // the top of an eye at +0.02, so a fringe has to live between the two: any
+    // lower and Flow and Mop are literally hanging over his eyes. The scallop
+    // rides along with it so the fringe has an edge and not a ruler line.
+    //
     // No special case for a mask: the shell is drawn over the hair and hides
-    // whatever it covers, so the hair is left to fall the way it always does
-    // and a goalie keeps his flow.
-    const brow = spec.fringe ? 0.18 : -0.06;
+    // whatever it covers, so the hair falls the way it always does and a
+    // goalie keeps his flow.
+    const brow = spec.fringe ? -0.04 + scallop * 0.35 : -0.06;
     const onFace = Math.max(0, Math.min(1, (0.92 - Math.abs(t - face.at)) / 0.22));
     return hang + face.lift * onFace * (brow - hang);
   }
