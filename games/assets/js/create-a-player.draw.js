@@ -387,7 +387,7 @@
         ctx.lineJoin = "round";
         ctx.stroke();
         if (mask) return;
-        drawEarLobes(ctx, c.sx, c.sy, hw, params.helmetColor, head.rx * c.k);
+        drawEarLobes(ctx, c.sx, c.sy, hw, params.helmetColor, head.rx * c.k, yaw);
         if (params.helmetStyle === "visor") drawVisor(ctx, dims, yaw);
       }
     };
@@ -437,12 +437,26 @@
   // 0.152 / 0.195 are the old 2.8 / 3.6 over a DRAWN default head - the frame
   // zoom counts too - so a default player comes out the same as before and only
   // the builds either side of him change.
-  function drawEarLobes(ctx, cx, cy, hw, helmetColor, unit) {
+  //
+  // Welded to the shell's ends works from the front round to three-quarters,
+  // but side-on the ends of the shell are his forehead and the back of his
+  // head - and the front cup sat right on top of his one visible eye. So only
+  // as he comes side-on (profile, 0..1) the back cup slides round to where
+  // the ear actually is and the front one goes away with the far ear.
+  function drawEarLobes(ctx, cx, cy, hw, helmetColor, unit, yaw) {
     const color = shade(helmetColor, -0.22);
+    const sin = Math.sin(yaw);
+    const profile = Math.max(0, Math.min(1, (Math.abs(sin) - 0.80) / 0.17));
+    const ahead = sin >= 0 ? 1 : -1;             // the screen side his face is on
     [-1, 1].forEach(side => {
+      const front = side === ahead;
+      const size = front ? 1 - profile : 1;
+      if (size <= 0.05) return;
+      const x = front ? hw * 0.88 * side
+        : hw * 0.88 * side * (1 - profile) - ahead * hw * 0.10 * profile;
       ctx.beginPath();
-      ctx.ellipse(p(cx + side * hw * 0.88), p(cy + 1),
-                  p(unit * 0.152), p(unit * 0.195), 0, 0, Math.PI * 2);
+      ctx.ellipse(p(cx + x), p(cy + 1),
+                  p(unit * 0.152 * size), p(unit * 0.195 * size), 0, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.strokeStyle = OUTLINE;
@@ -450,6 +464,7 @@
       ctx.stroke();
     });
   }
+
 
   // A tinted shade across the eyes, hung off the front of the shell. Drawn
   // semi-transparent so the eyes still read through it.
@@ -806,20 +821,17 @@
       d: params.helmetStyle === "mask" ? hr.z + 1.5 : head.rz,
       draw: () => {
         const facing = Math.cos(yaw);
-        if (facing < 0.3) return;
         const mask = params.helmetStyle === "mask";
+        // Side-on, in the highlight, the near eye is still there - a profile
+        // with no eye is a blank. So the eyes get their own test (which side
+        // of the head each is on) and only the rest of the face waits for him
+        // to turn towards us. Not through a mask: side-on that is all shell.
+        if (!mask && facing < 0.3) return drawEyes(ctx, head, yaw, facing);
+        if (facing < 0.3) return;
         // The shell sits in front of the head, so on a mask the face has to be
         // put back as an opening in it - otherwise he is a blank dark egg.
         if (mask) drawFaceHole(ctx, dims, params, yaw, facing);
-        const eyeY = head.y - head.ry * 0.16;
-        [-1, 1].forEach(s => {
-          const r = rotY(head.x + s * head.rx * 0.36, head.z + head.rz * 0.8, yaw);
-          // An eye that has rotated onto the far hemisphere would otherwise
-          // sit out at the silhouette edge, reading as detached from the head.
-          if (r.z <= 0) return;
-          const c = project(r.x, eyeY, r.z);
-          E(ctx, c.sx, c.sy, 1.7 * c.k, 2.1 * c.k, OUTLINE);
-        });
+        drawEyes(ctx, head, yaw, facing);
         drawFaceHair(ctx, dims, params, yaw, facing, mask);
         if (mask) return drawCage(ctx, dims, yaw);
         const m = rotY(head.x, head.z + head.rz * 0.85, yaw);
@@ -827,6 +839,21 @@
         L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
       }
     };
+  }
+
+  // An eye that has rotated onto the far hemisphere would otherwise sit out at
+  // the silhouette edge, reading as detached from the head, so each one is
+  // tested on its own. Side-on that leaves exactly one. It narrows as it turns
+  // away from us, so a profile eye is an eye seen from the side, not a dot.
+  function drawEyes(ctx, head, yaw, facing) {
+    const eyeY = head.y - head.ry * 0.16;
+    const narrow = 0.70 + 0.30 * Math.max(0, facing);
+    [-1, 1].forEach(s => {
+      const r = rotY(head.x + s * head.rx * 0.36, head.z + head.rz * 0.8, yaw);
+      if (r.z <= 0) return;
+      const c = project(r.x, eyeY, r.z);
+      E(ctx, c.sx, c.sy, 1.7 * narrow * c.k, 2.1 * c.k, OUTLINE);
+    });
   }
 
   // The opening in the shell, in skin, hung off the front of the head the same
