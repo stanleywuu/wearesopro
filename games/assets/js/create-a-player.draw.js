@@ -410,22 +410,32 @@
 
   // The cage goes on in facePart, not here: it has to land on top of the eyes,
   // and the face sorts in front of the shell.
-  function drawCage(ctx, dims, yaw) {
-    const facing = Math.cos(yaw);
-    if (facing < 0.3) return;
-    const head = dims.head;
-    const hr = rotY(head.x, head.z + head.rz * facing, yaw);
-    const c = project(hr.x, head.y - head.ry * 0.2, hr.z);
-    const hw = head.rx * 0.74 * facing * c.k, hh = head.ry * 0.52 * c.k;
+  // The cage. Its uprights are fixed round the front of the mask (CAGE_BARS,
+  // radians from the nose) and turned with it, so side-on they bunch up at the
+  // front edge the way a real cage does instead of being spread evenly across
+  // the opening - which filled the side view with bars and left no way out.
+  // The outer pair sit round the side and only show once he turns. The two
+  // cross-bars run the width of whatever of the opening is showing.
+  const CAGE_BARS = [-0.85, -0.40, 0, 0.40, 0.85];
+
+  function drawCage(ctx, head, yaw, hole) {
+    const sin = Math.sin(yaw), cos = Math.cos(yaw);
+    const w = hole.x1 - hole.x0, top = hole.cy - hole.h * 0.62, bot = hole.cy + hole.h * 0.72;
     ctx.save();
-    ctx.strokeStyle = "#3A4A59";
-    ctx.lineWidth = p(1.3);
-    [-0.55, 0, 0.55].forEach(f =>
-      L(ctx, c.sx + hw * f, c.sy - hh, c.sx + hw * f, c.sy + hh, "#3A4A59", 1.3));
-    [-0.4, 0.35].forEach(f =>
-      L(ctx, c.sx - hw, c.sy + hh * f, c.sx + hw, c.sy + hh * f, "#3A4A59", 1.3));
+    CAGE_BARS.forEach(th => {
+      const bx = head.rx * 1.04 * Math.sin(th), bz = head.rz * 1.08 * Math.cos(th);
+      if (-bx * sin + bz * cos <= 0) return;               // round the far side
+      const x = hole.ox + (bx * cos + bz * sin) * hole.k;
+      if (x < hole.x0 + w * 0.08 || x > hole.x1 - w * 0.08) return;
+      L(ctx, x, top, x, bot, "#3A4A59", 1.3);
+    });
+    [-0.30, 0.30].forEach(f =>
+      L(ctx, hole.x0 + w * 0.04, hole.cy + hole.h * f, hole.x1 - w * 0.04,
+        hole.cy + hole.h * f, "#3A4A59", 1.3));
     ctx.restore();
   }
+
+
 
   // Painted relative to the shell rather than anchored in body space, so they
   // stay welded to the helmet instead of drifting across the face as it turns.
@@ -468,21 +478,53 @@
 
   // A tinted shade across the eyes, hung off the front of the shell. Drawn
   // semi-transparent so the eyes still read through it.
+  // The visor is a strip of glass wrapped round the front of the face, so what
+  // you see of it is whatever part of that wrap is still facing you: the full
+  // width face-on, a short strip standing proud of his face side-on. It used
+  // to be a flat panel that faded out with cos(yaw), so in a side-on highlight
+  // he had no visor at all and his eye was bare.
+  //
+  // Wrapped a little outside the head (1.08 x 1.12), which is what makes it
+  // stand off the face in profile. 55 degrees either side of the nose puts its
+  // face-on width where the flat panel's was.
+  const VISOR_ARC = 0.96;
+
+  // Whatever is wrapped round the front of the head - a visor, the opening in
+  // a goalie mask - seen from yaw: the screen span (head units, relative to the
+  // head's centre) of the part of that wrap still facing us. `arc` is how far
+  // round it goes either side of the nose, sx/sz how far off the head it sits.
+  // Null when it has turned too far to leave anything worth drawing.
+  function wrapSpan(head, yaw, arc, sx, sz) {
+    const sin = Math.sin(yaw), cos = Math.cos(yaw);
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i <= 16; i++) {
+      const th = (i / 16 * 2 - 1) * arc;
+      const bx = head.rx * sx * Math.sin(th), bz = head.rz * sz * Math.cos(th);
+      if (-bx * sin + bz * cos <= 0) continue;              // round the far side
+      const x = bx * cos + bz * sin;
+      lo = Math.min(lo, x);
+      hi = Math.max(hi, x);
+    }
+    return hi - lo > 0.6 ? { lo: lo, hi: hi } : null;
+  }
+
   function drawVisor(ctx, dims, yaw) {
-    const facing = Math.cos(yaw);
-    if (facing < 0.15) return;
     const head = dims.head;
-    const hr = rotY(head.x, head.z + head.rz * facing, yaw);
+    const hr = rotY(head.x, head.z, yaw);
     const c = project(hr.x, head.y - head.ry * 0.13, hr.z);
-    const hw = head.rx * 0.88 * facing * c.k, hh = head.ry * 0.26 * c.k;
+    const span = wrapSpan(head, yaw, VISOR_ARC, 1.08, 1.12);
+    if (!span) return;                                      // edge-on: nothing to see
+    const x0 = c.sx + span.lo * c.k, x1 = c.sx + span.hi * c.k;
+    const hh = head.ry * 0.26 * c.k;
+    const inset = (x1 - x0) * 0.06;                         // the old panel's taper
     ctx.save();
     ctx.globalAlpha = 0.42;
     pathRoundedPoly(ctx, [
-      { x: p(c.sx - hw * 0.88), y: p(c.sy - hh) },
-      { x: p(c.sx + hw * 0.88), y: p(c.sy - hh) },
-      { x: p(c.sx + hw), y: p(c.sy + hh) },
-      { x: p(c.sx - hw), y: p(c.sy + hh) }
-    ], p(hh * 0.7));
+      { x: p(x0 + inset), y: p(c.sy - hh) },
+      { x: p(x1 - inset), y: p(c.sy - hh) },
+      { x: p(x1), y: p(c.sy + hh) },
+      { x: p(x0), y: p(c.sy + hh) }
+    ], p(Math.min(hh * 0.7, (x1 - x0) * 0.45)));
     ctx.fillStyle = "#2C4356";
     ctx.fill();
     ctx.restore();
@@ -490,6 +532,7 @@
     ctx.lineWidth = p(1);
     ctx.stroke();
   }
+
 
   // ---- hair ---------------------------------------------------------------
 
@@ -825,20 +868,33 @@
         // Side-on, in the highlight, the near eye is still there - a profile
         // with no eye is a blank. So the eyes get their own test (which side
         // of the head each is on) and only the rest of the face waits for him
-        // to turn towards us. Not through a mask: side-on that is all shell.
-        if (!mask && facing < 0.3) return drawEyes(ctx, head, yaw, facing);
-        if (facing < 0.3) return;
-        // The shell sits in front of the head, so on a mask the face has to be
-        // put back as an opening in it - otherwise he is a blank dark egg.
-        if (mask) drawFaceHole(ctx, dims, params, yaw, facing);
+        // to turn towards us.
+        if (mask) return maskedFace(ctx, dims, params, yaw, facing);
+        if (facing < 0.3) return drawEyes(ctx, head, yaw, facing);
         drawEyes(ctx, head, yaw, facing);
         drawFaceHair(ctx, dims, params, yaw, facing, mask);
-        if (mask) return drawCage(ctx, dims, yaw);
         const m = rotY(head.x, head.z + head.rz * 0.85, yaw);
         const mc = project(m.x, head.y - head.ry * 0.56, m.z);
         L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
       }
     };
+  }
+
+  // The shell sits in front of the head, so on a mask the face has to be put
+  // back as an opening in it - otherwise he is a blank egg. Everything behind
+  // the cage is clipped to that opening, so an eye near the edge of it is cut
+  // by the shell rather than painted on top.
+  function maskedFace(ctx, dims, params, yaw, facing) {
+    const hole = drawFaceHole(ctx, dims, params, yaw);
+    if (!hole) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(p(hole.cx), p(hole.cy), p(hole.w), p(hole.h), 0, 0, Math.PI * 2);
+    ctx.clip();
+    drawEyes(ctx, dims.head, yaw, facing);
+    if (facing >= 0.3) drawFaceHair(ctx, dims, params, yaw, facing, true);
+    ctx.restore();
+    drawCage(ctx, dims.head, yaw, hole);
   }
 
   // An eye that has rotated onto the far hemisphere would otherwise sit out at
@@ -858,15 +914,33 @@
 
   // The opening in the shell, in skin, hung off the front of the head the same
   // way the visor is - so it narrows and slides as he turns.
-  function drawFaceHole(ctx, dims, params, yaw, facing) {
+  // A goalie mask's opening wraps round the side of the face - that is how he
+  // sees out of the corner of his eye - so it is a wrap like the visor, not a
+  // flat oval on the front. Side-on it is a narrow opening at the front of the
+  // shell with his eye in it. 48 degrees either side of the nose keeps the
+  // face-on width it always had; it reaches round to 74 as he comes side-on,
+  // which is the part of a real mask cut back towards the temple so he can
+  // see out of the corner of his eye. Returns the opening, which the eyes are
+  // clipped to and the cage is laid out in; null when it has turned away.
+  const FACE_HOLE_ARC = 0.84, FACE_HOLE_SIDE = 0.45;
+
+  function drawFaceHole(ctx, dims, params, yaw) {
     const head = dims.head;
-    const r = rotY(head.x, head.z + head.rz * 0.55, yaw);
-    const c = project(r.x, head.y - head.ry * 0.10, r.z);
-    E(ctx, c.sx, c.sy, head.rx * 0.74 * facing * c.k, head.ry * 0.66 * c.k, params.skinColor);
+    const arc = FACE_HOLE_ARC + FACE_HOLE_SIDE * Math.abs(Math.sin(yaw));
+    const span = wrapSpan(head, yaw, arc, 1.0, 1.04);
+    if (!span) return null;
+    const hr = rotY(head.x, head.z, yaw);
+    const c = project(hr.x, head.y - head.ry * 0.10, hr.z);
+    const x0 = c.sx + span.lo * c.k, x1 = c.sx + span.hi * c.k;
+    const hole = { x0: x0, x1: x1, cx: (x0 + x1) / 2, cy: c.sy, ox: c.sx, k: c.k,
+                   w: (x1 - x0) / 2, h: head.ry * 0.66 * c.k };
+    E(ctx, hole.cx, hole.cy, hole.w, hole.h, params.skinColor);
     ctx.strokeStyle = OUTLINE;
     ctx.lineWidth = p(1.2);
     ctx.stroke();
+    return hole;
   }
+
 
   // ---- jersey lettering -------------------------------------------------
 
