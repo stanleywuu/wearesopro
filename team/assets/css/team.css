@@ -21,7 +21,12 @@
 .roster-player:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 rgba(22, 34, 46, .18); }
 .roster-player canvas { width: 100%; height: auto; display: block; background: #EEF6FF; }
 
+/* Grows to fill the tile, so a one-line name and a two-line one end level. */
 .roster-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: .55rem .6rem;
   background: var(--ink);
   color: #fff;
