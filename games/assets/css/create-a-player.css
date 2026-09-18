@@ -582,3 +582,11 @@
   border-bottom: 1px solid rgba(30, 136, 229, .2);
 }
 .cap-gallery-backup p { flex-basis: 100%; margin: 0; font-size: .85rem; }
+
+/* The fallback when neither a share sheet nor the clipboard is available. */
+.cap-link-box {
+  width: 100%;
+  margin-top: .5rem;
+  padding: .4rem .5rem;
+  font-size: .85rem;
+}

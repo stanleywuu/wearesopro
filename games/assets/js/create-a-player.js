@@ -12,6 +12,7 @@
   const SHARE_KEY = "p";
   const SAVE_DELAY = 700;
   const SHARED = "cap-shared";
+  const CARD_PATH = "/games/card.html";
 
   // Set now, not on partials:ready. The builder's markup arrives with the
   // includes, and collapsing it after that has already been painted is what
@@ -205,42 +206,64 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "button";
-    button.textContent = "Share";
+    button.textContent = "Share card";
     button.addEventListener("click", share);
     editor.el("host-actions").appendChild(button);
   }
 
+  // What you want to send somebody is the card, not the control panel: the
+  // builder opens on a stranger's player with every slider in front of them,
+  // and the card is the player. The card page links back here to edit, so
+  // nothing is lost by starting there.
+  //
   // Percent escapes make a link look like spam and some chat clients stop
   // linkifying at one, so the two that free text actually produces are undone:
   // a space rides as "+" (URLSearchParams decodes that back to a space) and a
   // comma is legal in a query value as-is. A typed "+" still escapes to %2B and
   // survives the round trip.
   function shareUrl() {
-    return location.origin + location.pathname + "?" + SHARE_KEY + "=" + shareCode();
+    return location.origin + CARD_PATH + "?" + SHARE_KEY + "=" + shareCode();
   }
 
   // The phone's own share sheet. navigator.share only exists in a secure
-  // context, so over plain http — a LAN IP while testing — there is no sheet
-  // and the link is written into the address bar instead.
+  // context, so over plain http - a LAN IP while testing - there is no sheet
+  // and the link is copied instead.
   function share() {
     const url = shareUrl();
+    const who = editor.params.name ? editor.params.name + "'s hockey card" : "My hockey card";
     if (!navigator.share) return showLink(url);
     // Only title and url: some share targets use `text` and drop the url,
     // which would lose the player.
-    navigator.share({ title: "Create A Player", url: url })
+    navigator.share({ title: who, url: url })
       .catch(err => { if (err && err.name !== "AbortError") showLink(url); });
   }
 
-  // No share sheet, so the link is copied instead. It also goes into the address
-  // bar either way: that is the fallback when the clipboard is refused, and it
-  // costs nothing when the copy works. Actually loading the URL would reload the
-  // whole page and flicker for no gain, so only the address bar changes.
+  // No share sheet, so the link is copied. It is a link to another page now, so
+  // the address bar is left alone - putting it there would make a reload leave
+  // the builder. When the clipboard is refused as well, the link is shown in a
+  // box you can select by hand.
   function showLink(url) {
-    history.replaceState(null, "", url);
-    if (!navigator.clipboard) return editor.status("Link ready - copy it from the address bar");
+    if (!navigator.clipboard) return showLinkBox(url);
     navigator.clipboard.writeText(url)
-      .then(() => editor.status("Link copied - paste it to a teammate"))
-      .catch(() => editor.status("Link ready - copy it from the address bar"));
+      .then(() => editor.status("Card link copied - paste it to a teammate"))
+      .catch(() => showLinkBox(url));
+  }
+
+  function showLinkBox(url) {
+    const host = editor.el("host-footer");
+    let box = host.querySelector(".cap-link-box");
+    if (!box) {
+      box = document.createElement("input");
+      box.type = "text";
+      box.readOnly = true;
+      box.className = "cap-link-box";
+      box.setAttribute("aria-label", "Your card link");
+      host.appendChild(box);
+    }
+    box.value = url;           // never innerHTML: this is built from typed text
+    box.focus();
+    box.select();
+    editor.status("Copy the link below");
   }
 
   function loadShared(params) {
@@ -286,7 +309,7 @@
   }
 
   function refreshCardLink() {
-    if (cardLink) cardLink.href = "/games/card.html?" + SHARE_KEY + "=" + shareCode();
+    if (cardLink) cardLink.href = CARD_PATH + "?" + SHARE_KEY + "=" + shareCode();
   }
 
   function shareCode() {
