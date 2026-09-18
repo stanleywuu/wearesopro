@@ -49,10 +49,12 @@
     if (el) apply(el);
   }
 
-  // The code in the URL is untrusted like any other, so it goes through the
+  // A ?p= code wins; otherwise the page may carry its own on #card, which is
+  // how a team profile shows its character. Either way it goes through the
   // codec's whitelist before anything draws it.
   function readPlayer() {
-    const code = new URLSearchParams(location.search).get(SHARE_KEY);
+    const code = new URLSearchParams(location.search).get(SHARE_KEY) ||
+      document.getElementById("card").dataset.player;
     if (!code) return null;
     try {
       return CODE.load(code);
