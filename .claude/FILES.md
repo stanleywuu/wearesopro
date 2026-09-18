@@ -4,7 +4,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 
 ## Root pages
 - `index.html` — Landing page (book cover image, intro).
-- `notes.html` — Editor's notes hub: Acknowledgements, Pipeline, Random Thoughts.
+- `notes.html` — Editor's notes hub: Acknowledgements, Pipeline, Random Thoughts. **Not in the menus** (build notes don't sell the book); reached from the footer site map. `notes/faqs.html` is in The Team menu instead.
 - `games.html` — Games & Quizzes hub, links out to each game in `games/`.
 - `experiments.html` — "Under construction" page with an email-capture Netlify Form.
 - `links.html` — Amazon / Lulu (self-publish) purchase links.
@@ -34,7 +34,7 @@ Character profiles. See `docs/team.md`.
 - `team/assets/css/team.css` — hub roster grid and the profile's card-beside-bio layout.
 
 ## partials/ (included via `data-include`, see `assets/js/main.js`)
-- `partials/nav.html` — Main site navigation. The dropdown and drawer link lists are **generated** from `PAGES` between `nav:notes` / `nav:games` markers — edit `tools/build.py`, not the lists.
+- `partials/nav.html` — Main site navigation. The dropdown and drawer link lists are **generated** from `PAGES` between `nav:games` / `nav:team` markers — edit `tools/build.py`, not the lists.
 - `partials/player-editor.html` — **The** player builder markup (stage, canvas, tabs, all controls), shared by `games/create-a-player.html` and the slot modal on `games/team-photo.html`. Driven by `CAP_EDITOR.mount()`; elements addressed by `data-el`, never by id. Four tabs: Shape, Kit, Face (hair and facial hair), Info. `[data-el="host-actions"]` / `[data-el="host-links"]` / `[data-el="host-footer"]` are empty slots each host page fills with its own buttons - the main action row, the quiet "which player" links, and whatever comes after. See `.claude/RULES.md`, "One builder, two mounts".
 - `partials/nav-noscript.html` — **Unused.** Was included inside `<noscript>` via `data-include`, which cannot work (the include needs JS); replaced by the generated `.site-links` nav.
 - `partials/sidebar.html` — Sidebar (poll widgets, etc.).
