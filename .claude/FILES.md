@@ -47,7 +47,7 @@ Character profiles. See `docs/team.md`.
 - `assets/css/style.css` — Main site stylesheet.
 - `assets/css/critical.css` — Above-the-fold styles meant to be inlined in `<style>` for fast first paint.
 - `assets/img/book-placeholder.png` — Placeholder book cover image (86x121, favicon/hero only — far too small for link previews).
-- `assets/img/cover.jpg` — The real front cover (480x750, from `../cover_ebook.jpg`) shown in the home page hero. Re-export from the original if the cover changes.
+- `assets/img/cover-tilted.webp` — The real front cover as the home page hero shows it: frame, rounded corners, shadow and the 3deg tilt **baked in** (CSS rotation blurred it). 332x491, displayed at 166x245. Built from `../cover_ebook.jpg` by drawing at 4x and scaling down; re-make it if the cover changes.
 - `assets/img/og-cover.jpg` — 1200x630 share card used as `og:image` on every page.
 - `assets/img/og-create-a-player.jpg` — 1200x630 share card for the Create A Player page.
 - `assets/img/create-a-player-thumb.jpg` — 320x320 square crop of the player from the share card, used in the home page feature banner.
