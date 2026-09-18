@@ -66,7 +66,8 @@ Yes. They've been doing it long enough that it feels normal.
 The companion site at wearesopro.ca provides bonus content beyond the book:
 
 - **Home:** https://wearesopro.ca — About the book, author's origin story, buy links
-- **Team Updates:** https://wearesopro.ca/teamupdates.html — Real-world updates on the characters since the book was published
+- **The Team:** https://wearesopro.ca/team.html — Profiles of the main characters (Stanley, Tommy the Goalie, Stephanie, Dale, Ricky), each drawn as a Create A Player hockey card: /team/stanley.html, /team/tommy.html, /team/stephanie.html, /team/dale.html, /team/ricky.html
+- **Recent Updates:** https://wearesopro.ca/team/updates.html — Real-world updates on the characters since the book was published
 - **Author's Notes:** https://wearesopro.ca/notes.html — Behind-the-scenes process notes (the pipeline, the infamous spreadsheet, FAQs)
 - **FAQ:** https://wearesopro.ca/notes/faqs.html — Answers to reader questions about the book's origin, characters, and AI usage
 - **Games & Quizzes:** https://wearesopro.ca/games.html — Interactive character games (quote matching, character identification, Tommy the Goalie simulator)
