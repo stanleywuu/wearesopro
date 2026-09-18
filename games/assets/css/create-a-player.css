@@ -590,3 +590,21 @@
   padding: .4rem .5rem;
   font-size: .85rem;
 }
+
+/* "Paste a code": a box and a Load button on one line. A fixed width, since
+   the footer slot shrinks to whatever it holds. Desktop only (see the JS). */
+.cap-paste {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  width: 24rem;
+  max-width: 100%;
+  margin-top: .5rem;
+}
+.cap-paste input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: .4rem .5rem;
+  font-size: .85rem;
+}
+.cap-paste .button { flex: 0 0 auto; margin-top: 0; }

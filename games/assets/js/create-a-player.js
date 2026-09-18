@@ -46,6 +46,7 @@
     addShareButton();
     addTeamButton();
     addGalleryButton(root);
+    addPasteLink();
     addCardLink();
     if (fromLink) collapseEditor();
   }
@@ -116,6 +117,74 @@
     keeping = true;
     editor.sync();
     editor.status("Loaded " + (player.name || "player") + ". Changes are saved as you go.");
+  }
+
+  // ---- paste a code -----------------------------------------------------
+
+  // For putting back a player you have the code for - out of a backup file, a
+  // team link or a message. It opens a box rather than sitting on the page,
+  // since almost nobody needs it, and only on a desktop-width screen: it is a
+  // tool for copying codes around at a desk, and a phone's link row is full.
+  function addPasteLink() {
+    if (!matchMedia("(min-width: 900px)").matches) return;
+    editor.addLink("Paste a code", togglePasteBox);
+  }
+
+  function togglePasteBox() {
+    const host = editor.el("host-footer");
+    const open = host.querySelector(".cap-paste");
+    if (open) return open.remove();
+    const row = document.createElement("div");
+    row.className = "cap-paste";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.autocomplete = "off";
+    input.placeholder = "Paste a player code or link";
+    input.setAttribute("aria-label", "Player code or link");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button";
+    button.textContent = "Load";
+    button.addEventListener("click", () => loadPasted(input));
+    input.addEventListener("keydown", e => { if (e.key === "Enter") loadPasted(input); });
+    row.append(input, button);
+    host.appendChild(row);
+    input.focus();
+  }
+
+  // Loaded as a NEW player, so whoever was on screen keeps their own entry,
+  // and remembered straight away - the point is to have them back.
+  function loadPasted(input) {
+    const player = pastedPlayer(input.value);
+    if (!player) return editor.status("That does not look like a player code");
+    newPlayer();
+    editEnabled();
+    Object.assign(editor.params, player);
+    editor.sync();
+    PLAYERS.remember(playerId, CODE.encode(editor.params));
+    queueSave(editor.params);
+    refreshCardLink();
+    input.value = "";
+    editor.status("Loaded " + (player.name || "player") + " and saved to your players.");
+  }
+
+  // A bare code, or any link carrying one as ?p= (builder or card). A team
+  // code is not a player, and says so by failing to load.
+  function pastedPlayer(text) {
+    let value = String(text || "").trim();
+    if (value.indexOf("?") >= 0) {
+      try {
+        value = new URLSearchParams(value.slice(value.indexOf("?") + 1)).get(SHARE_KEY) || "";
+      } catch (e) {
+        return null;
+      }
+    }
+    if (!value) return null;
+    try {
+      return CODE.load(value);
+    } catch (e) {
+      return null;
+    }
   }
 
   // ---- a new player -----------------------------------------------------
