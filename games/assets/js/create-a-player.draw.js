@@ -498,7 +498,7 @@
     flow:     { puff: 0.06, fall: 0.85, locks: 4, wave: 0.16, fringe: 1 },
     mop:      { puff: 0.09, fall: 0.40, locks: 6, wave: 0.18, fringe: 1 },
     thinning: { puff: 0.02, fall: 0.02, locks: 4, wave: 0.05, fringe: 0, thin: 1 },
-    ponytail: { puff: 0.05, fall: 0.08, locks: 4, wave: 0.06, fringe: 0, tail: 1 }
+    ponytail: { puff: 0.05, fall: 0.08, locks: 4, wave: 0.06, fringe: 0, tail: 1.35 }
   };
 
   // A lock with a bend in it: tapered from a wide root towards a rounded tip,
@@ -534,9 +534,7 @@
   }
 
   // Sorted just under the lid, whichever lid it is, so the helmet always wins
-  // the crown and the hair always beats the head to it. The tail is its own
-  // part behind the head - gathered at the nape, it belongs back there, and
-  // from the front it should be out of sight behind him.
+  // the crown and the hair always beats the head to it.
   function hairParts(ctx, dims, params, yaw) {
     const spec = HAIR[params.hairStyle];
     if (!spec) return [];
@@ -551,38 +549,32 @@
     const puff = spec.puff + (mask ? 0.13 : 0);
     const W = silWidth(head.rx, head.rz, yaw, dims.headStyle.boxy) * c.k * (1 + puff);
     const H = head.ry * c.k * (1 + puff);
-    const parts = [{
+    return [{
       d: (mask ? hr.z + 0.5 : 0.1) - 0.02,
       draw: () => drawHair(ctx, dims, params, spec, c, W, H, yaw)
     }];
-    if (spec.tail) {
-      const t = rotY(head.x, head.z - head.rz * 1.2, yaw);
-      const tc = project(t.x, head.y, t.z);
-      parts.push({ d: t.z, draw: () => drawTail(ctx, params, tc, W, H) });
-    }
-    return parts;
   }
 
   // The outline, in one pass: the head's own crown curve over the top, then a
   // hem back across the bottom. The hem is the whole trick - see hemAt().
-  function pathHair(ctx, dims, spec, c, W, H, face) {
+  function pathHair(ctx, dims, spec, c, W, H, view) {
     const x = p(c.sx), y = p(c.sy), w = p(W), h = p(H);
     const tw = w * dims.headStyle.taper;
-    const N = 22;
+    const N = 44;                 // fine enough for a ponytail a fifth of the head wide
     ctx.beginPath();
     ctx.moveTo(x - w, y);
     ctx.bezierCurveTo(x - w, y - h * KAPPA, x - tw * KAPPA, y - h, x, y - h);
     ctx.bezierCurveTo(x + tw * KAPPA, y - h, x + w, y - h * KAPPA, x + w, y);
     for (let i = 0; i <= N; i++) {
       const t = 1 - (i / N) * 2;
-      ctx.lineTo(p(c.sx + t * W), p(c.sy + hemAt(t, spec, face) * H));
+      ctx.lineTo(p(c.sx + t * W), p(c.sy + hemAt(t, spec, view) * H));
     }
     ctx.closePath();
   }
 
   function drawHair(ctx, dims, params, spec, c, W, H, yaw) {
-    const face = faceLift(dims, c, W, yaw);
-    pathHair(ctx, dims, spec, c, W, H, face);
+    const view = hairView(dims, spec, c, W, yaw);
+    pathHair(ctx, dims, spec, c, W, H, view);
     ctx.fillStyle = slabFill(ctx, c.sx, W, params.hairColor, yaw);
     ctx.fill();
     ctx.strokeStyle = OUTLINE;
@@ -592,9 +584,9 @@
     // Clipped to the hair itself: everything below is texture INSIDE the shape,
     // and unclipped it paints locks down a man's face.
     ctx.save();
-    pathHair(ctx, dims, spec, c, W, H, face);
+    pathHair(ctx, dims, spec, c, W, H, view);
     ctx.clip();
-    insideHair(ctx, params, spec, c, W, H, face.lift);
+    insideHair(ctx, params, spec, c, W, H, view.back);
     ctx.restore();
   }
 
@@ -605,11 +597,10 @@
   // outline there is the skull's outline and the hair cannot help but hug it.
   // Where it is long, it hangs below that instead, scalloped into locks.
   //
-  // The exception is the face. Turned towards us, the middle of that range is
-  // somebody's eyes and nose, so the hem lifts to the brow and what is left is
-  // a fringe. Turned away there is no face to keep clear, and the hair closes
-  // over the whole of the back of the head.
-  function hemAt(t, spec, face) {
+  // Across his face the hem lifts to the brow, leaving a fringe - see
+  // hairView() for where the face is. And a ponytail is a narrow bump in this
+  // same hem, so it hangs off the hair instead of floating beside it.
+  function hemAt(t, spec, view) {
     const skull = Math.sqrt(Math.max(0, 1 - t * t));          // the head's curve
     const scallop = spec.wave * (1 - Math.abs(t) * 0.4)
       * Math.sin((t + 1) * Math.PI * spec.locks);
@@ -623,28 +614,67 @@
     // whatever it covers, so the hair falls the way it always does and a
     // goalie keeps his flow.
     const brow = spec.fringe ? -0.04 + scallop * 0.35 : -0.06;
-    const onFace = Math.max(0, Math.min(1, (0.92 - Math.abs(t - face.at)) / 0.22));
-    return hang + face.lift * onFace * (brow - hang);
+    const face = view.face;
+    const onFace = face
+      ? Math.max(0, Math.min(1, 1 + Math.min(t - face.lo, face.hi - t) / 0.12))
+      : 0;
+    const hem = hang + onFace * (brow - hang);
+    return view.tail ? Math.max(hem, tailAt(t, view.tail)) : hem;
   }
 
-  // Where his face is in the silhouette, and how much of it we can see.
+  // The tail: gathered at the nape (0.55 below the head's centre) and hanging
+  // from there, rounded at the end. Part of the hem, so it is one outline with
+  // the rest of the hair and cannot come loose from it.
+  const TAIL_W = 0.20;
+
+  function tailAt(t, tail) {
+    const d = Math.abs(t - tail.at) / TAIL_W;
+    return d < 1 ? 0.55 + tail.len * Math.sqrt(1 - d * d) : -Infinity;
+  }
+
+  // Which part of the silhouette is face, and where the back of the head is.
   //
-  // The face is not the middle of the shape once he turns - it swings round
-  // with the head, and the hair has to keep clear of wherever it has got to,
-  // or a man at three-quarters is looking out through his own fringe. `at` is
-  // that position in the same -1..1 the hem is drawn in.
-  function faceLift(dims, c, W, yaw) {
-    const head = dims.head;
-    const at = W ? (head.rz * 0.8 * Math.sin(yaw) * c.k) / W : 0;
-    return { at: at, lift: Math.max(0, Math.min(1, (Math.cos(yaw) - 0.02) / 0.30)) };
+  // The face is the front of the head from ear to ear, so its outline on
+  // screen is found by turning that arc with him: every point of it still
+  // facing us counts, and the span they cover is where the hair must keep
+  // clear. Face-on that is nearly the whole width; side-on, in the highlight,
+  // it is the front half - the profile - and the hair takes the back half.
+  // The first version faded the face out with cos(yaw), which is zero side-on,
+  // so mid-highlight the hair closed over his whole head.
+  //
+  // How far round the face goes depends on the view. Face-on it stops short of
+  // the ears (62 degrees), so a lock of hair still falls down each side of the
+  // face. Side-on the cheek is the whole front half of the profile, so it
+  // reaches almost to the ear (82) - otherwise the hair takes his cheek too.
+  const FACE_ARC = 1.08, FACE_ARC_SIDE = 0.35;
+
+  function hairView(dims, spec, c, W, yaw) {
+    const head = dims.head, wb = W / c.k;
+    const sin = Math.sin(yaw), cos = Math.cos(yaw);
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i <= 16; i++) {
+      const th = (i / 16 * 2 - 1) * (FACE_ARC + FACE_ARC_SIDE * Math.abs(sin));
+      const bx = head.rx * Math.sin(th), bz = head.rz * Math.cos(th);
+      if (-bx * sin + bz * cos <= 0) continue;               // turned away from us
+      const sx = (bx * cos + bz * sin) / wb;
+      lo = Math.min(lo, sx);
+      hi = Math.max(hi, sx);
+    }
+    // The back of the head is where the tail hangs. Face-on it is behind him
+    // and there is nothing to draw; it comes into view as he turns side-on.
+    const back = Math.max(0, Math.min(1, (0.30 - cos) / 0.30));
+    const tail = spec.tail && back > 0
+      ? { at: Math.max(-0.78, Math.min(0.78, -head.rz * sin / wb)), len: spec.tail * back }
+      : null;
+    return { face: lo <= hi ? { lo: lo, hi: hi } : null, back: back, tail: tail };
   }
 
   // Inside the shape: a parting and a couple of locks falling through it, so
   // the mass has a direction instead of being a flat fill, and the scalp for a
   // thinning man - on top the helmet hides the difference either way, so the
   // back of his head is the only place it can show.
-  function insideHair(ctx, params, spec, c, W, H, face) {
-    if (spec.thin && face < 0.5) {
+  function insideHair(ctx, params, spec, c, W, H, back) {
+    if (spec.thin && back > 0.5) {
       E(ctx, c.sx, c.sy - H * 0.16, W * 0.34, H * 0.26, params.skinColor);
     }
     [-0.46, 0.38].forEach((t, i) => {
@@ -655,16 +685,6 @@
       ctx.fillStyle = shade(params.hairColor, i ? 0.08 : -0.10);
       ctx.fill();
     });
-  }
-
-  // Gathered at the nape and hanging behind everything else.
-  function drawTail(ctx, params, c, W, H) {
-    const x = c.sx, y = c.sy + H * 0.78;
-    ctx.beginPath();
-    pathCurvedLock(ctx, x, y, 0, 1, H * 1.25, W * 0.24, 0.12);
-    fillPath(ctx, shade(params.hairColor, -0.16), 1.3);
-    E(ctx, x, y, W * 0.20, H * 0.12, shade(params.hairColor, -0.30));
-    outline(ctx, 1.1);
   }
 
   // ---- facial hair --------------------------------------------------------
