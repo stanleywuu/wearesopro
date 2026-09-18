@@ -1,7 +1,7 @@
 // The Team: one Create A Player code per character. Data only - the hub draws
 // its picture buttons from these and each profile's hockey card reads its own.
-// To change how someone looks, build them in Create A Player, copy the code,
-// and replace their line here. Nothing else needs touching.
+// To change how someone looks: open their profile, "Open in Create A Player",
+// edit, copy the code, and replace their line here. Nothing else needs touching.
 
 window.TEAM_CODES = {
   stanley:   "1~1~1~40~40~50~40~40~50~0~1~0~0~0~1~0~1~Stanley~9~We're basically pro now.~~1",
