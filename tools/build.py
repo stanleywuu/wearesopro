@@ -39,7 +39,6 @@ PAGES = [
     # still in the footer site map for anyone curious.
     {"path": "notes/pipeline.html",        "label": "The Pipeline"},
     {"path": "notes/spreadsheet.html",     "label": "The Spreadsheet"},
-    {"path": "notes/faqs.html",            "label": "FAQs"},
 
     {"path": "games.html",                 "label": "Games &amp; Quizzes"},
     {"path": "games/chirp.html",           "label": "Teammate or Coworker",
@@ -74,6 +73,9 @@ PAGES = [
      "section": "team", "icon": "🚌"},
     {"path": "team/ricky.html",            "label": "Ricky The Screamer",
      "section": "team", "icon": "📢"},
+    # Lives under notes/ but belongs here: the questions are about the people.
+    {"path": "notes/faqs.html",            "label": "FAQs",
+     "section": "team", "menu": "Is Ricky for real? (FAQ)", "icon": "❓"},
     {"path": "links.html",                 "label": "Get the Book"},
     {"path": "feedback.html",              "label": "Feedback"},
     {"path": "experiments.html"},
