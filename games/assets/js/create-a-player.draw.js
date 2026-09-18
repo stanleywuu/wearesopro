@@ -692,7 +692,13 @@
     };
     // A mask covers the jaw, so a beard under one is only whatever shows
     // through the opening - the band and the chops would sit on the shell.
-    if (spec.jaw && !mask) drawJawBand(ctx, head, at(0.55, head.y - head.ry * 0.30), facing, spec, color);
+    // A playoff beard hangs lower and narrower than a chinstrap: up at the
+    // cheekbones it runs into the hair coming down past the ears, and the two
+    // dark masses meeting is what turns his head into one brown blob.
+    if (spec.jaw && !mask) {
+      const y = head.y - head.ry * (spec.full ? 0.42 : 0.30);
+      drawJawBand(ctx, head, at(0.55, y), facing, spec, color);
+    }
     if (spec.chops && !mask) drawChops(ctx, head, yaw, facing, color);
     if (spec.chin && !spec.full) {
       // Under the lip, not on the point of the chin: the patch of a goatee
@@ -741,13 +747,13 @@
   const ENDS = Math.PI * 0.14;
 
   function drawJawBand(ctx, head, c, facing, spec, color) {
-    const w = head.rx * 0.90 * facing * c.k;
-    const h = head.ry * 0.70 * c.k;
     const full = Boolean(spec.full);
-    const a = full ? 0 : ENDS;
+    const w = head.rx * (full ? 0.78 : 0.90) * facing * c.k;
+    const h = head.ry * (full ? 0.58 : 0.70) * c.k;
+    const a = full ? ENDS * 0.5 : ENDS;
     // Full means full: a playoff beard is a solid mass from under the mouth to
     // the chin, not a band with a bare patch inside it.
-    const iw = w * (full ? 0.46 : 0.78), ih = h * (full ? 0.12 : 0.80);
+    const iw = w * (full ? 0.44 : 0.78), ih = h * (full ? 0.14 : 0.80);
     ctx.beginPath();
     ctx.ellipse(p(c.sx), p(c.sy), p(w), p(h), 0, a, Math.PI - a);
     ctx.ellipse(p(c.sx), p(c.sy), p(iw), p(ih), 0, Math.PI - a, a, true);
