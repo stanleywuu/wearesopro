@@ -4,12 +4,12 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 
 ## Root pages
 - `index.html` — Landing page (book cover image, intro).
-- `notes.html` — Editor's notes hub: Acknowledgements, Pipeline, Random Thoughts.
+- `notes.html` — Editor's notes hub: Acknowledgements, Pipeline, Random Thoughts. **Not in the menus** (build notes don't sell the book); reached from the footer site map. `notes/faqs.html` is in The Team menu instead.
 - `games.html` — Games & Quizzes hub, links out to each game in `games/`.
 - `experiments.html` — "Under construction" page with an email-capture Netlify Form.
 - `links.html` — Amazon / Lulu (self-publish) purchase links.
 - `feedback.html` — Reader feedback form (Netlify Forms).
-- `teamupdates.html` — Team/project update posts.
+- `team.html` — **The Team** hub: a picture button per character (drawn live from `team/assets/js/team.data.js`), names only.
 - `thanks.html` — Netlify Forms success/redirect page.
 - `404.html` — Custom 404 page.
 - `robots.txt` — Crawler rules.
@@ -25,8 +25,16 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 - `notes/pipeline.html` — Explains the book-building pipeline.
 - `notes/spreadsheet.html` — Notes tied to a tracking spreadsheet.
 
+## team/
+Character profiles. See `docs/team.md`.
+- `team/updates.html` — Recent Updates posts (was `teamupdates.html`; the old URL redirects here).
+- `team/stanley.html`, `team/tommy.html`, `team/stephanie.html`, `team/dale.html`, `team/ricky.html` — one profile each: the hockey card (`card.js` + `card.css`) beside a bio, quick facts and a buy-the-book button. Adding someone: copy a profile, add their code to `team.data.js`, a `PAGES` entry with `section: "team"`, and a tile on `team.html`.
+- `team/assets/js/team.data.js` — `TEAM_CODES`: **the** one place each character's Create A Player code lives. Change how someone looks here and nowhere else.
+- `team/assets/js/team.js` — draws the hub's picture buttons (`canvas[data-who]`) and hands a profile's code to its card (`#card[data-who]` → `data-player`).
+- `team/assets/css/team.css` — hub roster grid and the profile's card-beside-bio layout.
+
 ## partials/ (included via `data-include`, see `assets/js/main.js`)
-- `partials/nav.html` — Main site navigation. The dropdown and drawer link lists are **generated** from `PAGES` between `nav:notes` / `nav:games` markers — edit `tools/build.py`, not the lists.
+- `partials/nav.html` — Main site navigation. The dropdown and drawer link lists are **generated** from `PAGES` between `nav:games` / `nav:team` markers — edit `tools/build.py`, not the lists.
 - `partials/player-editor.html` — **The** player builder markup (stage, canvas, tabs, all controls), shared by `games/create-a-player.html` and the slot modal on `games/team-photo.html`. Driven by `CAP_EDITOR.mount()`; elements addressed by `data-el`, never by id. Four tabs: Shape, Kit, Face (hair and facial hair), Info. `[data-el="host-actions"]` / `[data-el="host-links"]` / `[data-el="host-footer"]` are empty slots each host page fills with its own buttons - the main action row, the quiet "which player" links, and whatever comes after. See `.claude/RULES.md`, "One builder, two mounts".
 - `partials/nav-noscript.html` — **Unused.** Was included inside `<noscript>` via `data-include`, which cannot work (the include needs JS); replaced by the generated `.site-links` nav.
 - `partials/sidebar.html` — Sidebar (poll widgets, etc.).
@@ -39,6 +47,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 - `assets/css/style.css` — Main site stylesheet.
 - `assets/css/critical.css` — Above-the-fold styles meant to be inlined in `<style>` for fast first paint.
 - `assets/img/book-placeholder.png` — Placeholder book cover image (86x121, favicon/hero only — far too small for link previews).
+- `assets/img/cover-tilted.webp` — The real front cover as the home page hero shows it: frame, rounded corners, shadow and the 3deg tilt **baked in** (CSS rotation blurred it). 332x491, displayed at 166x245. Built from `../cover_ebook.jpg` by drawing at 4x and scaling down; re-make it if the cover changes.
 - `assets/img/og-cover.jpg` — 1200x630 share card used as `og:image` on every page.
 - `assets/img/og-create-a-player.jpg` — 1200x630 share card for the Create A Player page.
 - `assets/img/create-a-player-thumb.jpg` — 320x320 square crop of the player from the share card, used in the home page feature banner.
@@ -59,11 +68,12 @@ One-line purpose for every file/directory in the repo. Update this when you add,
   - `games/assets/js/player-gallery.js` — `CAP_GALLERY`: the saved-players panel, shared by both pages that need it. Team Photo opens it to pick somebody for a slot; Create A Player opens it with `canDelete` to manage the collection. Deleting is offered there and nowhere else — on a page with a team in front of you, "remove" reads as "off the team". With `canBackup` the panel also carries the Export/Import row (`CAP_BACKUP`).
   - `games/assets/js/create-a-player.codec.js` — `CAP_CODE`: the player parameter defaults, the compact `~`-separated share code (encode/decode) and `sanitize()`, the one whitelist every untrusted player passes through. No DOM, no drawing; shared by the builder and the team photo page.
   - `games/assets/js/create-a-player.draw.js` — hand-rolled 2.5D renderer (no 3D library): silhouette slabs whose width, position, depth and shading are recomputed from the yaw angle. `position: "Goalie"` switches in pads, blocker, trapper, a paddle stick and the upright hands-on-the-knob rest pose. No DOM access. `render(ctx, params, yaw, anim, opts)` obeys the current canvas transform, and `opts.background:false` drops the ice fill so several players can be composited into one scene.
-  - `games/assets/js/create-a-player.editor.js` — `CAP_EDITOR.mount(root, params, opts)`: the builder as a mountable widget — tabs, option pickers, swatches, sliders, identity fields, drag/auto-spin, randomize, the Highlight animation timeline, `?debug` yaw grid and `?debug=reel` filmstrip (the highlight laid out as frames, since a four-second animation cannot be judged one run at a time). Scoped strictly to its `root`, so it also runs inside the team-photo slot modal. `destroy()` stops its render loop, `addLink(label, run)` builds the quiet link row under the status line (both mounts have one), and `startNaming()` opens the Info tab with the cursor in Name.
+  - `games/assets/js/create-a-player.reel.js` — `CAP_REEL`: **the** Highlight timeline. `build(params)` picks the shot for the position, `at(reel, ms)` returns the pose/puck/camera for that moment (null once finished). No DOM, no drawing. Played by the builder and by every hockey card (card page and `team/` profiles), so there is one highlight, not copies. Load it after `create-a-player.draw.js`.
+  - `games/assets/js/create-a-player.editor.js` — `CAP_EDITOR.mount(root, params, opts)`: the builder as a mountable widget — tabs, option pickers, swatches, sliders, identity fields, drag/auto-spin, randomize, the Highlight button (timeline in `CAP_REEL`), `?debug` yaw grid and `?debug=reel` filmstrip (the highlight laid out as frames, since a four-second animation cannot be judged one run at a time). Scoped strictly to its `root`, so it also runs inside the team-photo slot modal. `destroy()` stops its render loop, `addLink(label, run)` builds the quiet link row under the status line (both mounts have one), and `startNaming()` opens the Info tab with the cursor in Name.
   - `games/assets/js/create-a-player.js` — the *page* only: mounts the editor on `partials:ready`, quiet autosave to localStorage, `?p=` share links (whitelisted on load), the collapsed view a shared link opens in, the "Add to team" button, and "Paste a code" (desktop width only: load a player code or `?p=` link as a new saved player). Share hands over the **hockey card** URL, not the builder's.
 
 - `games/team-photo.html` + `games/assets/js/team-photo.js` + `games/assets/css/team-photo.css` — **Team Photo**: a line-up of slots; tapping one opens the Create A Player builder in a modal (a `CAP_EDITOR` mount on `partials/player-editor.html`) and saves that player into the slot. Two rows on risers composited into one canvas with `CAP_DRAW.render(..., {background:false})`. A slot holds a *copy*: saving writes the team and nothing else, and "Save as" is the only path from here into your saved players. Team kept in `localStorage["cap-team"]`; `?t=` carries a whole team as a length-framed code (free text means no separator is safe to split on) and never overwrites the stored team without a press. `?debug` fills every empty spot with a random player, in memory only. See `docs/team-photo.md`.
-- `games/card.html` + `games/assets/js/card.js` + `games/assets/css/card.css` — **Hockey Card**: one player from a `?p=` code, laid out like a card off the shelf, except the picture is their Highlight on a loop. Reached from the highlighted "View hockey card" button on a shared player. Deliberately absent from the nav and footer (`PAGES` entry has no label or section): with no player in the URL it is an empty page. Its reel is a trimmed copy of the builder's — same renderer, no camera travel, so the player stays in frame the way a card wants.
+- `games/card.html` + `games/assets/js/card.js` + `games/assets/css/card.css` — **Hockey Card**: one player from a `?p=` code, laid out like a card off the shelf, except the picture is their Highlight on a loop. Reached from the highlighted "View hockey card" button on a shared player. Also the picture on every `team/` profile: with no `?p=`, `card.js` reads the code from `#card`'s `data-player`. Deliberately absent from the nav and footer (`PAGES` entry has no label or section): with no player in the URL it is an empty page. It plays the builder's own Highlight (`CAP_REEL`) on a loop, holding on the last frame between runs.
 
 ## tools/
 - `tools/build.py` — Generates the footer site map in every page, the nav/drawer menus in `partials/nav.html`, and `sitemap.xml` — all from one `PAGES` list. Run via `make site`. Standard library only; not part of the deploy.
@@ -80,6 +90,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 Task-tracker plans for in-progress/completed work, per the plan convention in the root `CLAUDE.md`. Old entries get summarized and trimmed to the last 5 over time.
 - `docs/OBJECTIVE.md` — Current overall objective, kept separate from per-feature todo checklists so it survives todo trimming.
 - `docs/create-a-player.md` — Task tracker for the Create A Player builder.
+- `docs/team.md` — Task tracker for The Team hub and character profiles.
 - `docs/goalie-brawl.md` — Design and build history for the Goalie Brawl game.
 - `docs/drawing-code-cleanup.md` — Refactor log for `adopt.js` canvas drawing helpers.
 - `docs/discoverability.md` — SEO/GEO audit of the live site and the prioritized todo list that came out of it.

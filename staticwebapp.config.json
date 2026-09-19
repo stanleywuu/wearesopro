@@ -4,6 +4,11 @@
       "route": "/intermission",
       "redirect": "/games.html",
       "statusCode": 301
+    },
+    {
+      "route": "/teamupdates.html",
+      "redirect": "/team/updates.html",
+      "statusCode": 301
     }
   ]
 }

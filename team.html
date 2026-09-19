@@ -3,30 +3,35 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Thanks — We Are So Pro</title>
-<meta name="description" content="Got it. Thanks for reaching out about the Early Birds.">
-<link rel="canonical" href="https://wearesopro.ca/thanks.html">
+<title>The Team — meet the Early Birds</title>
+<meta name="description" content="Meet the Early Birds from We Are So Pro: Stanley, Tommy the Goalie, Stephanie, Dale and Ricky. Real people, lightly disguised, still playing 6:30 AM hockey.">
+<link rel="canonical" href="https://wearesopro.ca/team.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="We Are So Pro">
-<meta property="og:title" content="Thanks — We Are So Pro">
-<meta property="og:description" content="Got it. Thanks for reaching out about the Early Birds.">
-<meta property="og:url" content="https://wearesopro.ca/thanks.html">
+<meta property="og:title" content="The Team — meet the Early Birds">
+<meta property="og:description" content="Meet the Early Birds from We Are So Pro: Stanley, Tommy the Goalie, Stephanie, Dale and Ricky. Real people, lightly disguised, still playing 6:30 AM hockey.">
+<meta property="og:url" content="https://wearesopro.ca/team.html">
 <meta property="og:image" content="https://wearesopro.ca/assets/img/og-cover.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="We Are So Pro - a cartoon beer-league hockey player on the ice">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Thanks — We Are So Pro">
-<meta name="twitter:description" content="Got it. Thanks for reaching out about the Early Birds.">
+<meta name="twitter:title" content="The Team — meet the Early Birds">
+<meta name="twitter:description" content="Meet the Early Birds from We Are So Pro: Stanley, Tommy the Goalie, Stephanie, Dale and Ricky. Real people, lightly disguised, still playing 6:30 AM hockey.">
 <meta name="twitter:image" content="https://wearesopro.ca/assets/img/og-cover.jpg">
 <link rel="icon" href="/assets/img/book-placeholder.png">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; upgrade-insecure-requests">
 <link rel="preload" href="/assets/css/style.css" as="style" fetchpriority="high">
 <link rel="stylesheet" href="/assets/css/critical.css?v=1">
 <link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/team/assets/css/team.css">
 <script defer src="/assets/js/main.js"></script>
+<script defer src="/games/assets/js/create-a-player.data.js"></script>
+<script defer src="/games/assets/js/create-a-player.codec.js"></script>
+<script defer src="/games/assets/js/create-a-player.draw.js"></script>
+<script defer src="/team/assets/js/team.data.js"></script>
+<script defer src="/team/assets/js/team.js"></script>
 
-  <script defer src="/assets/js/tommy-float.js"></script>
 </head>
 <body>
 <header class="site-header">
@@ -37,12 +42,19 @@
 </header>
 
 <main class="layout">
+  <div data-include="/partials/sidebar.html"></div>
+
   <section class="content">
-    <article class="article">
-    <h1>Awesome!</h1>
-    <p>We got your submission. See you soon.</p>
-    <p><a href="/index.html">Back to home</a></p>
-    </article>
+    <h1>The Team</h1>
+    <p class="muted">Every Early Bird in the book is a real person in our group, lightly disguised. Here are the ones you&rsquo;ll hear the most about.</p>
+
+    <nav class="roster" aria-label="The Early Birds">
+      <a class="roster-player" href="/team/stanley.html"><canvas data-who="stanley" aria-hidden="true"></canvas><span class="roster-name">Stanley The Author</span></a>
+      <a class="roster-player" href="/team/tommy.html"><canvas data-who="tommy" aria-hidden="true"></canvas><span class="roster-name">Tommy The Goalie</span></a>
+      <a class="roster-player" href="/team/stephanie.html"><canvas data-who="stephanie" aria-hidden="true"></canvas><span class="roster-name">Stephanie The Planner</span></a>
+      <a class="roster-player" href="/team/dale.html"><canvas data-who="dale" aria-hidden="true"></canvas><span class="roster-name">Dale The President</span></a>
+      <a class="roster-player" href="/team/ricky.html"><canvas data-who="ricky" aria-hidden="true"></canvas><span class="roster-name">Ricky The Screamer</span></a>
+    </nav>
   </section>
 </main>
 <!-- Static site map. Plain markup on purpose: the nav and footer are injected

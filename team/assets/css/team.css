@@ -1,0 +1,52 @@
+/* The Team: the hub's picture buttons and the profile layout. The hockey card
+   itself is card.css; nothing here restyles it. */
+
+.roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.roster-player {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 4px 4px 0 rgba(22, 34, 46, .12);
+  transition: transform .1s, box-shadow .1s;
+}
+.roster-player:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 rgba(22, 34, 46, .18); }
+.roster-player canvas { width: 100%; height: auto; display: block; background: #EEF6FF; }
+
+/* Grows to fill the tile, so a one-line name and a two-line one end level. */
+.roster-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: .55rem .6rem;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Profile: card beside the bio, stacked on a phone. */
+.profile {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.profile .card-stage { justify-items: stretch; }
+.profile-bio h1 { margin-top: 0; }
+.profile-facts { padding-left: 1.1rem; }
+.profile-book { margin-top: 1.25rem; }
+
+@media (max-width: 720px) {
+  .profile { grid-template-columns: 1fr; }
+  .profile .card-stage { justify-items: center; }
+}

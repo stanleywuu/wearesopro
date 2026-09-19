@@ -27,7 +27,7 @@ SITE = "https://wearesopro.ca"
 # Every page, and the only place a link is declared. Only "path" is required.
 #   path     file, relative to the repo root
 #   label    text in the site map at the foot of every page; no label = not listed
-#   section  which menu it belongs to: "notes", "games", or absent for neither
+#   section  which menu it belongs to: "games", "team", or absent
 #   menu     menu wording, when it should differ from label
 #   badge    flag shown in the menus only, e.g. "New"
 #   icon     emoji shown in the menus, so a long list is scannable
@@ -35,12 +35,10 @@ PAGES = [
     {"path": "index.html",                 "label": "Home"},
     {"path": "notes.html",                 "label": "Editor&rsquo;s Notes"},
 
-    {"path": "notes/pipeline.html",        "label": "The Pipeline",
-     "section": "notes", "menu": "The pipeline that built everything", "icon": "⚙️"},
-    {"path": "notes/spreadsheet.html",     "label": "The Spreadsheet",
-     "section": "notes", "menu": "The infamous Spreadsheet", "icon": "📊"},
-    {"path": "notes/faqs.html",            "label": "FAQs",
-     "section": "notes", "menu": "Frequently Asked Questions", "icon": "❓"},
+    # Out of the menus on purpose: build notes don't sell the book. Still live,
+    # still in the footer site map for anyone curious.
+    {"path": "notes/pipeline.html",        "label": "The Pipeline"},
+    {"path": "notes/spreadsheet.html",     "label": "The Spreadsheet"},
 
     {"path": "games.html",                 "label": "Games &amp; Quizzes"},
     {"path": "games/chirp.html",           "label": "Teammate or Coworker",
@@ -62,7 +60,22 @@ PAGES = [
     # player's share view. Listed here only so the sitemap knows about it.
     {"path": "games/card.html"},
 
-    {"path": "teamupdates.html",           "label": "Team Updates"},
+    {"path": "team.html",                  "label": "The Team"},
+    {"path": "team/updates.html",          "label": "Team Updates",
+     "section": "team", "menu": "Recent Updates", "icon": "📰"},
+    {"path": "team/stanley.html",          "label": "Stanley The Author",
+     "section": "team", "icon": "✍️"},
+    {"path": "team/tommy.html",            "label": "Tommy The Goalie",
+     "section": "team", "icon": "🥅"},
+    {"path": "team/stephanie.html",        "label": "Stephanie The Planner",
+     "section": "team", "icon": "📣"},
+    {"path": "team/dale.html",             "label": "Dale The President",
+     "section": "team", "icon": "🎖️"},
+    {"path": "team/ricky.html",            "label": "Ricky The Screamer",
+     "section": "team", "icon": "📢"},
+    # Lives under notes/ but belongs here: the questions are about the people.
+    {"path": "notes/faqs.html",            "label": "FAQs",
+     "section": "team", "menu": "Is Ricky for real? (FAQ)", "icon": "❓"},
     {"path": "links.html",                 "label": "Get the Book"},
     {"path": "feedback.html",              "label": "Feedback"},
     {"path": "experiments.html"},
@@ -131,7 +144,7 @@ def write_menus(root):
     partial = root / NAV_PARTIAL
     source = partial.read_text(encoding="utf-8")
     updated = source
-    for section in ("notes", "games"):
+    for section in ("games", "team"):
         start = "<!-- nav:%s:start -->" % section
         end = "<!-- nav:%s:end -->" % section
         if start not in updated:

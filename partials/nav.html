@@ -1,18 +1,6 @@
 <nav class="site-nav" aria-label="Primary">
   <a class="nav-home" href="/index.html">Home</a>
 
-  <div class="dropdown">
-    <a href="/notes.html" class="top-link">Editor’s Notes</a>
-    <button class="drop-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-notes" aria-label="Open Editor’s Notes menu">▾</button>
-    <ul id="menu-notes" class="dropdown-menu" role="menu" aria-label="Editor’s Notes">
-<!-- nav:notes:start -->
-      <li><a role="menuitem" href="/notes/pipeline.html"><span class="menu-icon" aria-hidden="true">⚙️</span>The pipeline that built everything</a></li>
-      <li><a role="menuitem" href="/notes/spreadsheet.html"><span class="menu-icon" aria-hidden="true">📊</span>The infamous Spreadsheet</a></li>
-      <li><a role="menuitem" href="/notes/faqs.html"><span class="menu-icon" aria-hidden="true">❓</span>Frequently Asked Questions</a></li>
-<!-- nav:notes:end -->
-      </ul>
-  </div>
-
   <!--<a href="/experiments.html">Experiments</a>-->
 
   <div class="dropdown">
@@ -31,9 +19,23 @@
       </ul>
   </div>
 
-  <a href="/teamupdates.html">Team Updates</a>
+  <div class="dropdown">
+    <a href="/team.html" class="top-link">The Team</a>
+    <button class="drop-btn" aria-haspopup="true" aria-expanded="false" aria-controls="menu-team" aria-label="Open The Team menu">▾</button>
+    <ul id="menu-team" class="dropdown-menu" role="menu" aria-label="The Team">
+<!-- nav:team:start -->
+      <li><a role="menuitem" href="/team/updates.html"><span class="menu-icon" aria-hidden="true">📰</span>Recent Updates</a></li>
+      <li><a role="menuitem" href="/team/stanley.html"><span class="menu-icon" aria-hidden="true">✍️</span>Stanley The Author</a></li>
+      <li><a role="menuitem" href="/team/tommy.html"><span class="menu-icon" aria-hidden="true">🥅</span>Tommy The Goalie</a></li>
+      <li><a role="menuitem" href="/team/stephanie.html"><span class="menu-icon" aria-hidden="true">📣</span>Stephanie The Planner</a></li>
+      <li><a role="menuitem" href="/team/dale.html"><span class="menu-icon" aria-hidden="true">🎖️</span>Dale The President</a></li>
+      <li><a role="menuitem" href="/team/ricky.html"><span class="menu-icon" aria-hidden="true">📢</span>Ricky The Screamer</a></li>
+      <li><a role="menuitem" href="/notes/faqs.html"><span class="menu-icon" aria-hidden="true">❓</span>Is Ricky for real? (FAQ)</a></li>
+<!-- nav:team:end -->
+      </ul>
+  </div>
 
-  <a href="https://www.amazon.com/dp/B0G2FLQ76Z" class="amazon-btn">Buy The Book</a>
+  <a href="https://www.amazon.com/dp/B0G2FLQ76Z" class="amazon-btn" rel="noopener noreferrer">Get the Book</a>
 </nav>
 
 <button class="mobile-menu-toggle" aria-label="Open menu" aria-controls="mobile-drawer" aria-expanded="false">Menu ☰</button>
@@ -51,16 +53,6 @@
       <a class="drawer-link" href="/index.html">Home</a>
 
       <p class="drawer-label">Sections</p>
-      <details>
-        <summary>Editor&rsquo;s Notes</summary>
-        <ul>
-<!-- nav:notes:start -->
-      <li><a role="menuitem" href="/notes/pipeline.html"><span class="menu-icon" aria-hidden="true">⚙️</span>The pipeline that built everything</a></li>
-      <li><a role="menuitem" href="/notes/spreadsheet.html"><span class="menu-icon" aria-hidden="true">📊</span>The infamous Spreadsheet</a></li>
-      <li><a role="menuitem" href="/notes/faqs.html"><span class="menu-icon" aria-hidden="true">❓</span>Frequently Asked Questions</a></li>
-<!-- nav:notes:end -->
-      </ul>
-      </details>
       <!--<a class="drawer-link" href="/experiments.html">Experiments</a>-->
       <details>
         <summary>Games &amp; Quizzes</summary>
@@ -77,10 +69,23 @@
       </ul>
       </details>
 
-      <a class="drawer-link" href="/teamupdates.html">Team Updates</a>
+      <details>
+        <summary>The Team</summary>
+        <ul>
+<!-- nav:team:start -->
+      <li><a role="menuitem" href="/team/updates.html"><span class="menu-icon" aria-hidden="true">📰</span>Recent Updates</a></li>
+      <li><a role="menuitem" href="/team/stanley.html"><span class="menu-icon" aria-hidden="true">✍️</span>Stanley The Author</a></li>
+      <li><a role="menuitem" href="/team/tommy.html"><span class="menu-icon" aria-hidden="true">🥅</span>Tommy The Goalie</a></li>
+      <li><a role="menuitem" href="/team/stephanie.html"><span class="menu-icon" aria-hidden="true">📣</span>Stephanie The Planner</a></li>
+      <li><a role="menuitem" href="/team/dale.html"><span class="menu-icon" aria-hidden="true">🎖️</span>Dale The President</a></li>
+      <li><a role="menuitem" href="/team/ricky.html"><span class="menu-icon" aria-hidden="true">📢</span>Ricky The Screamer</a></li>
+      <li><a role="menuitem" href="/notes/faqs.html"><span class="menu-icon" aria-hidden="true">❓</span>Is Ricky for real? (FAQ)</a></li>
+<!-- nav:team:end -->
+      </ul>
+      </details>
 
-      <p class="drawer-label">Get the book</p>
-      <a href="https://www.amazon.com/dp/B0G2FLQ76Z" class="amazon-btn" rel="noopener noreferrer">Buy The Book</a>
+      <p class="drawer-label">The book</p>
+      <a href="https://www.amazon.com/dp/B0G2FLQ76Z" class="amazon-btn" rel="noopener noreferrer">Get the Book</a>
 
       <p class="drawer-label">Extras</p>
       <a class="drawer-link" href="https://wearesopro.substack.com/" rel="noopener noreferrer"><span class="menu-icon" aria-hidden="true">✍️</span>Stanley&rsquo;s Substack</a>

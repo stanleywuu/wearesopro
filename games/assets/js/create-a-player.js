@@ -10,6 +10,7 @@
 
   const STORE_KEY = "cap-player";
   const SHARE_KEY = "p";
+  const NEW_KEY = "new";     // ?p=<code>&new=1: their look, your player
   const SAVE_DELAY = 700;
   const SHARED = "cap-shared";
   const CARD_PATH = "/games/card.html";
@@ -18,7 +19,8 @@
   // includes, and collapsing it after that has already been painted is what
   // made the canvas visibly jump. On the document element the rule is waiting
   // before the markup it applies to exists.
-  if (new URLSearchParams(location.search).has(SHARE_KEY)) {
+  if (new URLSearchParams(location.search).has(SHARE_KEY) &&
+      !new URLSearchParams(location.search).has(NEW_KEY)) {
     document.documentElement.classList.add(SHARED);
   }
 
@@ -36,9 +38,13 @@
     const params = CODE.defaults();
     loadSaved(params);
     const fromLink = loadShared(params);
+    // A team profile links here with ?p=<their code>&new=1: keep the build,
+    // drop who they are. You are not looking at Dale, you are starting from him.
+    const asNew = fromLink && new URLSearchParams(location.search).has(NEW_KEY);
+    if (asNew) Object.assign(params, { name: "", number: "", phrase: "" });
 
     playerId = PLAYERS.newId();
-    keeping = !fromLink;     // looking at a shared player is not building one
+    keeping = !fromLink || asNew;
     editor = EDITOR.mount(root, params, { onChange: onChange, onNew: newPlayer });
     if (!editor) return;
 
@@ -48,7 +54,12 @@
     addGalleryButton(root);
     addPasteLink();
     addCardLink();
-    if (fromLink) collapseEditor();
+    if (asNew) {
+      dropShareParam();
+      editor.startNaming();
+    } else if (fromLink) {
+      collapseEditor();
+    }
   }
 
   // ---- save -------------------------------------------------------------
@@ -392,6 +403,7 @@
   function dropShareParam() {
     const query = new URLSearchParams(location.search);
     query.delete(SHARE_KEY);
+    query.delete(NEW_KEY);
     const rest = query.toString();
     history.replaceState(null, "", location.pathname + (rest ? "?" + rest : ""));
   }
