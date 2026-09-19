@@ -5,7 +5,10 @@
 
 (function () {
 
-  const SIDE_ON = Math.PI / 2;   // the reel plays side on, facing the net
+  // Not dead side-on: a pure profile hides the body width, the head shape and
+  // the front of the kit, so every player's highlight looks like the same
+  // silhouette. Turned a little towards us, they still face the net.
+  const SIDE_ON = 1.25;          // radians, about 72 degrees
 
   // The wrist shot every other position plays, unchanged.
   const CLASSIC = { glide: 1200, wind: 1800, contact: 2000, land: 2500, end: 3600 };
@@ -24,7 +27,13 @@
   // less time, and the number on the end is the same number.
   function build(params) {
     if (params.position === "Goalie") return goalieReel();
-    if (params.position !== "Defence") return Object.assign({ slap: false, home: 0, yaw: SIDE_ON }, CLASSIC);
+    // A left-handed forward shoots across his body from the camera's side, and
+    // the stick ends up behind him. Nothing in the pose is wrong - the view is.
+    // Mirroring the scene puts the stick back out front, shooting the other way.
+    if (params.position !== "Defence") {
+      return Object.assign({ slap: false, home: 0, yaw: SIDE_ON,
+        mirror: params.handedness === "left" }, CLASSIC);
+    }
     // Beer league. Nobody here is breaking 80.
     const speed = 55 + Math.round(Math.random() * 25);
     const contact = 2300;
@@ -62,6 +71,7 @@
       shift: 0, crouch: 0, swing: 0, lift: 0,
       puckT: null, goal: false, pan: 0,
       arc: 9, net: 1, label: reel.label,
+      mirror: Boolean(reel.mirror),
       puckHold: Boolean(reel.slap), netClose: Boolean(reel.slap)
     };
     if (ms < reel.glide) {

@@ -25,6 +25,7 @@
   // the stick sweeps, and the whole figure glides across the ice.
   let ANIM = null;
   let SHIFT = 0;
+  let MIRROR = false;   // a left-handed wrist shot plays the other way round
   const PAN_MAX = 180;      // far enough that the stick and shadow clear the edge too
   const TILT = 0.16;        // how much +z (towards viewer) drops on screen
   const PERSP = 0.0028;     // weak perspective: growth per unit of +z
@@ -370,11 +371,12 @@
     const mask = params.helmetStyle === "mask";
     const style = dims.headStyle;
     const mc = project(hr.x, head.y, hr.z);
-    // A dome caps the skull, so it can sit at a fixed shallow depth and still
-    // read. A mask wraps the whole head, so it has to sort in FRONT of the head
-    // slab or the face swallows it - which is what it did.
+    // Both sort against the head, never at a fixed depth: the head's own depth
+    // moves with the yaw AND with the crouch, so a lid pinned at 0.1 slid
+    // behind the face at three-quarter angles and vanished. A mask wraps the
+    // whole head and needs more clearance than a dome that caps the skull.
     return {
-      d: mask ? hr.z + 0.5 : 0.1,
+      d: hr.z + (mask ? 0.5 : 0.35),
       draw: () => {
         ctx.beginPath();
         if (mask) helmetShell(ctx, style, mc.sx, mc.sy, hw * 1.04, head.ry * 1.14 * mc.k);
@@ -608,7 +610,7 @@
     const W = silWidth(head.rx, head.rz, yaw, dims.headStyle.boxy) * c.k * (1 + puff);
     const H = head.ry * c.k * (1 + puff);
     return [{
-      d: (mask ? hr.z + 0.5 : 0.1) - 0.02,
+      d: hr.z + (mask ? 0.5 : 0.35) - 0.02,   // just behind the lid, same rule
       draw: () => drawHair(ctx, dims, params, spec, c, W, H, yaw)
     }];
   }
@@ -1492,18 +1494,26 @@
     ctx.restore();
   }
 
+  // Words never mirror. Under a flipped scene this undoes the flip and moves
+  // to the matching side, so the label still sits beside the net.
   function drawGoalText(ctx, label) {
     const text = label || "GOAL!";
     ctx.save();
+    if (MIRROR) {
+      ctx.translate(p(LW), 0);
+      ctx.scale(-1, 1);
+      ctx.textAlign = "left";
+    }
     ctx.font = "800 " + p(text.length > 6 ? 15 : 18) + "px " + FONT;
-    ctx.textAlign = "right";
+    if (!MIRROR) ctx.textAlign = "right";
     ctx.lineJoin = "round";
     ctx.lineWidth = p(3);
     ctx.strokeStyle = OUTLINE;
     const y = GROUND - NET.h * FIT - 12;
-    ctx.strokeText(text, p(LW - 8), p(y));
+    const x = p(MIRROR ? 8 : LW - 8);
+    ctx.strokeText(text, x, p(y));
     ctx.fillStyle = "#FDD835";
-    ctx.fillText(text, p(LW - 8), p(y));
+    ctx.fillText(text, x, p(y));
     ctx.restore();
   }
 
@@ -1565,6 +1575,14 @@
     if (background) {
       ctx.clearRect(0, 0, p(LW), p(LH));
       drawIce(ctx);
+    }
+    // The ice is symmetrical, so the flip starts after it: everything with a
+    // handedness in it - player, stick, net, puck - is drawn mirrored. The
+    // label is not, and undoes the flip itself.
+    MIRROR = Boolean(ANIM && ANIM.mirror);
+    if (MIRROR) {
+      ctx.translate(p(LW), 0);
+      ctx.scale(-1, 1);
     }
     // No shadow during a highlight: the camera travels, and a shadow is one
     // more thing that has to travel convincingly with it for no gain.
