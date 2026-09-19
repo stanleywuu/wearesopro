@@ -5,7 +5,10 @@
 
 (function () {
 
-  const SIDE_ON = Math.PI / 2;   // the reel plays side on, facing the net
+  // Not dead side-on: a pure profile hides the body width, the head shape and
+  // the front of the kit, so every player's highlight looks like the same
+  // silhouette. Turned a little towards us, they still face the net.
+  const SIDE_ON = 1.25;          // radians, about 72 degrees
 
   // The wrist shot every other position plays, unchanged.
   const CLASSIC = { glide: 1200, wind: 1800, contact: 2000, land: 2500, end: 3600 };
