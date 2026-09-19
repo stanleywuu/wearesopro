@@ -1,0 +1,26 @@
+/* 1200x630 exactly - the size Facebook, X and iMessage want. */
+:root{--ink:#16222E;--paper:#FFFDF6;--muted:#516273;--ice:#EEF6FF}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1200px;height:630px;overflow:hidden;background:var(--paper);
+  font-family:"DejaVu Sans","Segoe UI",system-ui,sans-serif;color:var(--ink)}
+.card{display:flex;align-items:center;height:100%;gap:40px;padding:60px 70px;
+  border:14px solid var(--ink);background:
+   linear-gradient(180deg,var(--paper) 0%,var(--paper) 62%,var(--ice) 62%,var(--ice) 100%)}
+.text{flex:1;min-width:0}
+.kicker{font-size:26px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:82px;line-height:1.02;margin:16px 0 20px;letter-spacing:-.02em}
+.tag{font-size:34px;line-height:1.3;color:var(--muted);max-width:19ch}
+.book{margin-top:34px;display:inline-block;font-size:26px;font-weight:700;color:#fff;
+  background:var(--ink);padding:14px 26px;border-radius:999px}
+.art{flex:0 0 430px;display:flex;justify-content:center;align-items:flex-end;height:100%}
+canvas{height:540px;width:auto}
+
+/* The hub card: heading across the top, the whole line-up underneath. */
+.card.is-group{flex-direction:column;align-items:stretch;gap:0;padding:44px 60px 0}
+.card.is-group .text{flex:0 0 auto}
+.card.is-group h1{font-size:66px;margin:10px 0 10px}
+.card.is-group .tag{max-width:none;font-size:30px}
+.card.is-group .book{display:none}
+.group{display:flex;align-items:flex-end;justify-content:center;flex:1 1 auto;width:100%}
+.group canvas{height:330px}
+.group canvas + canvas{margin-left:-46px}   /* shoulder to shoulder */
