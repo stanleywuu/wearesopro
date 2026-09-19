@@ -370,11 +370,12 @@
     const mask = params.helmetStyle === "mask";
     const style = dims.headStyle;
     const mc = project(hr.x, head.y, hr.z);
-    // A dome caps the skull, so it can sit at a fixed shallow depth and still
-    // read. A mask wraps the whole head, so it has to sort in FRONT of the head
-    // slab or the face swallows it - which is what it did.
+    // Both sort against the head, never at a fixed depth: the head's own depth
+    // moves with the yaw AND with the crouch, so a lid pinned at 0.1 slid
+    // behind the face at three-quarter angles and vanished. A mask wraps the
+    // whole head and needs more clearance than a dome that caps the skull.
     return {
-      d: mask ? hr.z + 0.5 : 0.1,
+      d: hr.z + (mask ? 0.5 : 0.35),
       draw: () => {
         ctx.beginPath();
         if (mask) helmetShell(ctx, style, mc.sx, mc.sy, hw * 1.04, head.ry * 1.14 * mc.k);
@@ -608,7 +609,7 @@
     const W = silWidth(head.rx, head.rz, yaw, dims.headStyle.boxy) * c.k * (1 + puff);
     const H = head.ry * c.k * (1 + puff);
     return [{
-      d: (mask ? hr.z + 0.5 : 0.1) - 0.02,
+      d: hr.z + (mask ? 0.5 : 0.35) - 0.02,   // just behind the lid, same rule
       draw: () => drawHair(ctx, dims, params, spec, c, W, H, yaw)
     }];
   }
