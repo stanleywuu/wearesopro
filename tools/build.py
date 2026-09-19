@@ -69,8 +69,8 @@ PAGES = [
      "section": "team", "icon": "🥅"},
     {"path": "team/stephanie.html",        "label": "Stephanie The Planner",
      "section": "team", "icon": "📣"},
-    {"path": "team/dale.html",             "label": "Dale The Uncle",
-     "section": "team", "icon": "🚌"},
+    {"path": "team/dale.html",             "label": "Dale The President",
+     "section": "team", "icon": "🎖️"},
     {"path": "team/ricky.html",            "label": "Ricky The Screamer",
      "section": "team", "icon": "📢"},
     # Lives under notes/ but belongs here: the questions are about the people.
