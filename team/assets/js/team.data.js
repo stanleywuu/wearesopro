@@ -10,14 +10,3 @@ window.TEAM_CODES = {
   dale:       "1~1~1~68~36~82~44~36~65~2~4~1~5~6~0~0~3~Dale~44~You don't need to sharpen your skates.~26~4~1~5",  // retired build, thinning grey hair, moustache, no helmet
   ricky:      "1~2~2~26~52~45~34~46~50~3~5~3~5~3~1~1~2~Ricky~3~Woohoo! This is so much fun!~44~3~3~1",  // tall and lanky, mop of hair, never still
 };
-
-// Which moment of each character's Highlight the hub shows them in, in ms.
-// Without it everyone stands in the same idle pose. Frames picked by eye:
-// a save, a windup, a follow-through, a shot, a goal.
-window.TEAM_POSES = {
-  stanley:   2150,   // the puck just off his stick
-  tommy:     1150,   // down in the butterfly
-  stephanie: 1700,   // stick at the top of the windup
-  dale:      2600,   // follow-through
-  ricky:     2600    // GOAL!
-};

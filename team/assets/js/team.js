@@ -9,8 +9,7 @@
 (function () {
 
   const CODES = window.TEAM_CODES || {};
-  const POSES = window.TEAM_POSES || {};
-  const DRAW = window.CAP_DRAW, CODE = window.CAP_CODE, REEL = window.CAP_REEL;
+  const DRAW = window.CAP_DRAW, CODE = window.CAP_CODE;
 
   function fillProfile() {
     const card = document.getElementById("card");
@@ -25,25 +24,11 @@
       canvas.width = DRAW.LW * DRAW.S;
       canvas.height = DRAW.LH * DRAW.S;
       try {
-        const params = CODE.load(code);
-        DRAW.render(canvas.getContext("2d"), params, yaw(params), pose(params, canvas.dataset.who));
+        DRAW.render(canvas.getContext("2d"), CODE.load(code), 0.5, null);
       } catch (e) {
         canvas.hidden = true;
       }
     });
-  }
-
-  // One frame of their own Highlight, so the line-up is five different
-  // players doing five different things. No pose, no reel: they stand there.
-  function pose(params, who) {
-    if (!REEL || !POSES[who]) return null;
-    return REEL.at(REEL.build(params), POSES[who]);
-  }
-
-  // The reel plays side on; an idle player reads better at three quarters.
-  function yaw(params) {
-    const reel = REEL && REEL.build(params);
-    return reel ? reel.yaw : 0.5;
   }
 
   fillProfile();
