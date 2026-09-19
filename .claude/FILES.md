@@ -50,6 +50,7 @@ Character profiles. See `docs/team.md`.
 - `assets/img/cover-tilted.webp` — The real front cover as the home page hero shows it: frame, rounded corners, shadow and the 3deg tilt **baked in** (CSS rotation blurred it). 332x491, displayed at 166x245. Built from `../cover_ebook.jpg` by drawing at 4x and scaling down; re-make it if the cover changes.
 - `assets/img/og-cover.jpg` — 1200x630 share card used as `og:image` on every page.
 - `assets/img/og-create-a-player.jpg` — 1200x630 share card for the Create A Player page.
+- `assets/img/og-team.jpg`, `og-stanley.jpg`, `og-tommy.jpg`, `og-stephanie.jpg`, `og-dale.jpg`, `og-ricky.jpg` — 1200x630 share cards for The Team hub and each profile: name, tagline and that character drawn by `CAP_DRAW`. Made with the temporary `_ogcard.*` generator (recipe in `docs/page-metadata.md`); re-make one if a character's code or tagline changes.
 - `assets/img/create-a-player-thumb.jpg` — 320x320 square crop of the player from the share card, used in the home page feature banner.
 
 ## games/
