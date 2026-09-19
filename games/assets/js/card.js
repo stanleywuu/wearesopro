@@ -29,8 +29,11 @@
     // and the card must not die without one - it threw on a missing element and
     // took the whole card down with it.
     wire("card-replay", function (el) { el.addEventListener("click", play); });
+    // data-new on the link (the team profiles) means "start from this player":
+    // their build, no name, cursor in the Name field.
     wire("card-edit", function (el) {
-      el.href = "/games/create-a-player.html?" + SHARE_KEY + "=" + shareCode();
+      el.href = "/games/create-a-player.html?" + SHARE_KEY + "=" + shareCode() +
+        (el.dataset.new ? "&new=1" : "");
     });
     play();
     requestAnimationFrame(frame);
