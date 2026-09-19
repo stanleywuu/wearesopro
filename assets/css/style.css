@@ -31,6 +31,11 @@ img{max-width:100%;height:auto;display:block}
 .nav-toggle{display:none}
 
 .layout{display:flex;gap:clamp(1rem,3vw,2rem);padding:clamp(1rem,4vw,2rem);align-items:flex-start}
+/* The sidebar is fetched by main.js, so its box has to be reserved or the
+   content column is full width until it lands and everything in it resizes.
+   Only above the stacking breakpoint: stacked, an empty placeholder would be
+   300px of nothing. */
+@media (min-width:961px){.layout > [data-include]{flex:0 0 300px}}
 .sidebar{position:sticky;top:1rem;flex:0 0 300px;background:var(--paper);border:2px solid var(--ink);padding:1.1rem;border-radius:var(--radius);box-shadow:5px 5px 0 rgba(22,34,46,.1)}
 .sidebar h2{display:flex;align-items:center;gap:.6rem;margin:0 0 .6rem;font-size:.8rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .sidebar h2::after{content:"";flex:1;height:2px;background:var(--rule)}
