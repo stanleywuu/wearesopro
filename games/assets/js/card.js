@@ -7,6 +7,7 @@
 
   const DRAW = window.CAP_DRAW, CODE = window.CAP_CODE, REEL = window.CAP_REEL;
   const SHARE = window.CAP_SHARE, STATS = window.CAP_STATS;
+  const PRINT = window.CAP_PRINT;
   const SHARE_KEY = "p";
   const REPLAY_GAP = 900;      // a beat on the last frame before it loops
 
@@ -42,6 +43,14 @@
           host: el.parentNode,
           say: note
         });
+      });
+    });
+    // Only where the page offers it: the team profiles do not.
+    wire("card-print", function (el) {
+      if (!PRINT) return el.remove();
+      el.addEventListener("click", function () {
+        PRINT.download(params);
+        note("Printable card saved - front and back, ready to cut out");
       });
     });
     wire("card-edit", function (el) {
