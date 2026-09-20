@@ -6,6 +6,7 @@
 (function () {
 
   const DRAW = window.CAP_DRAW, CODE = window.CAP_CODE, REEL = window.CAP_REEL;
+  const SHARE = window.CAP_SHARE;
   const SHARE_KEY = "p";
   const REPLAY_GAP = 900;      // a beat on the last frame before it loops
 
@@ -31,12 +32,29 @@
     wire("card-replay", function (el) { el.addEventListener("click", play); });
     // data-new on the link (the team profiles) means "start from this player":
     // their build, no name, cursor in the Name field.
+    // Optional like the rest: the team profiles mount the same card without it.
+    wire("card-share", function (el) {
+      el.addEventListener("click", function () {
+        SHARE.link({
+          url: location.href,
+          title: (params.name || "A beer leaguer") + "'s hockey card",
+          host: el.parentNode,
+          say: note
+        });
+      });
+    });
     wire("card-edit", function (el) {
       el.href = "/games/create-a-player.html?" + SHARE_KEY + "=" + shareCode() +
         (el.dataset.new ? "&new=1" : "");
     });
     play();
     requestAnimationFrame(frame);
+  }
+
+  // Short messages under the card: copied, or copy this yourself.
+  function note(msg) {
+    const el = document.getElementById("card-note");
+    if (el) el.textContent = msg;
   }
 
   function wire(id, apply) {

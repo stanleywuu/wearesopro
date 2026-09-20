@@ -9,6 +9,7 @@
   const GALLERY = window.CAP_GALLERY;
 
   const STORE_KEY = "cap-player";
+  const SHARE = window.CAP_SHARE;
   const SHARE_KEY = "p";
   const NEW_KEY = "new";     // ?p=<code>&new=1: their look, your player
   const SAVE_DELAY = 700;
@@ -309,42 +310,14 @@
   // context, so over plain http - a LAN IP while testing - there is no sheet
   // and the link is copied instead.
   function share() {
-    const url = shareUrl();
-    const who = editor.params.name ? editor.params.name + "'s hockey card" : "My hockey card";
-    if (!navigator.share) return showLink(url);
-    // Only title and url: some share targets use `text` and drop the url,
-    // which would lose the player.
-    navigator.share({ title: who, url: url })
-      .catch(err => { if (err && err.name !== "AbortError") showLink(url); });
+    SHARE.link({
+      url: shareUrl(),
+      title: editor.params.name ? editor.params.name + "'s hockey card" : "My hockey card",
+      host: editor.el("host-footer"),
+      say: function (msg) { editor.status(msg); }
+    });
   }
 
-  // No share sheet, so the link is copied. It is a link to another page now, so
-  // the address bar is left alone - putting it there would make a reload leave
-  // the builder. When the clipboard is refused as well, the link is shown in a
-  // box you can select by hand.
-  function showLink(url) {
-    if (!navigator.clipboard) return showLinkBox(url);
-    navigator.clipboard.writeText(url)
-      .then(() => editor.status("Card link copied - paste it to a teammate"))
-      .catch(() => showLinkBox(url));
-  }
-
-  function showLinkBox(url) {
-    const host = editor.el("host-footer");
-    let box = host.querySelector(".cap-link-box");
-    if (!box) {
-      box = document.createElement("input");
-      box.type = "text";
-      box.readOnly = true;
-      box.className = "cap-link-box";
-      box.setAttribute("aria-label", "Your card link");
-      host.appendChild(box);
-    }
-    box.value = url;           // never innerHTML: this is built from typed text
-    box.focus();
-    box.select();
-    editor.status("Copy the link below");
-  }
 
   function loadShared(params) {
     const code = new URLSearchParams(location.search).get(SHARE_KEY);

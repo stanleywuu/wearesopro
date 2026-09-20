@@ -29,7 +29,8 @@
   <script defer src="/games/assets/js/create-a-player.codec.js"></script>
   <script defer src="/games/assets/js/create-a-player.draw.js"></script>
   <script defer src="/games/assets/js/create-a-player.reel.js"></script>
-  <script defer src="/games/assets/js/card.js?v=4"></script>
+  <script defer src="/games/assets/js/share.js"></script>
+  <script defer src="/games/assets/js/card.js?v=5"></script>
 </head>
 <body>
   <header class="site-header">
@@ -63,8 +64,10 @@
           </div>
         </div>
         <div class="card-actions">
+          <button type="button" class="button" id="card-share">Share this card</button>
           <a class="button" id="card-edit" href="/games/create-a-player.html">Make your own</a>
         </div>
+        <p class="muted card-note" id="card-note" aria-live="polite"></p>
       </section>
     </section>
   </main>
