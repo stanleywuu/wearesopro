@@ -10,6 +10,8 @@
   if (!CODE) return;
 
   const STORE_KEY = "cap-team";
+  const VERSION = 1;
+  const STEPS = {};          // see player-store.js: one step per shape change
   const MIN_SIZE = 6, MAX_SIZE = 16, DEFAULT_SIZE = 12;
 
   function blank(size) {
@@ -45,10 +47,17 @@
   function load() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      return clean(raw ? JSON.parse(raw) : null);
+      return clean(current(raw ? JSON.parse(raw) : null));
     } catch (e) {
       return blank();        // blocked or corrupt storage starts empty
     }
+  }
+
+  function current(raw) {
+    const MIGRATE = window.CAP_MIGRATE;
+    if (!MIGRATE) return raw;
+    const up = MIGRATE.upgrade(raw, VERSION, STEPS);
+    return MIGRATE.ahead(up) ? null : up;    // a team from a newer site is not ours to rewrite
   }
 
   function save(team) {

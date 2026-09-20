@@ -9,11 +9,17 @@
 
 (function () {
 
-  const CODE = window.CAP_CODE;
+  const CODE = window.CAP_CODE, MIGRATE = window.CAP_MIGRATE;
   if (!CODE) return;
 
   const STORE_KEY = "cap-players";
   const LIMIT = 24;            // newest first; the tail falls off the end
+  const VERSION = 1;
+
+  // steps[n] upgrades version n to n+1. Empty because nothing has changed
+  // shape yet: clean() has always been tolerant of what it reads. The first
+  // time the shape does change, bump VERSION and add the step here.
+  const STEPS = {};
 
   function blank() {
     return { v: 1, players: [] };
@@ -47,10 +53,19 @@
   function load() {
     try {
       const raw = localStorage.getItem(STORE_KEY);
-      return clean(raw ? JSON.parse(raw) : null);
+      return clean(current(raw ? JSON.parse(raw) : null));
     } catch (e) {
       return blank();
     }
+  }
+
+  // Old data is brought up to date on the way in. Data from a NEWER version of
+  // the site is left alone and read as empty rather than rewritten by a cleaner
+  // that has never seen its shape - overwriting it would be the real damage.
+  function current(raw) {
+    if (!MIGRATE) return raw;
+    const up = MIGRATE.upgrade(raw, VERSION, STEPS);
+    return MIGRATE.ahead(up) ? null : up;
   }
 
   function save(store) {
