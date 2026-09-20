@@ -435,7 +435,10 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
   list-style:none;
   margin:0;
   padding:0;
-  max-height:220px;   /* scroll like the old feed boxes */
+  /* Fixed, not max: the list is filled from a remote endpoint long after first
+     paint, and a box that grows from nothing to 220px shoves the whole page
+     down - and resizes everything in the column beside it. */
+  height:220px;
   overflow:auto;
 }
 
