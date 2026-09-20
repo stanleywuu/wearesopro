@@ -12,11 +12,13 @@
 (function () {
 
   const CODE = window.CAP_CODE, TEAM = window.CAP_TEAM, PLAYERS = window.CAP_PLAYERS;
+  const MIGRATE = window.CAP_MIGRATE;
   if (!CODE || !TEAM || !PLAYERS) return;
 
   const APP = "we-are-so-pro";
   const KIND = "cap-backup";
   const VERSION = 1;
+  const STEPS = {};          // steps[n] upgrades a version n file to n+1
 
   // ---- export -----------------------------------------------------------
 
@@ -72,7 +74,9 @@
       try {
         data = parse(String(reader.result));
       } catch (e) {
-        return done({ ok: false, message: "That file is not a We Are So Pro backup" });
+        return done({ ok: false, message: e && e.message === "newer"
+          ? "That backup was made by a newer version of this site. Reload the page and try again."
+          : "That file is not a We Are So Pro backup" });
       }
       done(merge(data));
     };
@@ -82,10 +86,17 @@
     reader.readAsText(file);
   }
 
+  // An old file is upgraded to today's shape before anything reads it. A file
+  // from a NEWER version of the site is refused outright: merging it through a
+  // cleaner that predates its shape would drop whatever is new, silently, and
+  // the person would think their backup had been restored.
   function parse(text) {
     const raw = JSON.parse(text);
     if (!raw || typeof raw !== "object" || raw.kind !== KIND) throw new Error("not a backup");
-    return raw;
+    if (!MIGRATE) return raw;
+    const up = MIGRATE.upgrade(raw, VERSION, STEPS);
+    if (MIGRATE.ahead(up)) throw new Error("newer");
+    return up;
   }
 
   // Adding, never replacing: anyone already here stays, and a code that is

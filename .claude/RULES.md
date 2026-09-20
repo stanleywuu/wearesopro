@@ -110,6 +110,30 @@ copies. Add a control once and both get it.
 - Included markup arrives after deferred page scripts run, so anything that needs it
   listens for `partials:ready` (dispatched by `main.js` once the includes resolve).
 
+## Stored data carries a version
+
+Three things outlive a page load: the saved players (`cap-players`), the team
+(`cap-team`) and an exported backup file. Each stamps a `v`, and each is read
+through `CAP_MIGRATE.upgrade()` (`games/assets/js/migrate.js`), which walks a
+ladder of steps from whatever version the data is to today's.
+
+**Adding a field or changing a stored shape means providing the migration in the
+same change.** Not later, not "it'll be tolerant": someone's players are already
+on disk in the old shape.
+
+1. Bump that store's `VERSION`.
+2. Add `STEPS[old] = function (raw) { ...; return raw; }` — one step per version,
+   taking the previous shape and returning the next. Steps run in order, so data
+   several versions behind still arrives current.
+3. If the field belongs on a *player* rather than the store, it is a codec change
+   instead: append it to the end of the share code (see "One builder, two mounts"),
+   because a code already shared has to keep decoding.
+
+Data from a **newer** version than the code reading it is never rewritten: the
+stores read it as empty and an imported backup is refused with a message. An old
+cleaner silently dropping fields it has never heard of is how a backup gets
+quietly emptied.
+
 ## Previewing locally
 
 There is no build step, so a plain static server over the repo root is the whole
