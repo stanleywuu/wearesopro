@@ -60,7 +60,9 @@ PAGES = [
     # player's share view. Listed here only so the sitemap knows about it.
     {"path": "games/card.html"},
 
-    {"path": "team.html",                  "label": "The Team"},
+    # Menu says "Meet Us" (short row); the footer site map says what it is,
+    # because that is the copy a crawler reads.
+    {"path": "team.html",                  "label": "Meet the Early Birds"},
     {"path": "team/updates.html",          "label": "Team Updates",
      "section": "team", "menu": "Recent Updates", "icon": "📰"},
     {"path": "team/stanley.html",          "label": "Stanley The Author",
