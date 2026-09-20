@@ -6,7 +6,7 @@
 (function () {
 
   const DRAW = window.CAP_DRAW, CODE = window.CAP_CODE, REEL = window.CAP_REEL;
-  const SHARE = window.CAP_SHARE;
+  const SHARE = window.CAP_SHARE, STATS = window.CAP_STATS;
   const SHARE_KEY = "p";
   const REPLAY_GAP = 900;      // a beat on the last frame before it loops
 
@@ -26,6 +26,7 @@
     ctx = canvas.getContext("2d");
 
     fillPlate();
+    buildBack();
     // Both optional. The reel loops on its own, so a replay button is a nicety
     // and the card must not die without one - it threw on a missing element and
     // took the whole card down with it.
@@ -100,6 +101,79 @@
     note.className = "muted";
     note.textContent = "No player in this link. Build one and share it to get a card.";
     document.querySelector(".card-stage").insertBefore(note, document.querySelector(".card-actions"));
+  }
+
+  // ---- the back ---------------------------------------------------------
+
+  // Built here rather than in markup: six pages carry this card, and the back
+  // is entirely data - a stat line, their phrase, nothing to lay out by hand.
+  // Every value goes in as text, because all of it came from a URL.
+  function buildBack() {
+    const card = document.getElementById("card");
+    if (!card || !STATS) return;
+
+    const back = document.createElement("div");
+    back.className = "card-back";
+
+    const plate = document.createElement("div");
+    plate.className = "card-back-plate";
+    plate.appendChild(text("p", "card-back-number", params.number ? "#" + params.number : ""));
+    plate.appendChild(text("p", "card-back-name", params.name || "Unnamed"));
+    plate.appendChild(text("p", "card-back-pos",
+      params.position + " \u00b7 shoots " + (params.handedness === "right" ? "right" : "left")));
+    back.appendChild(plate);
+
+    const table = document.createElement("div");
+    table.className = "card-stats";
+    STATS.forPlayer(params, code()).forEach(function (row) {
+      const cell = document.createElement("div");
+      cell.className = "card-stat";
+      cell.appendChild(text("span", "card-stat-label", row[0]));
+      cell.appendChild(text("span", "card-stat-value", String(row[1])));
+      table.appendChild(cell);
+    });
+    back.appendChild(table);
+    back.appendChild(text("p", "card-back-note", "Last season, as far as anyone remembers."));
+    if (params.phrase) back.appendChild(text("p", "card-back-quote", "\u201c" + params.phrase + "\u201d"));
+    back.appendChild(text("p", "card-back-mark", "wearesopro.ca"));
+
+    card.appendChild(back);
+    card.classList.add("has-back");
+    addFlip(card);
+    // ?debug=back opens on the back: a flip cannot be judged from a screenshot,
+    // and the print layout is drawn from what this shows.
+    if (new URLSearchParams(location.search).get("debug") === "back") card.classList.add("flipped");
+  }
+
+  function text(tag, className, value) {
+    const el = document.createElement(tag);
+    el.className = className;
+    el.textContent = value;
+    return el;
+  }
+
+  // The card itself flips, and a button says so - a card that only turns over
+  // when you happen to click it is a card nobody turns over.
+  function addFlip(card) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "button card-flip-btn";
+    button.textContent = "Flip the card";
+    button.setAttribute("aria-pressed", "false");
+    const turn = function () {
+      const on = card.classList.toggle("flipped");
+      button.setAttribute("aria-pressed", String(on));
+      button.textContent = on ? "Flip it back" : "Flip the card";
+    };
+    button.addEventListener("click", turn);
+    card.addEventListener("click", turn);
+    const actions = document.querySelector(".card-actions");
+    if (actions) actions.insertBefore(button, actions.firstChild);
+  }
+
+  // The code as it is now - the same one the stats are hashed from.
+  function code() {
+    return CODE.encode(params);
   }
 
   // ---- the reel ---------------------------------------------------------
