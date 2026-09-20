@@ -9,7 +9,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 - `experiments.html` — "Under construction" page with an email-capture Netlify Form.
 - `links.html` — Amazon / Lulu (self-publish) purchase links.
 - `feedback.html` — Reader feedback form (Netlify Forms).
-- `team.html` — **The Team** hub: a picture button per character (drawn live from `team/assets/js/team.data.js`), names only.
+- `team.html` — **The Team** hub: a picture button per character (drawn live from `team/assets/js/team.data.js`), with the name and that profile's own one-line description. The description is repeated here on purpose (crawlers do not run the includes); `make check` fails if a tile's line stops matching its profile.
 - `thanks.html` — Netlify Forms success/redirect page.
 - `404.html` — Custom 404 page.
 - `robots.txt` — Crawler rules.
