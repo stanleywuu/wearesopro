@@ -27,7 +27,11 @@ Day to day this changes nothing — edit and commit, and the pre-commit hook (in
 
 ## Forms
 
-Uses Netlify Forms. Each form has a honeypot field to reduce spam. Successful submissions redirect to `thanks.html`.
+**Nothing here uses Netlify** (the site deploys to Azure - see Deploying). Forms post
+JSON to a Google Apps Script endpoint with `fetch`, and the page then sends the
+visitor to `thanks.html`. `feedback.html` and a few other pages just link out to a
+Google Form instead. Each posting form keeps a honeypot field, checked in the page
+before anything is sent.
 
 ## Security
 

@@ -6,11 +6,11 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 - `index.html` — Landing page (book cover image, intro).
 - `notes.html` — Editor's notes hub: Acknowledgements, Pipeline, Random Thoughts. **Not in the menus** (build notes don't sell the book); reached from the footer site map. `notes/faqs.html` is in The Team menu instead.
 - `games.html` — Games & Quizzes hub, links out to each game in `games/`.
-- `experiments.html` — "Under construction" page with an email-capture Netlify Form.
+- `experiments.html` — "Under construction" page with an email-capture form (posts JSON to a Google Apps Script endpoint, then redirects to `thanks.html`).
 - `links.html` — Amazon / Lulu (self-publish) purchase links.
-- `feedback.html` — Reader feedback form (Netlify Forms).
+- `feedback.html` — Reader feedback page; links out to a Google Form.
 - `team.html` — **The Team** hub: a picture button per character (drawn live from `team/assets/js/team.data.js`), with the name and that profile's own one-line description. The description is repeated here on purpose (crawlers do not run the includes); `make check` fails if a tile's line stops matching its profile.
-- `thanks.html` — Netlify Forms success/redirect page.
+- `thanks.html` — Success page a form sends you to once it has posted.
 - `404.html` — Custom 404 page.
 - `robots.txt` — Crawler rules.
 - `llms.txt` — LLM/GEO discovery file describing the site for AI crawlers.

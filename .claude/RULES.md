@@ -16,7 +16,7 @@ Source: original project brief (`Prompt`), `README.md`, and accumulated feedback
   `innerHTML` is for markup this repo authors, and only that. `make check` enforces that
   every page carries its CSP meta, but CSP is the seatbelt, not the brakes.
 - External links use `rel="noopener noreferrer"`.
-- Netlify Forms: every form needs a honeypot field.
+- Every form that posts needs a honeypot field (checked in the page before sending). Forms go to a Google Apps Script endpoint; nothing here uses Netlify Forms.
 - Follow standard web security best practices when applicable (sanitize/escape any user-influenced content, avoid `eval`/`innerHTML` with untrusted input, etc.).
 
 ## JS gotchas
