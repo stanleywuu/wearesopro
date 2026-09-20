@@ -50,3 +50,19 @@
   .profile { grid-template-columns: 1fr; }
   .profile .card-stage { justify-items: center; }
 }
+
+.team-invite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  margin-top: 1.5rem;
+  padding: .9rem 1.1rem;
+  background: var(--paper);
+  border: 2px dashed var(--rule);
+  border-radius: 12px;
+  color: var(--muted);
+}
+.team-invite p { margin: 0; }
+.team-invite .button { background: var(--surface); text-decoration: none; }
