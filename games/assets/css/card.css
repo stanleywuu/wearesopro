@@ -75,3 +75,8 @@
 
 .card-actions { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
 .card-actions .button { text-decoration: none; }
+
+/* Whatever the share button has to say: copied, or copy this yourself. */
+.card-note { margin: .2rem 0 0; min-height: 1.2em; text-align: center; font-size: .9rem; }
+.card-actions .cap-link-box { flex: 1 1 100%; padding: .5rem .6rem; border-radius: 8px;
+  border: 1px solid var(--rule); font-size: .85rem; }
