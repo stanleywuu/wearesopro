@@ -150,9 +150,18 @@ function initAnnouncements(endpoint){
   const widget = document.createElement('div');
   widget.className = 'announcements-widget';
   widget.setAttribute('aria-live','polite');
+  // The list is a fixed height and the rants come from a remote endpoint, so
+  // until they land the box would sit there empty. Placeholder lines, not
+  // invented rants: whatever fills this is Stanley's, and made-up ones would
+  // read as his.
   widget.innerHTML = `
     <div class="ann-head">Stanley's Thoughts and Rants</div>
-    <ul class="ann-list" role="list"></ul>
+    <ul class="ann-list" role="list">
+      <li class="ann-loading" aria-hidden="true"><span></span><span></span><span></span></li>
+      <li class="ann-loading" aria-hidden="true"><span></span><span></span></li>
+      <li class="ann-loading" aria-hidden="true"><span></span><span></span><span></span></li>
+      <li class="ann-empty ann-waiting">Stanley is thinking&hellip;</li>
+    </ul>
   `;
 
   // If we're inside <details>, append after the UL. Otherwise, append to the wrap we just added.

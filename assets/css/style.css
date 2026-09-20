@@ -442,6 +442,27 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
   overflow:auto;
 }
 
+/* Placeholder lines while the rants load: grey bars of uneven length, the
+   shape of text rather than text. They are replaced wholesale on arrival. */
+.announcements-widget .ann-loading{
+  padding:.6rem .75rem .2rem .75rem;
+  display:flex;flex-direction:column;gap:.35rem;
+}
+.announcements-widget .ann-loading span{
+  height:.6rem;border-radius:999px;
+  background:linear-gradient(90deg,rgba(22,34,46,.10),rgba(22,34,46,.05),rgba(22,34,46,.10));
+  background-size:200% 100%;
+  animation:ann-shimmer 1.4s linear infinite;
+}
+.announcements-widget .ann-loading span:nth-child(1){width:92%}
+.announcements-widget .ann-loading span:nth-child(2){width:78%}
+.announcements-widget .ann-loading span:nth-child(3){width:55%}
+.announcements-widget .ann-waiting{font-style:italic;opacity:.75}
+@keyframes ann-shimmer{from{background-position:200% 0}to{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){
+  .announcements-widget .ann-loading span{animation:none}
+}
+
 .announcements-widget .ann-item{
   padding:.6rem .75rem .5rem .75rem;
   border-bottom:1px solid rgba(0,0,0,.06);
