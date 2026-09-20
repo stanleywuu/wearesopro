@@ -11,32 +11,52 @@
 (function () {
 
   const PDF = window.CAP_PDF, DRAW = window.CAP_DRAW, STATS = window.CAP_STATS;
+  const REEL = window.CAP_REEL;
 
   const PAGE = { w: 612, h: 792 };          // US Letter, points
   const CARD = { w: 180, h: 252 };          // 2.5 x 3.5 inches, a hockey card
   const GAP = 36;
   const INK = 0.12, MID = 0.45, PALE = 0.75;
 
-  function build(params) {
+  // Four cards on one page: three action shots off their own Highlight, and a
+  // back to fill in. One player, one sheet, cut them out.
+  function build(params, filled) {
+    const typed = filled || { stats: {}, bio: "" };
     const doc = PDF.doc(PAGE.w, PAGE.h);
     const x0 = (PAGE.w - (CARD.w * 2 + GAP)) / 2;
-    const y0 = (PAGE.h - CARD.h) / 2;
+    const y1 = PAGE.h / 2 + 12;                 // top row sits above centre
+    const y0 = y1 - CARD.h - GAP;
 
-    doc.text(x0, PAGE.h - 72, "Print it, cut along the lines, fill in the back.",
+    doc.text(x0, PAGE.h - 62, "Print it, cut along the lines, fill in the back.",
              { size: 11, grey: MID });
 
-    front(doc, x0, y0, params);
-    back(doc, x0 + CARD.w + GAP, y0, params);
+    const shots = poses(params);
+    front(doc, x0, y1, params, shots[0]);
+    front(doc, x0 + CARD.w + GAP, y1, params, shots[1]);
+    front(doc, x0, y0, params, shots[2]);
+    back(doc, x0 + CARD.w + GAP, y0, params, typed);
     return doc.blob();
+  }
+
+  // Three moments of the Highlight, chosen so the player is in frame and the
+  // camera has not travelled yet: standing, into it, and through it. A goalie
+  // gets his own three, because his reel is three saves rather than a shot.
+  function poses(params) {
+    if (!REEL) return [null, null, null];
+    const reel = REEL.build(params);
+    const ms = params.position === "Goalie" ? [0, 1150, 1780] : [0, 1550, 2150];
+    return ms.map(function (at) {
+      return at ? { reel: reel, anim: REEL.at(reel, at) } : null;
+    });
   }
 
   // ---- front -------------------------------------------------------------
 
-  function front(doc, x, y, params) {
+  function front(doc, x, y, params, shot) {
     cut(doc, x, y);
     const photo = { x: x + 10, y: y + 78, w: CARD.w - 20, h: CARD.h - 96 };
     doc.rect(photo.x, photo.y, photo.w, photo.h, { fill: 0.95, stroke: INK, width: 1 });
-    doc.image(player(params), photo.x, photo.y, photo.w, photo.h);
+    doc.image(player(params, shot), photo.x, photo.y, photo.w, photo.h);
 
     // Name plate across the bottom, the way a card has always done it.
     doc.rect(x + 10, y + 34, CARD.w - 20, 40, { fill: INK });
@@ -53,7 +73,7 @@
 
   // ---- back --------------------------------------------------------------
 
-  function back(doc, x, y, params) {
+  function back(doc, x, y, params, typed) {
     cut(doc, x, y);
     let top = y + CARD.h - 24;
     doc.text(x + 14, top, (params.number ? "#" + params.number + "  " : "") + (params.name || "Unnamed"),
@@ -72,12 +92,18 @@
       const cx = x + 14 + i * cellW;
       doc.rect(cx + 1, top, cellW - 2, 30, { stroke: PALE, width: 0.8 });
       doc.centre(cx + 1, cellW - 2, top + 22, label, { size: 6.5, grey: MID });
+      // Printed only if they typed it. An empty box is the whole point.
+      const value = (typed.stats && typed.stats[label]) || "";
+      if (value) doc.centre(cx + 1, cellW - 2, top + 7, value, { font: "bold", size: 11, grey: INK });
     });
 
-    // Ruled lines for a bio, because a card back is mostly someone's story.
+    // Their story, or the space to write one. Ruled lines only where there is
+    // no text: half-typed and half-ruled looks like a form someone abandoned.
     let line = top - 22;
+    const story = wrap(typed.bio || "", 42, 6);
     for (let i = 0; i < 6; i++) {
-      doc.line(x + 14, line, x + CARD.w - 14, line, { grey: PALE, width: 0.6 });
+      if (story[i]) doc.text(x + 14, line + 3, story[i], { size: 8.5, grey: INK });
+      else doc.line(x + 14, line, x + CARD.w - 14, line, { grey: PALE, width: 0.6 });
       line -= 16;
     }
 
@@ -92,19 +118,36 @@
     doc.rect(x, y, CARD.w, CARD.h, { stroke: PALE, width: 0.7, dash: "3 3" });
   }
 
+  // Greedy wrap to a line length, capped at a number of lines.
+  function wrap(text, width, lines) {
+    const out = [];
+    let line = "";
+    String(text).split(/\s+/).forEach(function (word) {
+      if (!word) return;
+      const next = line ? line + " " + word : word;
+      if (next.length <= width) return void (line = next);
+      if (out.length < lines) out.push(line);
+      line = word;
+    });
+    if (line && out.length < lines) out.push(line);
+    return out;
+  }
+
   function quote(text, max) {
     const one = '"' + text + '"';
     return one.length > max ? one.slice(0, max - 2) + '..."' : one;
   }
 
   // The player, drawn big enough that print does not show the pixels.
-  function player(params) {
+  // One frame, drawn big enough that print does not show the pixels. No shot
+  // means the resting pose, three-quarters on, the way the hub draws them.
+  function player(params, shot) {
     const canvas = document.createElement("canvas");
     canvas.width = DRAW.LW * DRAW.S * 2;
     canvas.height = DRAW.LH * DRAW.S * 2;
     const ctx = canvas.getContext("2d");
     ctx.scale(2, 2);
-    DRAW.render(ctx, params, 0.5, null);
+    DRAW.render(ctx, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null);
     return canvas;
   }
 
@@ -113,8 +156,8 @@
     return "hockey-card-" + (who || "player") + ".pdf";
   }
 
-  function download(params) {
-    PDF.save(build(params), name(params));
+  function download(params, filled) {
+    PDF.save(build(params, filled), name(params));
   }
 
   window.CAP_PRINT = { build: build, download: download };

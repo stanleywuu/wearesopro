@@ -28,6 +28,7 @@
 
     fillPlate();
     buildBack();
+    buildFill();
     // Both optional. The reel loops on its own, so a replay button is a nicety
     // and the card must not die without one - it threw on a missing element and
     // took the whole card down with it.
@@ -49,7 +50,7 @@
     wire("card-print", function (el) {
       if (!PRINT) return el.remove();
       el.addEventListener("click", function () {
-        PRINT.download(params);
+        PRINT.download(params, filled);
         note("Printable card saved - front and back, ready to cut out");
       });
     });
@@ -134,15 +135,19 @@
 
     const table = document.createElement("div");
     table.className = "card-stats";
-    STATS.forPlayer(params, code()).forEach(function (row) {
+    labels().forEach(function (label) {
       const cell = document.createElement("div");
       cell.className = "card-stat";
-      cell.appendChild(text("span", "card-stat-label", row[0]));
-      cell.appendChild(text("span", "card-stat-value", String(row[1])));
+      cell.appendChild(text("span", "card-stat-label", label));
+      const value = text("span", "card-stat-value", "");
+      value.dataset.stat = label;
+      cell.appendChild(value);
       table.appendChild(cell);
     });
     back.appendChild(table);
-    back.appendChild(text("p", "card-back-note", "Last season, as far as anyone remembers."));
+    const story = text("p", "card-back-story", "");
+    story.id = "card-back-story";
+    back.appendChild(story);
     if (params.phrase) back.appendChild(text("p", "card-back-quote", "\u201c" + params.phrase + "\u201d"));
     back.appendChild(text("p", "card-back-mark", "wearesopro.ca"));
 
@@ -152,6 +157,82 @@
     // ?debug=back opens on the back: a flip cannot be judged from a screenshot,
     // and the print layout is drawn from what this shows.
     if (new URLSearchParams(location.search).get("debug") === "back") card.classList.add("flipped");
+  }
+
+  // The column headings, which is all CAP_STATS is used for until someone asks
+  // for numbers: the boxes start empty and stay empty unless they fill them.
+  function labels() {
+    return STATS ? STATS.forPlayer(params, "").map(function (row) { return row[0]; }) : [];
+  }
+
+  // ---- filling it in -----------------------------------------------------
+
+  // Typed here, shown on the back, printed in the PDF. Nothing is stored and
+  // nothing is required: an empty box prints as an empty box.
+  const filled = { stats: {}, bio: "" };
+
+  function buildFill() {
+    const panel = document.getElementById("card-fill");
+    if (!panel || !STATS) return;
+    panel.hidden = false;
+    const row = document.getElementById("card-fill-stats");
+    labels().forEach(function (label) {
+      const wrap = document.createElement("label");
+      wrap.className = "card-fill-stat";
+      wrap.appendChild(text("span", "", label));
+      const input = document.createElement("input");
+      input.type = "text";
+      input.inputMode = "numeric";
+      input.maxLength = 5;
+      input.dataset.stat = label;
+      input.addEventListener("input", function () {
+        filled.stats[label] = input.value.trim();
+        showFilled();
+      });
+      wrap.appendChild(input);
+      row.appendChild(wrap);
+    });
+
+    const bio = document.getElementById("card-fill-bio");
+    if (bio) bio.addEventListener("input", function () {
+      filled.bio = bio.value.trim();
+      showFilled();
+    });
+
+    wire("card-fill-roll", function (el) {
+      el.addEventListener("click", function () {
+        const made = STATS.forPlayer(params, code());
+        made.forEach(function (pair) { setStat(pair[0], String(pair[1])); });
+        showFilled();
+        note("A season, invented. Change anything you like.");
+      });
+    });
+    wire("card-fill-clear", function (el) {
+      el.addEventListener("click", function () {
+        labels().forEach(function (label) { setStat(label, ""); });
+        const box = document.getElementById("card-fill-bio");
+        if (box) box.value = "";
+        filled.bio = "";
+        showFilled();
+        note("");
+      });
+    });
+  }
+
+  function setStat(label, value) {
+    filled.stats[label] = value;
+    const input = document.querySelector('#card-fill-stats input[data-stat="' + label + '"]');
+    if (input) input.value = value;
+  }
+
+  // All of it typed by a person, so all of it goes in as text.
+  function showFilled() {
+    labels().forEach(function (label) {
+      const cell = document.querySelector('.card-stat-value[data-stat="' + label + '"]');
+      if (cell) cell.textContent = filled.stats[label] || "";
+    });
+    const story = document.getElementById("card-back-story");
+    if (story) story.textContent = filled.bio;
   }
 
   function text(tag, className, value) {

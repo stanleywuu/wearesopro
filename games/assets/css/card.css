@@ -127,3 +127,33 @@
 @media (prefers-reduced-motion: reduce) {
   .card.has-back { transition: none; }
 }
+
+/* Their words on the back, where the flavour text used to be. */
+.card-back .card-back-story {
+  margin: 0;
+  font-size: .8rem;
+  line-height: 1.35;
+  overflow: hidden;
+}
+
+/* ---- filling it in ----------------------------------------------------
+   Optional and quiet: a panel that looks like a form would suggest the card
+   is unfinished without it. */
+.card-fill { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px dashed var(--rule); }
+.card-fill h2 { margin: 0 0 .7rem; font-size: 1rem; }
+.card-fill h2 .muted { font-weight: 400; font-size: .85rem; }
+
+.card-fill-stats { display: flex; flex-wrap: wrap; gap: .5rem; }
+.card-fill-stat { flex: 1 1 60px; display: flex; flex-direction: column; gap: .2rem;
+  font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.card-fill-stat input { width: 100%; padding: .4rem .45rem; text-align: center;
+  font-size: .95rem; font-weight: 700; color: var(--text);
+  border: 1px solid var(--rule); border-radius: 8px; }
+
+.card-fill-bio { display: block; margin-top: .8rem; font-size: .7rem;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.card-fill-bio textarea { display: block; width: 100%; margin-top: .25rem; padding: .5rem;
+  font: inherit; font-size: .9rem; color: var(--text);
+  border: 1px solid var(--rule); border-radius: 8px; resize: vertical; }
+
+.card-fill-actions { display: flex; gap: .5rem; margin-top: .7rem; }
