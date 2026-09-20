@@ -214,6 +214,32 @@ def write_sitemap(root):
     print("sitemap.xml written")
 
 
+def taglines(root):
+    """The Team hub repeats each profile's one-line description.
+
+    It has to be real text in the hub - crawlers do not run the includes - so
+    the same sentence lives in two files. This is the only thing keeping them
+    the same: edit a profile's line and the hub is stale until it matches.
+    """
+    problems = []
+    hub = root / "team.html"
+    if not hub.exists():
+        return problems
+    source = hub.read_text(encoding="utf-8")
+    tiles = re.findall(r'href="/team/([a-z]+)\.html".*?<span class="roster-tag">(.*?)</span>',
+                       source, flags=re.S)
+    for who, shown in tiles:
+        page = root / "team" / (who + ".html")
+        if not page.exists():
+            continue
+        body = page.read_text(encoding="utf-8")
+        body = body[body.index("<main"):]
+        said = re.search(r'<p class="muted">(.*?)</p>', body, flags=re.S)
+        if said and said.group(1).strip() != shown.strip():
+            problems.append("team.html tagline for %s does not match team/%s.html" % (who, who))
+    return problems
+
+
 def check(root):
     """Report what a crawler would trip over. Does not write anything."""
     problems = []
@@ -239,6 +265,7 @@ def check(root):
                 resolved = root / "index.html"
             if not resolved.exists():
                 problems.append("broken link in %s -> %s" % (path, target))
+    problems += taglines(root)
     for line in problems:
         print("  " + line)
     print("%d problem(s)" % len(problems))

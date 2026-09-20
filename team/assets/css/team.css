@@ -22,17 +22,32 @@
 .roster-player canvas { width: 100%; height: auto; display: block; background: #EEF6FF; }
 
 /* Grows to fill the tile, so a one-line name and a two-line one end level. */
-.roster-name {
+.roster-text {
   flex: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
+  gap: .25rem;
   padding: .55rem .6rem;
   background: var(--ink);
   color: #fff;
-  font-weight: 700;
   text-align: center;
 }
+
+/* The line off their own profile: five names tell you nothing about who to
+   open. Clamped so a long one cannot stretch its tile past the others. */
+.roster-tag {
+  font-size: .8rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: #C7D6E4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.roster-name { font-weight: 700; }
 
 /* Profile: card beside the bio, stacked on a phone. */
 .profile {
