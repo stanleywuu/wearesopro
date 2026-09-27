@@ -19,7 +19,14 @@ window.CAP_DATA = {
     // Overall stature: scales the whole figure about the ice, so a short player
     // keeps his proportions and his feet. Added after v1, so the codec carries
     // it at the END of the share code (see TAIL_SLIDERS).
-    height:       { min: 70, max: 130, value: 100 },
+    //
+    // codeMin is where the share code counts FROM, and it is not min. The floor
+    // was 70, which drew a child rather than a short adult; raising it to 88
+    // would have made every height already in a code 18 units taller, since the
+    // code carries the offset from the minimum. So the offset goes on counting
+    // from 70 and only the slider moved - a player saved below the new floor
+    // comes back standing on it, which is what raising a minimum means.
+    height:       { min: 88, max: 130, value: 100, codeMin: 70 },
     // The face. Size scales the eye; contour is its shape at a constant size -
     // 0 is a wide slit, 100 is tall and round, 50 is the eye as it always was.
     eyeSize:      { min: 60, max: 170, value: 100 },

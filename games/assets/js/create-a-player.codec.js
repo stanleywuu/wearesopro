@@ -66,19 +66,28 @@
   const TAILED = TAIL_SLIDERS.concat(LATE_SLIDERS);
   const CODE_SLIDERS = SLIDER_KEYS.filter(key => TAILED.indexOf(key) < 0);
 
+  // What the share code counts a slider FROM. Normally the minimum, but a
+  // minimum can be RAISED later - and the code carries an offset, so moving the
+  // base would make every value already written to a code jump by the
+  // difference. A slider that has moved its floor keeps its original base in
+  // codeMin, and sanitize() is what brings an old value up to the new floor.
+  function sliderBase(key) {
+    const spec = D.sliders[key];
+    return spec.codeMin === undefined ? spec.min : spec.codeMin;
+  }
+
   // A tail slider left alone goes out empty, so a code that changed nothing
   // here is no longer than it was before the slider existed. Shared by both
   // tail groups.
   function encodeSlider(params, key) {
     const spec = D.sliders[key];
-    return params[key] === spec.value ? "" : params[key] - spec.min;
+    return params[key] === spec.value ? "" : params[key] - sliderBase(key);
   }
 
   // Missing from an older code: that player was built before the slider, so
-  // the default stands rather than min.
+  // the default stands rather than the floor.
   function decodeSlider(field, key) {
-    const spec = D.sliders[key];
-    return field === "" ? spec.value : Number(field) + spec.min;
+    return field === "" ? D.sliders[key].value : Number(field) + sliderBase(key);
   }
 
   // A fresh player every call - callers mutate what they get back.
@@ -181,7 +190,7 @@
       D.shapes.findIndex(s => s.id === params.bodyShape),
       D.shapes.findIndex(s => s.id === params.headShape)
     ];
-    CODE_SLIDERS.forEach(key => fields.push(params[key] - D.sliders[key].min));
+    CODE_SLIDERS.forEach(key => fields.push(params[key] - sliderBase(key)));
     PALETTES.forEach(entry => fields.push(encodeColor(params[entry[0]], entry[1])));
     fields.push(
       D.helmets.findIndex(h => h.id === params.helmetStyle),
@@ -219,7 +228,7 @@
     const next = () => (fields[i++] || "");
     const id = (list, field) => (list[Number(field)] || {}).id;
     const raw = { bodyShape: id(D.shapes, next()), headShape: id(D.shapes, next()) };
-    CODE_SLIDERS.forEach(key => { raw[key] = Number(next()) + D.sliders[key].min; });
+    CODE_SLIDERS.forEach(key => { raw[key] = Number(next()) + sliderBase(key); });
     PALETTES.forEach(entry => { raw[entry[0]] = decodeColor(next(), entry[1]); });
     raw.helmetStyle = id(D.helmets, next());
     raw.handedness = id(D.handedness, next());

@@ -111,6 +111,12 @@ copies. Add a control once and both get it.
   `AUTO_PALETTES`, `LATE_SLIDERS`) in the order they were added, and putting a new
   slider in `TAIL_SLIDERS` would shift the hair, the card colours and the kit along
   behind it. That is why a later slider gets a group of its own at the back. The renderer reads it off `params`; both pages and every saved team get it free.
+- **Raising a slider's minimum needs `codeMin`.** The share code carries a slider as
+  its offset from the minimum, so moving `min` shifts every value already written
+  into a code by the difference. Put the ORIGINAL floor in `codeMin` and move `min`
+  alone: the code goes on counting from the old base, and `sanitize()` brings a value
+  below the new floor up to it - which is what raising a minimum is supposed to do.
+  `height` is the one that has done this (70 -> 88).
 - Included markup arrives after deferred page scripts run, so anything that needs it
   listens for `partials:ready` (dispatched by `main.js` once the includes resolve).
 
