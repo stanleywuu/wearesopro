@@ -76,7 +76,10 @@
           </button>
         </div>
         <div class="card-actions card-actions-quiet">
-          <a class="button" id="card-edit" href="/games/create-a-player.html">
+          <!-- data-new: "another" card, not this one again. The builder keeps
+               the kit and starts a new saved player with the Name field
+               waiting - same as pressing New player there. -->
+          <a class="button" id="card-edit" data-new="1" href="/games/create-a-player.html">
             <span aria-hidden="true">&#127912;</span> Make another card
           </a>
         </div>
