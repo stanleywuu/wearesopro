@@ -336,8 +336,8 @@
   // where anybody stops - with the hands coming in to the centre line, so the
   // bottom of the shaft ends up behind his legs and the puck leaves from
   // there. The recovery is the only ordinary part of it.
-  const CHEEKY_BACK = -1.2;      // radians of swing, where a wrist shot takes 1.15
-  const CHEEKY_TILT = 0.55;      // and the shaft tips back, so the blade clears his heels
+  const CHEEKY_BACK = -0.5;      // a little across the body, no more
+  const CHEEKY_TILT = 0.92;      // the shaft swings back under him, hands staying put
 
   function cheekyAt(reel, ms, anim) {
     if (ms < reel.glide) return;

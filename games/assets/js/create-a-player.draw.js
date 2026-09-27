@@ -1218,18 +1218,16 @@
   // above cannot do - it only ever moves the blade sideways. Positive angle
   // takes the blade up and back into the windup; negative finishes it high in
   // front on the follow-through.
-  // Between the legs: the hands come down off the chest to the hips and in to
-  // the centre line. That is all this does - the shaft is swung back through
-  // the legs by the ordinary lift, which now turns about the dropped hand, so
-  // the blade ends up behind him at ice level.
+  // Between the legs: the top hand does NOT go anywhere. It stays out in front
+  // of him, where it was - all this does is bring it in to the centre line, so
+  // the shaft hangs between his legs instead of outside one. What goes back is
+  // the bottom of the stick, and that is the lift rotating about this hand.
   function tuckStick(s, dims, t) {
-    const drop = { x: s.topHand.x * (1 - 0.8 * t),
-                   y: s.topHand.y - (s.topHand.y - (dims.hipY + 6)) * t,
-                   z: s.topHand.z - 22 * t };
-    const by = { x: drop.x - s.topHand.x, y: drop.y - s.topHand.y, z: drop.z - s.topHand.z };
-    const move = pt => ({ x: pt.x + by.x, y: pt.y + by.y, z: pt.z + by.z });
+    const x = s.topHand.x * (1 - 0.95 * t);
+    const by = x - s.topHand.x;
+    const move = pt => ({ x: pt.x + by, y: pt.y, z: pt.z });
     return {
-      hand: s.hand, topHand: drop,
+      hand: s.hand, topHand: { x: x, y: s.topHand.y, z: s.topHand.z },
       butt: move(s.butt), heel: move(s.heel), toe: move(s.toe), lowHand: move(s.lowHand)
     };
   }
