@@ -10,3 +10,12 @@ window.TEAM_CODES = {
   dale:       "1~1~1~68~36~82~44~36~65~2~4~1~5~6~0~0~3~Dale~44~You don't need to sharpen your skates.~26~4~1~5",  // retired build, thinning grey hair, moustache, no helmet
   ricky:      "1~2~2~26~52~45~34~46~50~3~6~3~2~3~1~1~2~Ricky~3~Woohoo! This is so much fun!~44~3~3~1",  // tall and lanky, white and red, never still
 };
+
+// A real season for a character who has one, keyed the same way. A profile
+// card shows these on its back instead of the invented line CAP_STATS hashes
+// out of the code - Stanley's are from the book, so they are his, not a guess.
+// Anyone missing from here keeps the empty boxes, which is what the card is
+// for: print it and fill it in.
+window.TEAM_STATS = {
+  stanley: { GP: 24, G: 3, A: 0, PTS: 3 }
+};

@@ -32,6 +32,7 @@
     buildPoses();
     buildColours();
     buildFill();
+    loadGivenStats();
     // ?debug=print opens the print panel on load - it is three clicks deep
     // otherwise, and every change to it has to be looked at.
     if (new URLSearchParams(location.search).get("debug") === "print") openPrint();
@@ -512,6 +513,25 @@
         note("");
       });
     });
+  }
+
+  // A character with a real season carries it on the card element (team.js puts
+  // it there from TEAM_STATS). Only the columns this card has are taken, and
+  // every value goes in as text - it is data off an attribute like any other.
+  function loadGivenStats() {
+    const card = document.getElementById("card");
+    if (!card || !card.dataset.stats) return;
+    let season;
+    try {
+      season = JSON.parse(card.dataset.stats);
+    } catch (e) {
+      return;
+    }
+    labels().forEach(function (label) {
+      if (season[label] == null) return;
+      setStat(label, String(season[label]));
+    });
+    showFilled();
   }
 
   function setStat(label, value) {

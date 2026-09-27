@@ -29,7 +29,7 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 Character profiles. See `docs/team.md`.
 - `team/updates.html` — Recent Updates posts (was `teamupdates.html`; the old URL redirects here).
 - `team/stanley.html`, `team/tommy.html`, `team/stephanie.html`, `team/dale.html`, `team/ricky.html` — one profile each: the hockey card (`card.js` + `card.css`) beside a bio, quick facts and a buy-the-book button. Adding someone: copy a profile, add their code to `team.data.js`, a `PAGES` entry with `section: "team"`, and a tile on `team.html`.
-- `team/assets/js/team.data.js` — `TEAM_CODES`: **the** one place each character's Create A Player code lives. Change how someone looks here and nowhere else.
+- `team/assets/js/team.data.js` — `TEAM_CODES`: **the** one place each character's Create A Player code lives. Change how someone looks here and nowhere else. `TEAM_STATS` beside it holds a real season for anyone who has one (Stanley's, from the book), which the profile's card back shows instead of the invented line `CAP_STATS` hashes out of the code; anyone missing from it keeps the empty boxes.
 - `team/assets/js/team.js` — draws the hub's picture buttons (`canvas[data-who]`) and hands a profile's code to its card (`#card[data-who]` → `data-player`).
 - `team/assets/css/team.css` — hub roster grid and the profile's card-beside-bio layout.
 

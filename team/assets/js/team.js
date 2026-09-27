@@ -2,18 +2,25 @@
 // through the codec's whitelist before anything draws them.
 //
 // Hub: every canvas[data-who] gets a still of that character.
-// Profile: #card[data-who] gets its code as data-player, which card.js reads.
+// Profile: #card[data-who] gets its code as data-player and, for anyone with a
+// real season in TEAM_STATS, that as data-stats. Both are read by card.js.
 // This runs as a deferred script and card.js waits for partials:ready, so the
 // attribute is always in place before the card looks for it.
 
 (function () {
 
   const CODES = window.TEAM_CODES || {};
+  const SEASONS = window.TEAM_STATS || {};
   const DRAW = window.CAP_DRAW, CODE = window.CAP_CODE;
 
   function fillProfile() {
     const card = document.getElementById("card");
-    if (card && CODES[card.dataset.who]) card.dataset.player = CODES[card.dataset.who];
+    if (!card || !CODES[card.dataset.who]) return;
+    card.dataset.player = CODES[card.dataset.who];
+    // A season, for whoever has one. card.js reads it, keeps only the columns
+    // that card actually has, and shows the rest empty.
+    const season = SEASONS[card.dataset.who];
+    if (season) card.dataset.stats = JSON.stringify(season);
   }
 
   function drawTiles() {
