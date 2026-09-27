@@ -86,7 +86,11 @@
     cut(doc, x, y);
     const photo = { x: x + 10, y: y + 78, w: CARD.w - 20, h: CARD.h - 96 };
     doc.rect(photo.x, photo.y, photo.w, photo.h, { fill: 0.95, stroke: INK, width: 1 });
-    doc.image(player(params, shot), photo.x, photo.y, photo.w, photo.h);
+    // Fitted, never stretched: the render is taller than it is wide (180x200)
+    // and the photo window is not, so filling the window made every player a
+    // stone heavier than they are on screen.
+    const box = fit(photo, DRAW.LW / DRAW.LH);
+    doc.image(player(params, shot), box.x, box.y, box.w, box.h);
 
     // Name plate across the bottom, the way a card has always done it.
     doc.rect(x + 10, y + 34, CARD.w - 20, 40, { fill: INK });
@@ -140,6 +144,13 @@
     if (params.phrase) {
       doc.text(x + 14, y + 22, quote(params.phrase, 44), { font: "italic", size: 8, grey: MID });
     }
+  }
+
+  // The biggest rectangle of the given aspect that fits inside a box, centred.
+  function fit(box, aspect) {
+    const w = Math.min(box.w, box.h * aspect);
+    const h = w / aspect;
+    return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w: w, h: h };
   }
 
   // The cut line IS the card's edge: dashed, so it reads as "cut here" rather

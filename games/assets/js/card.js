@@ -128,7 +128,21 @@
   function buildBack() {
     const card = document.getElementById("card");
     if (!card || !STATS) return;
+    card.appendChild(makeBack());
+    card.classList.add("has-back");
+    addFlip(card, document.querySelector(".card-actions"));
+    // ?debug=back opens on the back: a flip cannot be judged from a screenshot.
+    const debug = new URLSearchParams(location.search).get("debug");
+    if (debug === "back") card.classList.add("flipped");
+    // ?debug=print opens the print panel, for the same reason.
+    if (debug === "print") setTimeout(openPrint, 0);
+  }
 
+  // The back as an element rather than markup in a page: six pages carry this
+  // card, the back is entirely data, and TWO of them exist at once - the card
+  // and the one in the print preview. Classes throughout, no ids, and every
+  // value goes in as text because all of it came from a URL.
+  function makeBack() {
     const back = document.createElement("div");
     back.className = "card-back";
 
@@ -152,22 +166,10 @@
       table.appendChild(cell);
     });
     back.appendChild(table);
-    const story = text("p", "card-back-story", "");
-    story.id = "card-back-story";
-    back.appendChild(story);
+    back.appendChild(text("p", "card-back-story", ""));
     if (params.phrase) back.appendChild(text("p", "card-back-quote", "\u201c" + params.phrase + "\u201d"));
     back.appendChild(text("p", "card-back-mark", "wearesopro.ca"));
-
-    card.appendChild(back);
-    card.classList.add("has-back");
-    addFlip(card);
-    // ?debug=back opens on the back: a flip cannot be judged from a screenshot,
-    // and the print layout is drawn from what this shows.
-    const debug = new URLSearchParams(location.search).get("debug");
-    if (debug === "back") card.classList.add("flipped");
-    // ?debug=print opens the print panel: the flow cannot be judged from a
-    // screenshot otherwise, and the sheet is drawn from what it shows.
-    if (debug === "print") setTimeout(openPrint, 0);
+    return back;
   }
 
   // The column headings, which is all CAP_STATS is used for until someone asks
@@ -182,13 +184,14 @@
   // This is only about the still that goes on paper, so it is a row of frames
   // to choose from rather than anything that interrupts the loop.
   const printing = { pose: 1, allPoses: false };
-  let held = null;           // the frame the card is frozen on, or null
+  let preview = null;        // the small card in the panel: what will print
 
   function openPrint() {
     const panel = document.getElementById("card-print-panel");
     if (!panel) return;
     panel.hidden = false;
-    hold(printing.pose);
+    buildPreview();
+    drawPreview();
     note("");
     panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
@@ -196,14 +199,59 @@
   function closePrint() {
     const panel = document.getElementById("card-print-panel");
     if (panel) panel.hidden = true;
-    held = null;
-    play();                  // back to the Highlight
     note("");
   }
 
-  function hold(i) {
-    const shots = PRINT && PRINT.poses ? PRINT.poses(params) : [];
-    held = shots[i] || { reel: null, anim: null };
+  // A small card of its own, with its own flip button. The big card above goes
+  // on playing its Highlight - freezing it to preview the print was worse than
+  // the problem, because then neither one is doing its job.
+  function buildPreview() {
+    const host = document.getElementById("card-preview");
+    if (!host || preview) return;
+
+    const card = document.createElement("div");
+    card.className = "card card-preview has-back";
+
+    const frame = document.createElement("div");
+    frame.className = "card-frame";
+    const photo = document.createElement("div");
+    photo.className = "card-photo";
+    const shot = document.createElement("canvas");
+    shot.width = DRAW.LW * DRAW.S;
+    shot.height = DRAW.LH * DRAW.S;
+    photo.appendChild(shot);
+    frame.appendChild(photo);
+    frame.appendChild(plate());
+    if (params.phrase) {
+      frame.appendChild(text("p", "card-quote", "“" + params.phrase + "”"));
+    }
+    card.appendChild(frame);
+    card.appendChild(makeBack());
+    host.appendChild(card);
+
+    preview = { card: card, canvas: shot };
+    addFlip(card, document.getElementById("card-pose-flip"));
+    showFilled();            // anything already typed
+  }
+
+  // The front's name plate, same shape as the one in the page's own markup.
+  function plate() {
+    const el = document.createElement("div");
+    el.className = "card-plate";
+    el.appendChild(text("p", "card-number", params.number ? "#" + params.number : ""));
+    const id = document.createElement("div");
+    id.className = "card-id";
+    id.appendChild(text("h3", "card-name", params.name || "Unnamed"));
+    id.appendChild(text("p", "card-pos", params.position));
+    el.appendChild(id);
+    return el;
+  }
+
+  function drawPreview() {
+    if (!preview || !PRINT || !PRINT.poses) return;
+    const shot = PRINT.poses(params)[printing.pose];
+    const c = preview.canvas.getContext("2d");
+    DRAW.render(c, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null);
   }
 
   const LABELS = {
@@ -246,7 +294,7 @@
 
   function choose(i) {
     printing.pose = i;
-    if (held) hold(i);       // the card follows the choice while it is frozen
+    drawPreview();           // the preview follows the choice; the card above plays on
     const tiles = document.querySelectorAll(".card-pose");
     tiles.forEach(function (tile, at) {
       tile.classList.toggle("chosen", at === i);
@@ -316,11 +364,11 @@
   // All of it typed by a person, so all of it goes in as text.
   function showFilled() {
     labels().forEach(function (label) {
-      const cell = document.querySelector('.card-stat-value[data-stat="' + label + '"]');
-      if (cell) cell.textContent = filled.stats[label] || "";
+      document.querySelectorAll('.card-stat-value[data-stat="' + label + '"]')
+        .forEach(function (cell) { cell.textContent = filled.stats[label] || ""; });
     });
-    const story = document.getElementById("card-back-story");
-    if (story) story.textContent = filled.bio;
+    document.querySelectorAll(".card-back-story")
+      .forEach(function (el) { el.textContent = filled.bio; });
   }
 
   function text(tag, className, value) {
@@ -333,35 +381,32 @@
   // A corner icon on the card itself, not a button in a row: the card turns
   // over wherever it is - on a profile, or frozen inside the print panel - and
   // clicking anywhere on the card does the same thing.
-  function addFlip(card) {
+  // Icon AND words: an icon on its own reads as decoration and nobody turns the
+  // card over. Each card gets its own button, flipping that card and no other -
+  // the one under the picture choices turns the preview, not the card above it.
+  function addFlip(card, host) {
+    if (!host) return;
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "card-flip-btn";
-    button.setAttribute("aria-label", "Flip the card");
+    button.className = "button card-flip-btn";
     button.setAttribute("aria-pressed", "false");
     const glyph = document.createElement("span");
     glyph.setAttribute("aria-hidden", "true");
     glyph.textContent = "\u21BB";
     button.appendChild(glyph);
+    button.appendChild(document.createTextNode(" Flip the card"));
 
     const turn = function () {
       const on = card.classList.toggle("flipped");
       button.setAttribute("aria-pressed", String(on));
-      button.setAttribute("aria-label", on ? "Flip it back" : "Flip the card");
+      button.lastChild.textContent = on ? " Show the front" : " Flip the card";
     };
     button.addEventListener("click", function (e) {
       e.stopPropagation();       // the card's own click would undo this one
       turn();
     });
     card.addEventListener("click", turn);
-
-    // Outside the card, not in it: the card is what rotates, so an icon inside
-    // it ends up mirrored on the left and sitting on top of the number.
-    const holder = document.createElement("div");
-    holder.className = "card-holder";
-    card.parentNode.insertBefore(holder, card);
-    holder.appendChild(card);
-    holder.appendChild(button);
+    host.appendChild(button);
   }
 
   // The code as it is now - the same one the stats are hashed from.
@@ -376,13 +421,7 @@
     start = performance.now();
   }
 
-  // While the print panel is open the card holds the picture that is about to
-  // be printed. Otherwise it plays its Highlight, which is the point of it.
   function frame(now) {
-    if (held) {
-      DRAW.render(ctx, params, held.reel ? held.reel.yaw : 0.5, held.anim || null);
-      return requestAnimationFrame(frame);
-    }
     const ms = now - start;
     const anim = REEL.at(reel, ms) || lastFrame();
     if (ms > reel.end + REPLAY_GAP) return play(), requestAnimationFrame(frame);
