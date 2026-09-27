@@ -1555,7 +1555,12 @@
     const glass = top - BOARDS.post * FIT;
     ctx.fillStyle = "rgba(255,255,255,.45)";
     ctx.fillRect(0, p(glass), p(LW), p(top - glass));
-    for (let x = BOARDS.bay / 2; x < LW; x += BOARDS.bay) {
+    // The posts travel with the camera - they are the only thing on a plain
+    // wall that can show it moving - so a pan slides them rather than leaving
+    // the rink pinned to the frame.
+    const slide = ANIM ? -PAN_MAX * (ANIM.pan || 0) : 0;
+    const first = BOARDS.bay / 2 + (slide % BOARDS.bay) - BOARDS.bay;
+    for (let x = first; x < LW + BOARDS.bay; x += BOARDS.bay) {
       L(ctx, x, top, x, glass, "rgba(90,104,117,.22)", 0.9);
     }
     L(ctx, 0, glass, LW, glass, "rgba(90,104,117,.45)", 1.1);
