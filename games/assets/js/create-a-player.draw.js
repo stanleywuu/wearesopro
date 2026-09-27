@@ -1539,7 +1539,7 @@
   // ice is a man falling over in a void; put the dasher behind him and it is a
   // man falling over at the rink. Drawn flat across the frame, low enough that
   // the player still stands clear of it.
-  const BOARDS = { h: 66, cap: 3.2, kick: 7, post: 26, bay: 26 };
+  const BOARDS = { h: 66, cap: 2.8, kick: 6, post: 26, bay: 26 };
 
   function drawBoards(ctx) {
     const h = BOARDS.h * FIT, base = GROUND - 1, top = base - h;
@@ -1555,18 +1555,17 @@
       L(ctx, x, top, x, glass, "rgba(90,104,117,.22)", 0.9);
     }
     L(ctx, 0, glass, LW, glass, "rgba(90,104,117,.45)", 1.1);
-    for (let x = 0; x <= LW; x += BOARDS.bay) {
-      L(ctx, x, top, x, base, "rgba(90,104,117,.26)", 0.6);
-    }
-    ctx.fillStyle = "#C8DCF0";                       // kick plate along the foot
+    // The dasher itself is left plain: seams drawn across it only read as
+    // clutter behind a player, and the two strips are what say "boards".
+    ctx.fillStyle = "#F2C94C";                       // kick plate along the foot
     ctx.fillRect(0, p(base - BOARDS.kick * FIT), p(LW), p(BOARDS.kick * FIT));
     // The cap rail, drawn last and inked top and bottom: it is the line that
     // says where the ice stops, so it has to read at a glance.
     const cap = BOARDS.cap * FIT;
-    ctx.fillStyle = "#F2C94C";
+    ctx.fillStyle = "#EF7B2E";
     ctx.fillRect(0, p(top), p(LW), p(cap));
-    L(ctx, 0, top, LW, top, OUTLINE, 1.1);
-    L(ctx, 0, top + cap, LW, top + cap, OUTLINE, 1.1);
+    L(ctx, 0, top, LW, top, OUTLINE, 0.8);
+    L(ctx, 0, top + cap, LW, top + cap, OUTLINE, 0.8);
     L(ctx, 0, base, LW, base, "rgba(90,104,117,.25)", 0.5);   // where it meets the ice
   }
 
