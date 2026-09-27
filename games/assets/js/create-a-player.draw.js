@@ -1658,13 +1658,22 @@
     return Math.min(1.45, (GROUND - TOP_MARGIN) / (topY * HEIGHT_MAX)) * heightFactor(params);
   }
 
-  // Every player scaled to exactly the same rendered height, whatever their
-  // sliders say. Uncapped on purpose: the cap exists to stop a tiny build
-  // blowing up in the builder frame, and here "the same height as everyone
-  // else" is the whole point. Perspective, not the sliders, is what makes one
-  // player smaller than another in a group shot.
+  // Every build put on the same baseline and then given its own stature, for a
+  // GROUP: a short player has to be short next to the others, and that is the
+  // only place being short means anything. Uncapped on purpose - the cap exists
+  // to stop a tiny build blowing up in the builder frame, and here standing at
+  // the same scale as everyone else is the whole point.
   function uniformFit(params) {
     return (GROUND - TOP_MARGIN) / computeDims(params).topY * heightFactor(params);
+  }
+
+  // A card is a portrait: this player, filling the picture, with the same small
+  // gap over the helmet every time. Stature is deliberately NOT in here. A card
+  // has nobody to be taller than, and multiplying it in - which is what the
+  // card used to do, via uniformFit - pushed a tall build's head clean off the
+  // top of the frame and left a short one adrift in empty ice.
+  function portraitFit(params) {
+    return (GROUND - TOP_MARGIN) / computeDims(params).topY;
   }
 
   // opts.background === false draws the figure alone, on whatever is already
@@ -1745,7 +1754,8 @@
     FRAME: GROUND - TOP_MARGIN,
     render: render,
     computeDims: computeDims,
-    uniformFit: uniformFit
+    uniformFit: uniformFit,
+    portraitFit: portraitFit
   };
 
 })();

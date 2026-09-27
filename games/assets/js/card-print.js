@@ -270,11 +270,12 @@
     canvas.height = DRAW.LH * DRAW.S * 2;
     const ctx = canvas.getContext("2d");
     ctx.scale(2, 2);
-    // uniformFit, not the builder's auto zoom: auto leaves headroom for the
+    // portraitFit, not the builder's auto zoom: auto leaves headroom for the
     // tallest build there is, which on a card is a third of the picture spent
-    // on empty ice above the helmet.
+    // on empty ice above the helmet. Not uniformFit either - that is the group
+    // fit, and it multiplies the stature back in, which cropped a tall build.
     DRAW.render(ctx, params, shot ? shot.yaw : 0.5, shot ? shot.anim : null,
-                { background: false, fit: DRAW.uniformFit(params) });
+                { background: false, fit: DRAW.portraitFit(params) });
     return canvas;
   }
 

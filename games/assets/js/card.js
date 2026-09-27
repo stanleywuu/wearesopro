@@ -386,7 +386,7 @@
     const ctx2 = canvas.getContext("2d");
     ctx2.scale(0.5, 0.5);
     DRAW.render(ctx2, params, shot ? shot.yaw : 0.5, shot ? shot.anim : null,
-                { background: false, fit: DRAW.uniformFit(params) });
+                { background: false, fit: DRAW.portraitFit(params) });
     return canvas;
   }
 
@@ -532,7 +532,7 @@
     if (ms > reel.end + REPLAY_GAP) return play(), requestAnimationFrame(frame);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     DRAW.render(ctx, params, anim ? reel.yaw : 0.5, anim,
-                { background: false, fit: DRAW.uniformFit(params) });
+                { background: false, fit: DRAW.portraitFit(params) });
     requestAnimationFrame(frame);
   }
 
