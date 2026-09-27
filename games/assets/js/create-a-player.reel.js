@@ -270,22 +270,32 @@
     }
   }
 
-  // Glide in, sink into the shot, sweep through it.
-  function wristAt(reel, ms, anim) {
-    if (ms >= reel.glide && ms < reel.wind) {
-      const t = (ms - reel.glide) / (reel.wind - reel.glide);
-      anim.crouch = 0.35 + 0.65 * t;      // sink into it
-      anim.swing = -1.15 * t;
-    } else if (ms >= reel.wind && ms < reel.contact) {
-      const t = (ms - reel.wind) / (reel.contact - reel.wind);
+  // The wrist shot itself, as three windows: load the stick back, sweep it
+  // through the puck, rise out of the follow-through. The plain shot and the
+  // spin-o-rama both play THIS - they differ only in when the load starts and
+  // what he is doing on the way in.
+  const BACK = -1.15, THROUGH = 1.35;
+
+  function wristShot(anim, ms, t) {
+    if (ms >= t.load && ms < t.release) {
+      const w = (ms - t.load) / (t.release - t.load);
+      anim.crouch = t.crouch + (1 - t.crouch) * w;    // sink into it
+      anim.swing = BACK * w;
+    } else if (ms >= t.release && ms < t.contact) {
+      const w = (ms - t.release) / (t.contact - t.release);
       anim.crouch = 1;
-      anim.swing = -1.15 + 2.5 * t;
-    } else if (ms >= reel.contact) {
-      // Rise back up out of the follow-through.
-      const t = Math.min(1, (ms - reel.contact) / 900);
-      anim.crouch = 1 - 0.8 * t;
-      anim.swing = 1.35;
+      anim.swing = BACK + (THROUGH - BACK) * w;
+    } else if (ms >= t.contact) {
+      const w = Math.min(1, (ms - t.contact) / 900);
+      anim.crouch = 1 - 0.8 * w;
+      anim.swing = THROUGH;
     }
+  }
+
+  // Glide in, then shoot: the load starts where the glide ends.
+  function wristAt(reel, ms, anim) {
+    wristShot(anim, ms, { load: reel.glide, release: reel.wind,
+                          contact: reel.contact, crouch: 0.35 });
   }
 
   // The turn and the shot are one move. The rotation carries its speed all the
@@ -295,21 +305,9 @@
   function spinAt(reel, ms, anim) {
     const t = Math.min(1, ms / reel.spin);
     anim.yaw = reel.yaw + Math.PI * 2 * t * t * (3 - 2 * t);
-    if (ms < reel.wind) {
-      anim.crouch = 0.35 + 0.25 * (ms / reel.wind);
-    } else if (ms < reel.pull) {
-      const w = (ms - reel.wind) / (reel.pull - reel.wind);
-      anim.crouch = 0.6 + 0.4 * w;
-      anim.swing = -1.15 * w;            // loading up out of the turn
-    } else if (ms < reel.contact) {
-      const w = (ms - reel.pull) / (reel.contact - reel.pull);
-      anim.crouch = 1;
-      anim.swing = -1.15 + 2.5 * w;      // and through it
-    } else {
-      const w = Math.min(1, (ms - reel.contact) / 900);
-      anim.crouch = 1 - 0.8 * w;
-      anim.swing = 1.35;
-    }
+    if (ms < reel.wind) anim.crouch = 0.35 + 0.25 * (ms / reel.wind);
+    wristShot(anim, ms, { load: reel.wind, release: reel.pull,
+                          contact: reel.contact, crouch: 0.6 });
   }
 
   // The edge goes while he is still going. The turn accelerates the way a fall
