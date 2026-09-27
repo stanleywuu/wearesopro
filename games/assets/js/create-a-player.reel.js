@@ -341,20 +341,15 @@
 
   function cheekyAt(reel, ms, anim) {
     if (ms < reel.glide) return;
-    if (ms < reel.contact) {
-      const t = (ms - reel.glide) / (reel.contact - reel.glide);
-      const ease = t * t * (3 - 2 * t);
-      anim.crouch = 0.35 + 0.5 * ease;
-      anim.swing = CHEEKY_BACK * ease;
-      anim.lift = CHEEKY_TILT * ease;    // the bottom of the shaft goes out behind him
-      anim.tuck = ease;                  // hands in to the hip, on the centre line
-    } else {
-      const t = Math.min(1, (ms - reel.contact) / 700);
-      anim.crouch = 0.85 - 0.55 * t;
-      anim.swing = CHEEKY_BACK + (CHEEKY_BACK * -1 + 0.5) * t;   // back out in front
-      anim.lift = CHEEKY_TILT * (1 - t);
-      anim.tuck = 1 - t;
-    }
+    const t = Math.min(1, (ms - reel.glide) / (reel.contact - reel.glide));
+    const ease = t * t * (3 - 2 * t);
+    anim.swing = CHEEKY_BACK * ease;
+    anim.lift = CHEEKY_TILT * ease;      // the bottom of the shaft goes out behind him
+    anim.tuck = ease;                    // hands in to the centre line and down to the waist
+    // Nothing is put back afterwards. He shot it from there; he stays there,
+    // and only stands out of the crouch to watch it go.
+    if (ms < reel.contact) return (anim.crouch = 0.35 + 0.5 * ease), undefined;
+    anim.crouch = 0.85 - 0.35 * Math.min(1, (ms - reel.contact) / 700);
   }
 
   // The edge goes while he is still going. The turn accelerates the way a fall
