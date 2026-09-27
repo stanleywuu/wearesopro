@@ -111,21 +111,24 @@
     };
   }
 
-  // Loses an edge. He is skating it out of the corner, the skate goes, and he
-  // is on his back with the puck skittering away without him - which is why
-  // there is no net in this one: nothing is going in.
+  // Loses an edge. He never stops: the skate goes while he is still moving, he
+  // goes over travelling, and he slides on his back until friction takes it -
+  // so there is no glide-stop-fall in it anywhere. No net in this one either:
+  // nothing is going in.
   function wipeoutReel(params) {
     return {
       kind: "wipeout",
       yaw: SIDE_ON,
       mirror: params.handedness === "left",
       label: "Wipeout!",
-      home: 14,                  // still carrying it forward when the edge goes
-      glide: 900,
-      catch: 1150,               // the skate catches
-      down: 1850,                // flat on the ice
-      stop: 2750,                // done sliding
-      end: 3500                  // a beat lying there, and out - not a nap
+      home: 0,
+      glide: 1,                  // no glide phase - he is moving from frame one
+      speed: 0.06,               // units per ms, carried right through the fall
+      from: -62,                 // coming in from the corner
+      catch: 700,                // the skate catches
+      down: 1350,                // shoulder hits the ice
+      stop: 2250,                // friction has it
+      end: 2550                  // long enough to read the word, and out
     };
   }
 
@@ -293,41 +296,51 @@
     wristAt(reel, ms, anim);
   }
 
-  // The edge goes: he drops, the skates slide out ahead of him, and the fall
-  // accelerates the way a fall does - t*t, not a constant turn. Flat is a bit
-  // short of a right angle, because a player on the ice lands on a shoulder.
+  // The edge goes while he is still going. The turn accelerates the way a fall
+  // does (t*t, not a constant rate) and lands with one small settle rather than
+  // stopping dead. Flat is a bit short of a right angle, because a player on
+  // the ice lands on a shoulder.
   const FLAT = 1.38;             // radians, about 79 degrees
 
   function wipeoutFrame(reel, ms, anim) {
     anim.net = 0;                // no net in this one: nothing is going in
     anim.arc = 0;                // the puck skitters flat along the ice
+    anim.shift = wipeoutShift(reel, ms);
     if (ms >= reel.catch) {
       anim.puckT = Math.min(1, (ms - reel.catch) / (reel.stop - reel.catch));
     }
     if (ms < reel.catch) {
-      // The moment before: he is already off balance, arms coming up.
-      const t = Math.max(0, (ms - reel.glide) / (reel.catch - reel.glide));
-      anim.crouch = 0.35 + 0.35 * t;
-      anim.lift = -0.9 * t;              // stick flies up as the feet go
+      // Skating it up the ice, and off balance for the last stride of it.
+      const t = Math.max(0, (ms - (reel.catch - 350)) / 350);
+      anim.crouch = 0.3 + 0.25 * t;
+      anim.lift = -0.9 * t * t;          // stick coming up as the feet go
       anim.swing = 0.4 * t;
     } else if (ms < reel.down) {
       const t = (ms - reel.catch) / (reel.down - reel.catch);
       anim.fall = FLAT * t * t;
-      anim.crouch = 0.7 + 0.3 * t;
+      anim.crouch = 0.55 + 0.45 * t;
       anim.lift = -0.9 - 1.1 * t;        // arms and stick over his head
       anim.swing = 0.4 + 0.5 * t;
-      anim.shift = reel.home + 26 * t;   // skates out from under him
     } else {
-      // Down, sliding to a stop on his back.
-      const t = Math.min(1, (ms - reel.down) / (reel.stop - reel.down));
-      anim.fall = FLAT;
+      // Down, still travelling, settling onto his back.
+      const t = Math.min(1, (ms - reel.down) / 260);
+      anim.fall = FLAT - 0.07 * Math.sin(Math.PI * t) * (1 - t);
       anim.crouch = 1;
       anim.lift = -2;
       anim.swing = 0.9;
-      anim.shift = reel.home + 26 + 16 * t * (2 - t);
       anim.goal = ms >= reel.down + 250;  // the label, such as it is
     }
     return anim;
+  }
+
+  // One motion the whole way: constant speed in and through the fall, then a
+  // slide that runs out on its own. Nothing here ever returns him to a stop
+  // before he is down - that pause was the reason the fall read as staged.
+  function wipeoutShift(reel, ms) {
+    if (ms <= reel.down) return reel.from + reel.speed * ms;
+    const t = Math.min(1, (ms - reel.down) / (reel.stop - reel.down));
+    const slide = reel.speed * (reel.stop - reel.down) * 0.55;
+    return reel.from + reel.speed * reel.down + slide * (1 - Math.pow(1 - t, 3));
   }
 
   window.CAP_REEL = { build: build, at: at, KINDS: SKATER.concat(GOALIE) };
