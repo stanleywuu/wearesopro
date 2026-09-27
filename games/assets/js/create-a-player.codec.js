@@ -174,7 +174,8 @@
   //
   // New fields go on the END of the order, so codes already out in the world
   // keep decoding.
-  const SHARE_VERSION = "1";
+  const SHARE_VERSION = "2";      // what we WRITE
+  const V1 = "1";                 // what we still read, unchanged, forever
 
   function encodeColor(value, list) {
     const idx = list.indexOf(value);
@@ -185,7 +186,14 @@
     return /^\d$/.test(field) ? list[Number(field)] : "#" + field;
   }
 
+  // v2 is what we write. encodeV1 is kept because it is the only proof that the
+  // old reader still reads what the old writer wrote - the test harness rounds
+  // v1 codes through it.
   function encode(params) {
+    return encodeV2(params);
+  }
+
+  function encodeV1(params) {
     const fields = [
       D.shapes.findIndex(s => s.id === params.bodyShape),
       D.shapes.findIndex(s => s.id === params.headShape)
@@ -216,14 +224,16 @@
     LATE_SLIDERS.forEach(key => fields.push(encodeSlider(params, key)));
     // Empty name/number/phrase at the end are just dead weight in the URL.
     while (fields.length && fields[fields.length - 1] === "") fields.pop();
-    return SHARE_VERSION + "~" + fields.join("~");
+    return V1 + "~" + fields.join("~");
   }
 
   // Returns a raw, still-untrusted object of the same shape the old JSON codes
   // did, so sanitize() stays the one place a shared player is validated.
   function decode(code) {
     const fields = String(code).split("~");
-    if (fields.shift() !== SHARE_VERSION) return JSON.parse(fromBase64Url(code));
+    const version = fields.shift();
+    if (version === SHARE_VERSION) return decodeV2(fields);
+    if (version !== V1) return JSON.parse(fromBase64Url(code));
     let i = 0;
     const next = () => (fields[i++] || "");
     const id = (list, field) => (list[Number(field)] || {}).id;
@@ -258,6 +268,181 @@
   function fromBase64Url(code) {
     const bin = atob(String(code).replace(/-/g, "+").replace(/_/g, "/"));
     return new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0)));
+  }
+
+  // ---- v2: the numbers, packed -----------------------------------------
+
+  // v1 spells every number out in decimal with a "~" after it. The numbers are
+  // the bulk of a code and they are tiny values, so v2 writes each one as a
+  // fixed number of base64 DIGITS with no separators at all, and leaves only
+  // the free text as "~" fields, because text does not pack.
+  //
+  // Digits, not a bit field. A bit field is about ten characters shorter on a
+  // fully customised player and completely opaque: every field would sit at a
+  // bit offset, half of them straddling a byte. This way each field is at a
+  // character offset you can count to, which is worth ten characters.
+  //
+  // THE INVARIANT: zero means the default. Sliders ride as a zigzag offset from
+  // their default, enums and colours as a selector whose 0 means "whatever
+  // defaults() says". Two things fall out of that for free - trailing "0"s can
+  // be dropped, so a default player encodes to nothing at all; and a field
+  // added later is simply absent from an older code, reads as 0, and comes back
+  // as its default. Same append-only promise as v1, without the tail of empty
+  // separators.
+  //
+  // WIDTHS ARE FROZEN. A width is deliberately not derived from the slider's
+  // range: widening a range would otherwise re-interpret every code already
+  // shared. Two digits per slider (4096 values for a zigzag that needs 161) and
+  // one per enum is headroom, not a tight fit.
+  const W_ENUM = 1, W_SLIDER = 2, W_COLOR = 1, W_HEX = 4;   // in base64 digits
+
+  // Colour selectors above the palette indices.
+  const C_AUTO = 62;      // "" - follow the jersey
+  const C_CUSTOM = 63;    // four digits of RGB follow
+
+  // Frozen orders. Anything new is appended, which is what keeps an old code
+  // readable - see the invariant above.
+  const V2_ENUMS = ["bodyShape", "headShape", "helmetStyle", "handedness",
+                    "position", "hairStyle", "faceHair"];
+  const V2_SLIDERS = ["bodyWidth", "bodyHeight", "bodyContour", "headWidth",
+                      "headHeight", "headContour", "height", "eyeSize",
+                      "eyeContour", "mouthLength", "mouthContour"];
+  const V2_COLORS = ["skinColor", "jerseyColor", "trimColor", "sockColor",
+                     "helmetColor", "hairColor", "cardEdge", "cardBack",
+                     "stickColor", "pantsColor", "gloveColor"];
+
+  // A slider or colour added to the data file but not to the lists above still
+  // encodes - at the end, which is exactly where a new field belongs.
+  const SLIDER_ORDER = V2_SLIDERS.concat(
+    SLIDER_KEYS.filter(key => V2_SLIDERS.indexOf(key) < 0));
+  const COLOR_ORDER = V2_COLORS.concat(
+    ALL_PALETTES.map(e => e[0]).filter(key => V2_COLORS.indexOf(key) < 0));
+
+  const PALETTE_OF = {};
+  ALL_PALETTES.forEach(entry => { PALETTE_OF[entry[0]] = entry[1]; });
+
+  // The ids of an enum field, in the order a code refers to them by.
+  function idsOf(key) {
+    if (key === "position") return D.positions;
+    const lists = { bodyShape: D.shapes, headShape: D.shapes, helmetStyle: D.helmets,
+                    handedness: D.handedness, hairStyle: D.hairStyles, faceHair: D.faceHairs };
+    return lists[key].map(o => o.id);
+  }
+
+  // ---- digits -----------------------------------------------------------
+
+  // URL-safe, and ordered so digit 0 is "0" - which is what lets a run of
+  // defaults at the end be trimmed off as a run of zeros.
+  const DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+
+  function writer() {
+    let out = "";
+    return {
+      put: function (value, width) {
+        let text = "";
+        for (let i = 0; i < width; i++) {
+          text = DIGITS.charAt(value % 64) + text;
+          value = Math.floor(value / 64);
+        }
+        out += text;
+      },
+      text: function () { return out; }
+    };
+  }
+
+  // Reading past the end gives zeros, which is the whole append story: a field
+  // this code was written before comes back as its default. It works because a
+  // missing character and a "0" are the same thing - both contribute nothing -
+  // and the characters that go missing are always the low-order ones.
+  function reader(text) {
+    let at = 0;
+    return function (width) {
+      let value = 0;
+      for (let i = 0; i < width; i++) {
+        const idx = DIGITS.indexOf(text.charAt(at++) || "0");
+        value = value * 64 + (idx < 0 ? 0 : idx);
+      }
+      return value;
+    };
+  }
+
+  // Signed offset to a non-negative one, so a default (0) stays 0 and a small
+  // move either way stays small.
+  function zigzag(n) {
+    return n >= 0 ? n * 2 : -n * 2 - 1;
+  }
+
+  function unzigzag(n) {
+    return n % 2 ? -(n + 1) / 2 : n / 2;
+  }
+
+  // A "~" typed into a name split the code where it was never meant to split,
+  // and everything after it shifted along: "P~7" came back as the name "P" with
+  // "7" for the number. v1 has always done this and cannot be fixed - its codes
+  // are already out there - but v2 escapes the two characters that matter. "%"
+  // goes first or unescaping would undo its own work.
+  //
+  // %7E and %25 survive a trip through a URL: encodeURIComponent turns them
+  // into %257E and %2525 on the way out and URLSearchParams gives them straight
+  // back, and a code pasted bare never gets decoded by anything else at all.
+  function escapeText(value) {
+    return String(value === undefined || value === null ? "" : value)
+      .replace(/%/g, "%25").replace(/~/g, "%7E");
+  }
+
+  function unescapeText(value) {
+    return String(value || "").replace(/%(25|7E)/g, (m, c) => (c === "25" ? "%" : "~"));
+  }
+
+  // ---- v2 encode / decode -----------------------------------------------
+
+  function encodeV2(params) {
+    const base = defaults();
+    const w = writer();
+    SLIDER_ORDER.forEach(key => w.put(zigzag(params[key] - base[key]), W_SLIDER));
+    V2_ENUMS.forEach(key => {
+      const idx = idsOf(key).indexOf(params[key]);
+      w.put(params[key] === base[key] || idx < 0 ? 0 : idx + 1, W_ENUM);
+    });
+    COLOR_ORDER.forEach(key => putColor(w, key, params[key], base[key]));
+    const fields = [w.text().replace(/0+$/, ""), escapeText(params.name),
+                    escapeText(params.number), escapeText(params.phrase)];
+    while (fields.length && fields[fields.length - 1] === "") fields.pop();
+    return SHARE_VERSION + "~" + fields.join("~");
+  }
+
+  function putColor(w, key, value, fallback) {
+    if (value === fallback) return w.put(0, W_COLOR);
+    if (value === "") return w.put(C_AUTO, W_COLOR);
+    const idx = (PALETTE_OF[key] || []).indexOf(value);
+    if (idx >= 0 && idx + 1 < C_AUTO) return w.put(idx + 1, W_COLOR);
+    w.put(C_CUSTOM, W_COLOR);
+    w.put(parseInt(String(value).slice(1), 16) || 0, W_HEX);
+  }
+
+  // Returns a raw, still-untrusted object, same as the v1 reader, so sanitize()
+  // stays the one place a shared player is validated.
+  function decodeV2(fields) {
+    const raw = defaults();
+    const read = reader(String(fields[0] || ""));
+    SLIDER_ORDER.forEach(key => { raw[key] = raw[key] + unzigzag(read(W_SLIDER)); });
+    V2_ENUMS.forEach(key => {
+      const sel = read(W_ENUM);
+      if (sel) raw[key] = idsOf(key)[sel - 1];
+    });
+    COLOR_ORDER.forEach(key => { raw[key] = takeColor(read, key, raw[key]); });
+    raw.name = unescapeText(fields[1]);
+    raw.number = unescapeText(fields[2]);
+    raw.phrase = unescapeText(fields[3]);
+    return raw;
+  }
+
+  function takeColor(read, key, fallback) {
+    const sel = read(W_COLOR);
+    if (sel === 0) return fallback;
+    if (sel === C_AUTO) return "";
+    if (sel === C_CUSTOM) return "#" + ("000000" + read(W_HEX).toString(16)).slice(-6);
+    return (PALETTE_OF[key] || [])[sel - 1];
   }
 
   // ---- validation -------------------------------------------------------
@@ -343,6 +528,7 @@
     defaults: defaults,
     random: random,
     encode: encode,
+    encodeV1: encodeV1,
     decode: decode,
     sanitize: sanitize,
     load: load,

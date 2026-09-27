@@ -106,11 +106,19 @@ copies. Add a control once and both get it.
 - **A new player field goes in exactly three places:** `defaults()` in
   `create-a-player.codec.js`, the field order in `encode`/`decode`/`sanitize` there
   (**append to the end** so codes already shared keep decoding), and the control in the
-  partial. "The end" means the end of the WHOLE code, not the end of its own kind:
-  the tail is a run of groups (`TAIL_SLIDERS`, `TAIL_OPTIONS`, `TAIL_PALETTES`,
-  `AUTO_PALETTES`, `LATE_SLIDERS`) in the order they were added, and putting a new
-  slider in `TAIL_SLIDERS` would shift the hair, the card colours and the kit along
-  behind it. That is why a later slider gets a group of its own at the back. The renderer reads it off `params`; both pages and every saved team get it free.
+  partial. In **v2** (what the codec writes today) that means appending the key to
+  `V2_SLIDERS` / `V2_ENUMS` / `V2_COLORS`, and the one thing that must hold is
+  **zero means the default** - that is what lets a code written before the field
+  existed read it as 0 and get the default back, and what lets a run of defaults at
+  the end be trimmed off. Widths are frozen: never derive one from a slider's range,
+  or widening the range re-reads every code already shared.
+
+  **v1 is frozen.** Do not add fields to it, do not change it - it only has to go on
+  reading the codes people already have. (Its own rule was the same idea in a worse
+  form: the tail is a run of groups - `TAIL_SLIDERS`, `TAIL_OPTIONS`,
+  `TAIL_PALETTES`, `AUTO_PALETTES`, `LATE_SLIDERS` - in the order they were added,
+  so a new slider could not join `TAIL_SLIDERS` without shifting everything behind
+  it along.) The renderer reads it off `params`; both pages and every saved team get it free.
 - **Raising a slider's minimum needs `codeMin`.** The share code carries a slider as
   its offset from the minimum, so moving `min` shifts every value already written
   into a code by the difference. Put the ORIGINAL floor in `codeMin` and move `min`
