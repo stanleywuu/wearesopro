@@ -19,7 +19,7 @@
   const CLASSIC = { glide: 1200, wind: 1800, contact: 2000, land: 2500, end: 3600 };
 
   const SKATER = ["shot", "wipeout", "spin"];
-  const GOALIE = ["saves", "robbery"];
+  const GOALIE = ["saves", "scramble"];
 
   // A goalie does not take the highlight, he is the highlight: leaning on his
   // stick in front of the net, then three saves in a row with no warning.
@@ -28,8 +28,15 @@
     { at: 1620, kind: "blocker", hold: 260 },
     { at: 2240, kind: "glove",   hold: 520 }
   ];
-  // The other one: a single shot, and he holds the glove up afterwards.
-  const ROBBERY = [{ at: 1500, kind: "glove", hold: 1500 }];
+  // The other one: a scramble. Five in on him with no gaps, and he is pushing
+  // across the crease between them - x is where in the crease each save happens.
+  const SCRAMBLE = [
+    { at: 520,  kind: "blocker", hold: 140, x: 12 },
+    { at: 940,  kind: "drop",    hold: 160, x: -4 },
+    { at: 1320, kind: "glove",   hold: 150, x: -14 },
+    { at: 1720, kind: "drop",    hold: 170, x: 6 },
+    { at: 2140, kind: "glove",   hold: 700, x: 14 }   // and he holds this one up
+  ];
 
   // ---- the seed ---------------------------------------------------------
 
@@ -142,9 +149,10 @@
   function goalieReel(kind) {
     // Face on, not side on: a goalie is looked at down the ice, with the net
     // behind him and the blocker and glove out to either side of frame.
-    if (kind === "robbery") {
-      return { kind: "robbery", save: true, yaw: 0, label: "What a grab!",
-        saves: ROBBERY, approach: 520, deflect: 300, end: 3600, home: 0 };
+    if (kind === "scramble") {
+      return { kind: "scramble", save: true, yaw: 0, label: "Unreal!!",
+        saves: SCRAMBLE, approach: 260, deflect: 180, slide: true,
+        end: 3300, home: 0 };
     }
     return { kind: "saves", save: true, yaw: 0, label: "Robbed!",
       saves: SAVES, approach: 300, deflect: 260, end: 4000, home: 0 };
@@ -238,8 +246,22 @@
     anim.glove = pose.glove;
     anim.shot = shotAt(reel, ms);
     anim.crouch = 0;
+    if (reel.slide) anim.shift = creaseX(reel, ms);
     anim.goal = ms >= last.at + last.hold;
     return anim;
+  }
+
+  // Pushing across the crease: he arrives at each save a moment before the puck
+  // does, which is what makes it read as getting there rather than being there.
+  function creaseX(reel, ms) {
+    let x = 0;
+    reel.saves.forEach((save, i) => {
+      const to = save.x || 0, from = i ? (reel.saves[i - 1].x || 0) : 0;
+      const start = save.at - 240;
+      if (ms >= save.at) x = to;
+      else if (ms > start) x = from + (to - from) * ramp(ms, start, save.at);
+    });
+    return x;
   }
 
   // Up and back over the shoulder, then down through the puck and high out
