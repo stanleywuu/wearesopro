@@ -1295,19 +1295,16 @@
     const shoulderX = dims.torso.rx * 0.70;
     const shaft = stickDepth(s, yaw);
     // Which shoulder owns which hand. Both grips sit on the blade's side of the
-    // body, and a stick is held with the hands crossed over: a player who
-    // shoots LEFT carries it on his left and holds the knob in his RIGHT hand.
-    // So the shoulder on the stick's side takes the LOWER hand, and the far
-    // shoulder reaches across the chest for the top one. Exactly one arm
-    // crosses, which is how a stick is actually held.
+    // body, so the shoulder on THAT side takes the top hand and stays tucked,
+    // and the far shoulder reaches across for the lower hand. Exactly one arm
+    // crosses the chest, which is how a stick is actually held.
     //
-    // A goalie is the exception and keeps his own pairing: his two hands are a
-    // blocker and a glove, one on each side of him, not two hands on a shaft.
-    const top = dims.goalie ? grips[0] : grips[1];
-    const low = dims.goalie ? grips[1] : grips[0];
+    // Pairing them the other way round sends both arms to the far side and
+    // they cross each other - the far one reaching up to the high hand, the
+    // near one down to the low hand.
     const arms = [
-      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: top, blocker: true },
-      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: low, blocker: false }
+      { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[0], blocker: true },
+      { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[1], blocker: false }
     ].map(pair => armAt(pair, yaw));
 
     // The deepest arm, worked out before any hand is placed. A glove has to
