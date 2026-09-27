@@ -1136,7 +1136,7 @@
   // left shot was drawn as a right one and the reel had them shooting the
   // wrong way.
   function handSign(params) {
-    return params.handedness === "left" ? 1 : -1;
+    return params.handedness === "right" ? 1 : -1;
   }
 
   function stickPoints(dims, params) {

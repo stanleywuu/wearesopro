@@ -63,9 +63,16 @@ window.CAP_DATA = {
     { id: "chops",    label: "Mutton chops" }
   ],
 
+  // A shot is named for the hand at the BOTTOM of the shaft: shoots left means
+  // the left hand is the low one, the right hand is on the knob, and the puck
+  // rides on his left. The first entry here is the stance the renderer has
+  // always drawn first, and that stance is a right-handed shot - it was
+  // labelled the other way round for a long time, which is all that was wrong.
+  // The ORDER is frozen: a share code carries the index, so renaming these
+  // renames the label on an existing player without moving him.
   handedness: [
-    { id: "left",  label: "Left" },
-    { id: "right", label: "Right" }
+    { id: "right", label: "Right" },
+    { id: "left",  label: "Left" }
   ],
 
   positions: ["Centre", "Left Wing", "Right Wing", "Defence", "Goalie"],

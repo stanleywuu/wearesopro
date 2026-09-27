@@ -120,7 +120,7 @@
       hairColor: D.hairColors[0],
       cardEdge: D.cardEdgeColors[0],
       cardBack: D.cardBackColors[0],
-      handedness: "left",
+      handedness: "right",
       name: "",
       number: "",
       position: D.positions[0],

@@ -68,7 +68,7 @@
     // Mirroring the scene puts the stick back out front, shooting the other way.
     if (params.position !== "Defence") {
       return Object.assign({ kind: "shot", slap: false, home: 0, yaw: SIDE_ON,
-        mirror: params.handedness === "left" }, CLASSIC);
+        mirror: params.handedness === "right" }, CLASSIC);
     }
     // Beer league. Nobody here is breaking 80.
     const speed = next(55, 80);
@@ -103,7 +103,7 @@
     return {
       kind: "wipeout",
       yaw: SIDE_ON,
-      mirror: params.handedness === "left",
+      mirror: params.handedness === "right",
       label: "Wipeout!",
       home: 0,
       glide: 1,                  // no glide phase - he is moving from frame one
@@ -121,7 +121,7 @@
   // spin, stop, wait, shoot is four moves where there should be one.
   function spinReel(params) {
     return { kind: "spin", slap: false, home: 0, yaw: SIDE_ON,
-      mirror: params.handedness === "left", label: "Filthy!",
+      mirror: params.handedness === "right", label: "Filthy!",
       glide: 900, spin: 1150,    // the turn
       wind: 300,                 // the stick starts back a quarter of the way round
       pull: 750,                 // loaded, and still turning
