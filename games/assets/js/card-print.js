@@ -73,7 +73,9 @@
   // celebration after it. The goalie's three are three different saves and
   // need no help.
   const MOMENTS = {
-    skater:  [{ ms: 0, yaw: 0.5 }, { ms: 1950 }, { ms: 3400, yaw: 0.85 }],
+    skater:  [{ ms: 0, yaw: 0.5 },
+              { ms: 1950, shift: -14 },
+              { ms: 3400, yaw: 0.85, shift: -14 }],
     defence: [{ ms: 0, yaw: 0.5 }, { ms: 1200 }, { ms: 2450 }],
     goalie:  [{ ms: 0 }, { ms: 1150 }, { ms: 1780 }]
   };
@@ -87,9 +89,14 @@
     if (!REEL) return [null, null, null];
     const reel = REEL.build(params);
     return MOMENTS[kind(params)].map(function (at) {
+      const anim = at.ms ? REEL.at(reel, at.ms) : null;
+      // A shot frame puts the player mid-frame with the net beside them and a
+      // third of the picture left over. Pushing them away from the net spreads
+      // the two across the card instead.
+      if (anim && at.shift) anim.shift += at.shift;
       return {
         reel: reel,
-        anim: at.ms ? REEL.at(reel, at.ms) : null,
+        anim: anim,
         yaw: at.yaw == null ? reel.yaw : at.yaw
       };
     });
