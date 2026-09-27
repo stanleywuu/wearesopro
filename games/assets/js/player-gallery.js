@@ -16,15 +16,18 @@
 
   let panel = null;
   let options = {};
+  let filter = "";           // what is typed in the search box, lower case
 
   // opts: { into, title, onPick, onNew, canDelete, canBackup, onStatus }
   function open(opts) {
     close();
     options = opts || {};
+    filter = "";
     panel = document.createElement("div");
     panel.className = "cap-gallery";
     panel.appendChild(head());
     if (options.canBackup) panel.appendChild(backupRow());
+    if (PLAYERS.list().length > SEARCH_FROM) panel.appendChild(searchRow());
     panel.appendChild(grid());
     (options.into || document.body).appendChild(panel);
     const first = panel.querySelector(".cap-pick");
@@ -38,6 +41,37 @@
 
   function isOpen() {
     return Boolean(panel);
+  }
+
+  // ---- search -----------------------------------------------------------
+
+  // Twenty-four tiles is past what a grid scans at a glance, but three is not:
+  // a box over a handful of players is furniture nobody asked for.
+  const SEARCH_FROM = 5;
+
+  function searchRow() {
+    const row = document.createElement("div");
+    row.className = "cap-gallery-search";
+    const box = document.createElement("input");
+    box.type = "search";
+    box.autocomplete = "off";
+    box.placeholder = "Search by name";
+    box.setAttribute("aria-label", "Search your saved players by name");
+    box.addEventListener("input", function () {
+      filter = box.value.trim().toLowerCase();
+      refresh();
+    });
+    row.appendChild(box);
+    return row;
+  }
+
+  // Their name, and their position too - an unnamed tile is labelled with its
+  // position, so that is the word on screen to search for.
+  function matches(player) {
+    if (!filter) return true;
+    if (!player) return false;
+    return ((player.name || "") + " " + (player.position || "")).toLowerCase()
+      .indexOf(filter) >= 0;
   }
 
   function head() {
@@ -108,15 +142,21 @@
     const box = document.createElement("div");
     box.className = "cap-gallery-grid";
     const saved = PLAYERS.list();
+    // Saving to a new slot is not a search result, so it stays put whatever is
+    // typed - it is where this panel's other job lives.
     if (options.onNew) box.appendChild(newTile());
-    if (!saved.length) {
-      const empty = document.createElement("p");
-      empty.className = "muted";
-      empty.textContent = "Nobody saved yet - anyone you build shows up here.";
-      box.appendChild(empty);
-      return box;
-    }
-    saved.forEach(function (entry) { box.appendChild(tile(entry)); });
+    if (!saved.length) return note(box, "Nobody saved yet - anyone you build shows up here.");
+    const shown = saved.filter(function (entry) { return matches(read(entry.code)); });
+    if (!shown.length) return note(box, "Nobody here called \u201c" + filter + "\u201d.");
+    shown.forEach(function (entry) { box.appendChild(tile(entry)); });
+    return box;
+  }
+
+  function note(box, message) {
+    const line = document.createElement("p");
+    line.className = "muted";
+    line.textContent = message;
+    box.appendChild(line);
     return box;
   }
 

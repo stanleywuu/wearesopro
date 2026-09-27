@@ -593,6 +593,28 @@
 }
 .cap-pick-del:hover, .cap-pick-del:focus-visible { background: #B3261E; color: #fff; }
 
+/* Search, between the panel's head and its grid. Full width: it filters the
+   whole grid, so anything narrower reads as belonging to one column. */
+.cap-gallery-search {
+  padding: .6rem 1rem;
+  border-bottom: 1px solid rgba(30, 136, 229, .2);
+}
+.cap-gallery-search input {
+  width: 100%;
+  padding: .45rem .6rem;
+  font: inherit;
+  font-size: .9rem;
+  border: 1px solid rgba(30, 136, 229, .35);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+.cap-gallery-search input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* "Nobody saved yet", "nobody called that" - a sentence, not a tile, so it
+   runs across the grid instead of being squeezed into one column. */
+.cap-gallery-grid p { grid-column: 1 / -1; margin: 0; font-size: .85rem; }
+
 /* Export / import, at the head of the saved players panel. */
 .cap-gallery-backup {
   display: flex;
