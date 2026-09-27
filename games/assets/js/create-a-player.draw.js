@@ -25,6 +25,11 @@
   // the stick sweeps, and the whole figure glides across the ice.
   let ANIM = null;
   let SHIFT = 0;
+  // How big the rink is drawn. 1 is the builder's own scale, where the boards
+  // never move and a short player is visibly short against them. A card zooms
+  // in on the player (portraitFit), so the rink zooms with it - otherwise the
+  // camera moves and the wall behind it does not.
+  let SCENE = 1;
   let MIRROR = false;   // a left-handed wrist shot plays the other way round
   const PAN_MAX = 180;      // far enough that the stick and shadow clear the edge too
   const TILT = 0.16;        // how much +z (towards viewer) drops on screen
@@ -1505,7 +1510,25 @@
 
   // ---- highlight scenery ------------------------------------------------
 
-  const NET = { x: LW - 44, w: 65, h: 50 };
+  // The boards, for a highlight with no net in it. A fall on a blank sheet of
+  // ice is a man falling over in a void; put the dasher behind him and it is a
+  // man falling over at the rink. Drawn flat across the frame, low enough that
+  // the player still stands clear of it.
+  // The rink is built at ONE size and never scaled by the figure's zoom. That
+  // is the whole point of it: the player is drawn at his own height against a
+  // wall that does not move, so a short build looks short and a tall one looks
+  // tall instead of every player filling the same frame.
+  //
+  // h is the dasher, and the glass runs from its cap rail up to GLASS - above
+  // the tallest player the auto-fit can draw, which is TOP_MARGIN from the top.
+  const BOARDS = { h: 70, cap: 2.8, kick: 6, bay: 26 };
+  const GLASS = 8;               // logical y of the rail across the top
+
+  // Sized off the boards, not off the player: a net stands a little taller than
+  // the dasher and is half again as wide as it is high, which is what a 6x4
+  // net is. FAR is the only thing that changes it - a shooter's net is down at
+  // the other end, a goalie is standing in his.
+  const NET = { x: LW - 44, h: BOARDS.h * 1.06, w: BOARDS.h * 1.06 * 1.5, far: 0.8 };
 
   // Where the net comes to rest when the camera is riding along with the puck:
   // out at the middle of the frame, so it closes on a puck sitting there.
@@ -1518,15 +1541,11 @@
     const into = (t === undefined) ? 1 : t;
     const behind = Boolean(ANIM && ANIM.netBehind);
     const home = behind ? CX : ((ANIM && ANIM.netClose) ? NET_CLOSE : NET.x);
-    // One size, whoever the player is and whatever he is doing: the net used to
-    // be scaled by the figure's own zoom, so a tall build shrank it and every
-    // change of pose nudged it. The only thing that still changes it is the
-    // viewpoint - a goalie is standing IN his net, so his is drawn nearer.
     // Starts just past the right edge, not miles beyond it: come in from too
     // far away and it spends the whole slide off screen, then pops.
     const cx = home + (1 - into) * ((LW + NET.w / 2) - home);
-    const near = behind ? 1.45 : 1;      // he has to fit in front of it
-    const w = NET.w * near, h = NET.h * near;
+    const away = (behind ? 1 : NET.far) * SCENE;
+    const w = NET.w * away, h = NET.h * away;
     const base = GROUND - 1, left = cx - w / 2, right = cx + w / 2, top = base - h;
     ctx.fillStyle = "rgba(255,255,255,.7)";
     ctx.fillRect(p(left), p(top), p(w), p(h));
@@ -1543,21 +1562,15 @@
     L(ctx, left, top, right, top, "#E53935", 2.4);
   }
 
-  // The boards, for a highlight with no net in it. A fall on a blank sheet of
-  // ice is a man falling over in a void; put the dasher behind him and it is a
-  // man falling over at the rink. Drawn flat across the frame, low enough that
-  // the player still stands clear of it.
-  const BOARDS = { h: 82, cap: 2.8, kick: 6, post: 30, bay: 26 };
 
   function drawBoards(ctx) {
-    const h = BOARDS.h * FIT, base = GROUND - 1, top = base - h;
+    const base = GROUND - 1, top = base - BOARDS.h * SCENE;
+    const glass = base - (base - GLASS) * SCENE;
     ctx.fillStyle = "#E4EEF9";        // a shade off the ice, or it is not there
-    ctx.fillRect(0, p(top), p(LW), p(h));
-    // The glass above: posts and the rail across their top, because glass that
-    // stops in mid-air closes off nothing. Panels only tinted, so it still
-    // reads as something you can see through.
-    const glass = top - BOARDS.post * FIT;
-    ctx.fillStyle = "rgba(255,255,255,.45)";
+    ctx.fillRect(0, p(top), p(LW), p(base - top));
+    // The glass above: panels tinted, posts, and the rail across their top,
+    // because glass that stops in mid-air closes nothing off.
+    ctx.fillStyle = "rgba(255,255,255,.38)";
     ctx.fillRect(0, p(glass), p(LW), p(top - glass));
     // The posts travel with the camera - they are the only thing on a plain
     // wall that can show it moving - so a pan slides them rather than leaving
@@ -1571,15 +1584,15 @@
     // The dasher itself is left plain: seams drawn across it only read as
     // clutter behind a player, and the two strips are what say "boards".
     ctx.fillStyle = "#F2C94C";                       // kick plate along the foot
-    ctx.fillRect(0, p(base - BOARDS.kick * FIT), p(LW), p(BOARDS.kick * FIT));
+    ctx.fillRect(0, p(base - BOARDS.kick * SCENE), p(LW), p(BOARDS.kick * SCENE));
     // The cap rail, drawn last and inked top and bottom: it is the line that
     // says where the ice stops, so it has to read at a glance.
-    const cap = BOARDS.cap * FIT;
+    const cap = BOARDS.cap * SCENE;
     ctx.fillStyle = "#EF7B2E";
     ctx.fillRect(0, p(top), p(LW), p(cap));
     L(ctx, 0, top, LW, top, OUTLINE, 0.8);
     L(ctx, 0, top + cap, LW, top + cap, OUTLINE, 0.8);
-    L(ctx, 0, base, LW, base, "rgba(90,104,117,.25)", 0.5);   // where it meets the ice
+    L(ctx, 0, base, LW, base, "rgba(90,104,117,.25)", 0.5);  // where it meets the ice
   }
 
   // Where the puck is sitting before the shot, and therefore where it sets off
@@ -1671,7 +1684,7 @@
     ctx.lineJoin = "round";
     ctx.lineWidth = p(3);
     ctx.strokeStyle = OUTLINE;
-    const y = GROUND - NET.h - 12;   // just over the crossbar
+    const y = GROUND - NET.h * SCENE - 12;   // just over the crossbar
     const x = p(MIRROR ? 8 : LW - 8);
     ctx.strokeText(text, x, p(y));
     ctx.fillStyle = "#FDD835";
@@ -1742,6 +1755,9 @@
     // left rather than being cut away. PAN_MAX is far enough to clear the edge.
     SHIFT = ANIM ? ANIM.shift - PAN_MAX * (ANIM.pan || 0) : 0;
     FIT = (opts && opts.fit) ? opts.fit : autoFit(params, dims.topY);
+    // The rink follows the camera, not the player: a fixed size in the builder,
+    // and the card's own zoom on a card.
+    SCENE = (opts && opts.fit) ? opts.fit : 1;
     ctx.save();
     if (background) {
       ctx.clearRect(0, 0, p(LW), p(LH));
