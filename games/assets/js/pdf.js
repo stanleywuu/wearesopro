@@ -134,6 +134,7 @@
     return new Blob([bytes], { type: "application/pdf" });
   }
 
+  // Generic on purpose: the card also hands out PNGs, and one saver is enough.
   function save(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

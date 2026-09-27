@@ -201,6 +201,32 @@
     PDF.save(build(params, filled, opts), name(params));
   }
 
-  window.CAP_PRINT = { build: build, download: download, poses: poses, kind: kind, draw: player };
+  // ---- the picture on its own --------------------------------------------
+
+  // A PNG of the player with nothing behind them - no ice, no shadow, no card.
+  // This is the one people can actually work with: drop it into a poster, a
+  // team sheet, a slide, whatever, and put their own words round it.
+  function picture(params, poseIndex, scale) {
+    const shot = poses(params)[Math.min(Math.max(0, poseIndex || 0), 2)];
+    const size = scale || 3;
+    const canvas = document.createElement("canvas");
+    canvas.width = DRAW.LW * DRAW.S * size;
+    canvas.height = DRAW.LH * DRAW.S * size;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(size, size);
+    DRAW.render(ctx, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null,
+                { background: false, shadow: false });
+    return canvas;
+  }
+
+  function savePicture(params, poseIndex) {
+    const file = name(params).replace(/^hockey-card-/, "player-").replace(/\.pdf$/, ".png");
+    picture(params, poseIndex).toBlob(function (blob) {
+      if (blob) PDF.save(blob, file);
+    }, "image/png");
+  }
+
+  window.CAP_PRINT = { build: build, download: download, poses: poses, kind: kind,
+                       picture: picture, savePicture: savePicture };
 
 })();

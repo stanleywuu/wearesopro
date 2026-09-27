@@ -58,6 +58,12 @@
         note("Saved. Print it, cut along the lines, fill in the back.");
       });
     });
+    wire("card-print-png", function (el) {
+      el.addEventListener("click", function () {
+        PRINT.savePicture(params, printing.pose);
+        note("Saved as a PNG with a see-through background - drop them into anything.");
+      });
+    });
     wire("card-print-close", function (el) {
       el.addEventListener("click", closePrint);
     });
@@ -130,7 +136,7 @@
     if (!card || !STATS) return;
     card.appendChild(makeBack());
     card.classList.add("has-back");
-    addFlip(card, document.querySelector(".card-actions"));
+    addFlip(card);
     // ?debug=back opens on the back: a flip cannot be judged from a screenshot.
     const debug = new URLSearchParams(location.search).get("debug");
     if (debug === "back") card.classList.add("flipped");
@@ -184,14 +190,11 @@
   // This is only about the still that goes on paper, so it is a row of frames
   // to choose from rather than anything that interrupts the loop.
   const printing = { pose: 1, allPoses: false };
-  let preview = null;        // the small card in the panel: what will print
 
   function openPrint() {
     const panel = document.getElementById("card-print-panel");
     if (!panel) return;
     panel.hidden = false;
-    buildPreview();
-    drawPreview();
     note("");
     panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
@@ -200,58 +203,6 @@
     const panel = document.getElementById("card-print-panel");
     if (panel) panel.hidden = true;
     note("");
-  }
-
-  // A small card of its own, with its own flip button. The big card above goes
-  // on playing its Highlight - freezing it to preview the print was worse than
-  // the problem, because then neither one is doing its job.
-  function buildPreview() {
-    const host = document.getElementById("card-preview");
-    if (!host || preview) return;
-
-    const card = document.createElement("div");
-    card.className = "card card-preview has-back";
-
-    const frame = document.createElement("div");
-    frame.className = "card-frame";
-    const photo = document.createElement("div");
-    photo.className = "card-photo";
-    const shot = document.createElement("canvas");
-    shot.width = DRAW.LW * DRAW.S;
-    shot.height = DRAW.LH * DRAW.S;
-    photo.appendChild(shot);
-    frame.appendChild(photo);
-    frame.appendChild(plate());
-    if (params.phrase) {
-      frame.appendChild(text("p", "card-quote", "“" + params.phrase + "”"));
-    }
-    card.appendChild(frame);
-    card.appendChild(makeBack());
-    host.appendChild(card);
-
-    preview = { card: card, canvas: shot };
-    addFlip(card, document.getElementById("card-pose-flip"));
-    showFilled();            // anything already typed
-  }
-
-  // The front's name plate, same shape as the one in the page's own markup.
-  function plate() {
-    const el = document.createElement("div");
-    el.className = "card-plate";
-    el.appendChild(text("p", "card-number", params.number ? "#" + params.number : ""));
-    const id = document.createElement("div");
-    id.className = "card-id";
-    id.appendChild(text("h3", "card-name", params.name || "Unnamed"));
-    id.appendChild(text("p", "card-pos", params.position));
-    el.appendChild(id);
-    return el;
-  }
-
-  function drawPreview() {
-    if (!preview || !PRINT || !PRINT.poses) return;
-    const shot = PRINT.poses(params)[printing.pose];
-    const c = preview.canvas.getContext("2d");
-    DRAW.render(c, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null);
   }
 
   const LABELS = {
@@ -294,7 +245,6 @@
 
   function choose(i) {
     printing.pose = i;
-    drawPreview();           // the preview follows the choice; the card above plays on
     const tiles = document.querySelectorAll(".card-pose");
     tiles.forEach(function (tile, at) {
       tile.classList.toggle("chosen", at === i);
@@ -382,31 +332,41 @@
   // over wherever it is - on a profile, or frozen inside the print panel - and
   // clicking anywhere on the card does the same thing.
   // Icon AND words: an icon on its own reads as decoration and nobody turns the
-  // card over. Each card gets its own button, flipping that card and no other -
-  // the one under the picture choices turns the preview, not the card above it.
-  function addFlip(card, host) {
-    if (!host) return;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "button card-flip-btn";
-    button.setAttribute("aria-pressed", "false");
-    const glyph = document.createElement("span");
-    glyph.setAttribute("aria-hidden", "true");
-    glyph.textContent = "\u21BB";
-    button.appendChild(glyph);
-    button.appendChild(document.createTextNode(" Flip the card"));
+  // card over. There is one card, and two buttons that turn it - one under the
+  // card, one in the print panel, so the back is there to look at while the
+  // boxes beside it are being filled in.
+  function addFlip(card) {
+    const buttons = [];
 
     const turn = function () {
       const on = card.classList.toggle("flipped");
-      button.setAttribute("aria-pressed", String(on));
-      button.lastChild.textContent = on ? " Show the front" : " Flip the card";
+      buttons.forEach(function (b) {
+        b.setAttribute("aria-pressed", String(on));
+        b.lastChild.textContent = on ? " Show the front" : " Flip the card";
+      });
     };
-    button.addEventListener("click", function (e) {
-      e.stopPropagation();       // the card's own click would undo this one
-      turn();
+
+    [document.querySelector(".card-actions"),
+     document.getElementById("card-pose-flip")].forEach(function (host) {
+      if (!host) return;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "button card-flip-btn";
+      button.setAttribute("aria-pressed", "false");
+      const glyph = document.createElement("span");
+      glyph.setAttribute("aria-hidden", "true");
+      glyph.textContent = "\u21BB";
+      button.appendChild(glyph);
+      button.appendChild(document.createTextNode(" Flip the card"));
+      button.addEventListener("click", function (e) {
+        e.stopPropagation();     // the card's own click would undo this one
+        turn();
+      });
+      host.appendChild(button);
+      buttons.push(button);
     });
+
     card.addEventListener("click", turn);
-    host.appendChild(button);
   }
 
   // The code as it is now - the same one the stats are hashed from.
