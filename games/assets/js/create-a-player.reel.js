@@ -102,7 +102,6 @@
     return {
       kind: "shot",
       slap: true,
-      boards: true,              // a point shot starts at the blue line, at the wall
       yaw: SIDE_ON,
       label: speed + " mph!!",
       home: -55,                 // out by the left boards, where a point shot comes from
@@ -174,7 +173,7 @@
       shift: 0, crouch: 0, swing: 0, lift: 0, fall: 0,
       puckT: null, goal: false, pan: 0,
       arc: 9, net: 1, label: reel.label, yaw: reel.yaw,
-      mirror: Boolean(reel.mirror), boards: Boolean(reel.boards),
+      mirror: Boolean(reel.mirror), boards: reel.boards !== false,
       puckHold: Boolean(reel.slap), netClose: Boolean(reel.slap)
     };
     if (ms < reel.glide) {
@@ -344,7 +343,6 @@
 
   function wipeoutFrame(reel, ms, anim) {
     anim.net = 0;                // no net in this one: nothing is going in
-    anim.boards = true;          // the dasher instead, or he falls over in a void
     anim.arc = 0;                // the puck skitters flat along the ice
     anim.shift = wipeoutShift(reel, ms);
     if (ms >= reel.catch) {

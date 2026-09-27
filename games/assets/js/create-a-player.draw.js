@@ -1518,11 +1518,15 @@
     const into = (t === undefined) ? 1 : t;
     const behind = Boolean(ANIM && ANIM.netBehind);
     const home = behind ? CX : ((ANIM && ANIM.netClose) ? NET_CLOSE : NET.x);
-    const grow = behind ? 1.45 : 1;      // he has to fit in front of it
+    // One size, whoever the player is and whatever he is doing: the net used to
+    // be scaled by the figure's own zoom, so a tall build shrank it and every
+    // change of pose nudged it. The only thing that still changes it is the
+    // viewpoint - a goalie is standing IN his net, so his is drawn nearer.
     // Starts just past the right edge, not miles beyond it: come in from too
     // far away and it spends the whole slide off screen, then pops.
     const cx = home + (1 - into) * ((LW + NET.w / 2) - home);
-    const w = NET.w * FIT * grow, h = NET.h * FIT * grow;
+    const near = behind ? 1.45 : 1;      // he has to fit in front of it
+    const w = NET.w * near, h = NET.h * near;
     const base = GROUND - 1, left = cx - w / 2, right = cx + w / 2, top = base - h;
     ctx.fillStyle = "rgba(255,255,255,.7)";
     ctx.fillRect(p(left), p(top), p(w), p(h));
@@ -1667,7 +1671,7 @@
     ctx.lineJoin = "round";
     ctx.lineWidth = p(3);
     ctx.strokeStyle = OUTLINE;
-    const y = GROUND - NET.h * FIT - 12;
+    const y = GROUND - NET.h - 12;   // just over the crossbar
     const x = p(MIRROR ? 8 : LW - 8);
     ctx.strokeText(text, x, p(y));
     ctx.fillStyle = "#FDD835";

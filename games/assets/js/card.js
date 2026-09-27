@@ -308,7 +308,7 @@
       button.className = "card-reel-btn";
       button.setAttribute("role", "radio");
       button.textContent = REEL_NAMES[kind] || kind;
-      if (kind === own) button.appendChild(text("span", "card-reel-own", "theirs"));
+      if (kind === own) button.appendChild(text("span", "card-reel-own", "orig"));
       button.addEventListener("click", function () { pickReel(kind, bar, button); });
       bar.appendChild(button);
       if (kind === own) markReel(bar, button);
