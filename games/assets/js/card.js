@@ -28,9 +28,13 @@
 
     fillPlate();
     buildBack();
+    buildReelPicker();
     buildPoses();
     buildColours();
     buildFill();
+    // ?debug=print opens the print panel on load - it is three clicks deep
+    // otherwise, and every change to it has to be looked at.
+    if (new URLSearchParams(location.search).get("debug") === "print") openPrint();
     // Both optional. The reel loops on its own, so a replay button is a nicety
     // and the card must not die without one - it threw on a missing element and
     // took the whole card down with it.
@@ -249,7 +253,11 @@
   // The card on screen keeps playing its Highlight - that is the point of it.
   // This is only about the still that goes on paper, so it is a row of frames
   // to choose from rather than anything that interrupts the loop.
-  const printing = { pose: 1, allPoses: false };
+  // reel is null until they pick one: null means this player's own highlight,
+  // the one everybody who opens the card sees. Choosing another changes the
+  // printed card and nothing else - it is not in the share code, and the
+  // picture on screen goes on playing what they rolled.
+  const printing = { pose: 1, allPoses: false, reel: null };
 
   function openPrint() {
     const panel = document.getElementById("card-print-panel");
@@ -269,14 +277,69 @@
   const LABELS = {
     skater:  ["Standing", "Into it", "Through it"],
     defence: ["Standing", "Carrying it", "Follow-through"],
-    goalie:  ["In the crease", "Down and across", "Glove"]
+    saves:   ["In the crease", "Down and across", "Glove"],
+    wipeout: ["Skating it up", "Feet gone", "On the ice"],
+    spin:    ["Into the turn", "Coming round", "Away it goes"],
+    scramble:["Blocker", "Across and glove", "Held up"]
   };
+
+  // What each reel is called where someone has to choose between them.
+  const REEL_NAMES = {
+    shot: "The shot", wipeout: "The wipeout", spin: "Spin-o-rama",
+    saves: "Three saves", scramble: "The scramble"
+  };
+
+  // The row that picks WHICH highlight gets printed. Their own is selected to
+  // begin with; the others are there because a still of a wipeout is a
+  // different card from a still of a shot, and someone might want either.
+  function buildReelPicker() {
+    const row = document.getElementById("card-pose-row");
+    if (!row || !PRINT || !PRINT.reels) return;
+    const kinds = PRINT.reels(params);
+    if (kinds.length < 2) return;
+    const bar = document.createElement("div");
+    bar.className = "card-reel-row";
+    bar.setAttribute("role", "radiogroup");
+    bar.setAttribute("aria-label", "Which highlight");
+    const own = PRINT.poses(params)[0].reel.kind;      // whatever they rolled
+    kinds.forEach(function (kind) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "card-reel-btn";
+      button.setAttribute("role", "radio");
+      button.textContent = REEL_NAMES[kind] || kind;
+      if (kind === own) button.appendChild(text("span", "card-reel-own", "theirs"));
+      button.addEventListener("click", function () { pickReel(kind, bar, button); });
+      bar.appendChild(button);
+      if (kind === own) markReel(bar, button);
+    });
+    row.parentNode.insertBefore(bar, row);
+  }
+
+  function markReel(bar, button) {
+    bar.querySelectorAll(".card-reel-btn").forEach(function (b) {
+      const on = b === button;
+      b.classList.toggle("chosen", on);
+      b.setAttribute("aria-checked", String(on));
+    });
+  }
+
+  function pickReel(kind, bar, button) {
+    printing.reel = kind;
+    markReel(bar, button);
+    const row = document.getElementById("card-pose-row");
+    if (row) row.textContent = "";
+    buildPoses();
+    sizePoses();
+    showFilled();
+  }
 
   function buildPoses() {
     const row = document.getElementById("card-pose-row");
     if (!row || !PRINT || !PRINT.poses) return;
-    const shots = PRINT.poses(params);
-    const labels = LABELS[PRINT.kind ? PRINT.kind(params) : "skater"] || LABELS.skater;
+    const shots = PRINT.poses(params, printing.reel);
+    const key = PRINT.kind ? PRINT.kind(params, shots[0].reel.kind) : "skater";
+    const labels = LABELS[key] || LABELS.skater;
 
     // Each picture IS the card, small: same markup, same styles, front and
     // back, so what a tile shows is what the sheet prints.

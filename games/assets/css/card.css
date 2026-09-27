@@ -283,3 +283,18 @@
    the card and again beside the pictures in the print panel. */
 .card-flip-btn { display: inline-flex; align-items: center; gap: .35rem; }
 
+
+/* Which highlight the printed card is cut from. Their own is marked "theirs";
+   picking another changes the sheet and nothing else. */
+.card-reel-row { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .7rem; }
+.card-reel-btn {
+  font: inherit; font-size: .8rem; padding: .3rem .7rem; cursor: pointer;
+  border: 1px solid var(--line, #C8D3DE); border-radius: 999px;
+  background: #fff; color: var(--muted); display: inline-flex; align-items: center; gap: .35rem;
+}
+.card-reel-btn:hover { border-color: var(--ink); color: var(--ink); }
+.card-reel-btn.chosen { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.card-reel-own {
+  font-size: .62rem; letter-spacing: .04em; text-transform: uppercase;
+  padding: .05rem .3rem; border-radius: 999px; background: #EEF4FB; color: var(--muted);
+}

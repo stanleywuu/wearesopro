@@ -38,7 +38,7 @@
     const x0 = (PAGE.w - (CARD.w * 2 + GAP)) / 2;
     const y1 = PAGE.h / 2 + 12;                 // top row sits above centre
     const y0 = y1 - CARD.h - GAP;
-    const shots = poses(params);
+    const shots = poses(params, o.reel);
     const chosen = shots[Math.min(Math.max(0, o.pose || 0), shots.length - 1)];
 
     doc.text(x0, PAGE.h - 62, "Print it, cut along the lines, fill in the back.",
@@ -77,30 +77,49 @@
               { ms: 1950, shift: -14 },
               { ms: 3400, yaw: 0.85, shift: -14 }],
     defence: [{ ms: 0, yaw: 0.5 }, { ms: 1200 }, { ms: 2450 }],
-    goalie:  [{ ms: 0 }, { ms: 1150 }, { ms: 1780 }]
+    saves:   [{ ms: 0 }, { ms: 1150 }, { ms: 1780 }],
+    // The other reels. A wipeout is worth printing for the same reason it is
+    // worth watching, so its three are the stride, the moment the feet go, and
+    // the landing.
+    wipeout: [{ ms: 400 }, { ms: 1150 }, { ms: 1950 }],
+    spin:    [{ ms: 480 }, { ms: 880 }, { ms: 1250 }],
+    scramble:[{ ms: 560 }, { ms: 1360 }, { ms: 2300 }]
   };
 
-  function kind(params) {
-    if (params.position === "Goalie") return "goalie";
+  // Which reels a player can be printed from. Their own is the default; the
+  // picker on the card page offers the rest. Nothing here touches the share
+  // code - what someone else sees when they open the card is still whatever
+  // that player rolled.
+  function reels(params) {
+    return params.position === "Goalie" ? ["saves", "scramble"] : ["shot", "wipeout", "spin"];
+  }
+
+  // The moments key for a reel: only the shot has two of them, because a
+  // defenceman's windup hides the stick behind his body and needs its own
+  // frames.
+  function kind(params, reel) {
+    const r = reel || "shot";
+    if (r !== "shot") return r;
+    if (params.position === "Goalie") return "saves";
     return params.position === "Defence" ? "defence" : "skater";
   }
 
-  // Always the shot reel, never the player's own: MOMENTS are moments in THAT
-  // timeline, and 1950ms into a wipeout is a man lying on the ice.
-  function poses(params) {
+  // The player's own reel unless the caller names another: MOMENTS are moments
+  // in a PARTICULAR timeline, so the frames follow whichever one is printing.
+  function poses(params, reel) {
     if (!REEL) return [null, null, null];
-    const reel = REEL.build(params, null, kind(params) === "goalie" ? "saves" : "shot");
-    return MOMENTS[kind(params)].map(function (at) {
-      const anim = at.ms ? REEL.at(reel, at.ms) : null;
+    const built = REEL.build(params, null, reel || null);
+    return MOMENTS[kind(params, built.kind)].map(function (at) {
+      const anim = at.ms ? REEL.at(built, at.ms) : null;
       // A shot frame puts the player mid-frame with the net beside them and a
       // third of the picture left over. Pushing them away from the net spreads
       // the two across the card instead.
       if (anim && at.shift) anim.shift += at.shift;
-      return {
-        reel: reel,
-        anim: anim,
-        yaw: at.yaw == null ? reel.yaw : at.yaw
-      };
+      // A named angle wins - a wrist shot barely changes the silhouette, so the
+      // forward's stills are turned by hand - then the reel's own, which is how
+      // the spin gets a different angle in every picture.
+      const turned = at.yaw != null ? at.yaw : (anim && anim.yaw != null ? anim.yaw : built.yaw);
+      return { reel: built, anim: anim, yaw: turned };
     });
   }
 
@@ -310,7 +329,7 @@
     const ctx = canvas.getContext("2d");
     const surface = SURFACE.canvas(ctx, w, h, scale);
 
-    const chosen = poses(params)[Math.min(Math.max(0, o.pose || 0), 2)];
+    const chosen = poses(params, o.reel)[Math.min(Math.max(0, o.pose || 0), 2)];
     front(surface, pad, pad, params, chosen);
     back(surface, pad + CARD.w + GAP, pad, params, typed);
     return canvas;
@@ -324,6 +343,6 @@
   }
 
   window.CAP_PRINT = { build: build, download: download, poses: poses, kind: kind,
-                       sheet: sheet, savePng: savePng };
+                       reels: reels, sheet: sheet, savePng: savePng };
 
 })();
