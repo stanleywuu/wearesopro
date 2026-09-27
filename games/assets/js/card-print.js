@@ -67,10 +67,15 @@
   // is the fussy one: through the middle of his windup the stick is behind his
   // body and he looks empty-handed, so his frames are the glide and the
   // follow-through and nothing in between.
+  // Each picture is a moment AND an angle. A wrist shot barely changes the
+  // silhouette - two frames of it look like the same photo twice - so the
+  // forward's three are a standing three-quarter, the sweep side-on, and the
+  // celebration after it. The goalie's three are three different saves and
+  // need no help.
   const MOMENTS = {
-    skater:  [0, 1350, 2250],
-    defence: [0, 1200, 2450],
-    goalie:  [0, 1150, 1780]
+    skater:  [{ ms: 0, yaw: 0.5 }, { ms: 1950 }, { ms: 2900, yaw: 0.85 }],
+    defence: [{ ms: 0, yaw: 0.5 }, { ms: 1200 }, { ms: 2450 }],
+    goalie:  [{ ms: 0 }, { ms: 1150 }, { ms: 1780 }]
   };
 
   function kind(params) {
@@ -81,9 +86,12 @@
   function poses(params) {
     if (!REEL) return [null, null, null];
     const reel = REEL.build(params);
-    const ms = MOMENTS[kind(params)];
-    return ms.map(function (at) {
-      return at ? { reel: reel, anim: REEL.at(reel, at) } : null;
+    return MOMENTS[kind(params)].map(function (at) {
+      return {
+        reel: reel,
+        anim: at.ms ? REEL.at(reel, at.ms) : null,
+        yaw: at.yaw == null ? reel.yaw : at.yaw
+      };
     });
   }
 
@@ -255,7 +263,7 @@
     canvas.height = DRAW.LH * DRAW.S * 2;
     const ctx = canvas.getContext("2d");
     ctx.scale(2, 2);
-    DRAW.render(ctx, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null,
+    DRAW.render(ctx, params, shot ? shot.yaw : 0.5, shot ? shot.anim : null,
                 { background: false });
     return canvas;
   }

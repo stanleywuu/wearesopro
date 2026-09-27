@@ -385,7 +385,7 @@
     canvas.height = DRAW.LH * DRAW.S / 2;
     const ctx2 = canvas.getContext("2d");
     ctx2.scale(0.5, 0.5);
-    DRAW.render(ctx2, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null,
+    DRAW.render(ctx2, params, shot ? shot.yaw : 0.5, shot ? shot.anim : null,
                 { background: false });
     return canvas;
   }
