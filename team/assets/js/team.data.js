@@ -17,5 +17,5 @@ window.TEAM_CODES = {
 // Anyone missing from here keeps the empty boxes, which is what the card is
 // for: print it and fill it in.
 window.TEAM_STATS = {
-  stanley: { GP: 24, G: 3, A: 0, PTS: 3 }
+  stanley: { GP: 24, G: 3, A: 0, PTS: 3, PIM: 0 }
 };
