@@ -76,6 +76,15 @@
         <!-- Optional, and blank on purpose: type something and it shows on the
              back and prints; leave it and the printed card has empty boxes and
              ruled lines to fill in by hand. -->
+        <section class="card-poses" id="card-poses" hidden>
+          <h2>Picture for the printed card</h2>
+          <div class="card-pose-row" id="card-pose-row" role="radiogroup" aria-label="Pose"></div>
+          <label class="card-pose-all">
+            <input type="checkbox" id="card-pose-all">
+            Print one of each pose instead
+          </label>
+        </section>
+
         <section class="card-fill" id="card-fill" hidden>
           <h2>Fill in the back <span class="muted">(optional)</span></h2>
           <div class="card-fill-stats" id="card-fill-stats"></div>

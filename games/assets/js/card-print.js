@@ -18,33 +18,53 @@
   const GAP = 36;
   const INK = 0.12, MID = 0.45, PALE = 0.75;
 
-  // Four cards on one page: three action shots off their own Highlight, and a
-  // back to fill in. One player, one sheet, cut them out.
-  function build(params, filled) {
+  // Four cards on one page, two ways round.
+  //
+  // The default is the SAME card twice - one to keep, one to hand over - in
+  // whichever pose they picked. Nobody wants three pictures they did not
+  // choose. `opts.allPoses` gives the other sheet: one of each pose, for
+  // anyone who does want the set.
+  function build(params, filled, opts) {
     const typed = filled || { stats: {}, bio: "" };
+    const o = opts || {};
     const doc = PDF.doc(PAGE.w, PAGE.h);
     const x0 = (PAGE.w - (CARD.w * 2 + GAP)) / 2;
     const y1 = PAGE.h / 2 + 12;                 // top row sits above centre
     const y0 = y1 - CARD.h - GAP;
+    const shots = poses(params);
+    const chosen = shots[Math.min(Math.max(0, o.pose || 0), shots.length - 1)];
 
     doc.text(x0, PAGE.h - 62, "Print it, cut along the lines, fill in the back.",
              { size: 11, grey: MID });
 
-    const shots = poses(params);
-    front(doc, x0, y1, params, shots[0]);
-    front(doc, x0 + CARD.w + GAP, y1, params, shots[1]);
-    front(doc, x0, y0, params, shots[2]);
+    if (o.allPoses) {
+      front(doc, x0, y1, params, shots[0]);
+      front(doc, x0 + CARD.w + GAP, y1, params, shots[1]);
+      front(doc, x0, y0, params, shots[2]);
+      back(doc, x0 + CARD.w + GAP, y0, params, typed);
+      return doc.blob();
+    }
+
+    front(doc, x0, y1, params, chosen);
+    back(doc, x0 + CARD.w + GAP, y1, params, typed);
+    front(doc, x0, y0, params, chosen);
     back(doc, x0 + CARD.w + GAP, y0, params, typed);
     return doc.blob();
   }
 
-  // Three moments of the Highlight, chosen so the player is in frame and the
-  // camera has not travelled yet: standing, into it, and through it. A goalie
-  // gets his own three, because his reel is three saves rather than a shot.
+  // The moments worth printing, in the order the picker shows them: standing,
+  // into it, through it. Chosen so the player is in frame and the camera has
+  // not travelled. A goalie gets his own, because his reel is three saves
+  // rather than a shot.
+  const MOMENTS = {
+    skater: [0, 1550, 2150],
+    goalie: [0, 1150, 1780]
+  };
+
   function poses(params) {
     if (!REEL) return [null, null, null];
     const reel = REEL.build(params);
-    const ms = params.position === "Goalie" ? [0, 1150, 1780] : [0, 1550, 2150];
+    const ms = MOMENTS[params.position === "Goalie" ? "goalie" : "skater"];
     return ms.map(function (at) {
       return at ? { reel: reel, anim: REEL.at(reel, at) } : null;
     });
@@ -156,10 +176,10 @@
     return "hockey-card-" + (who || "player") + ".pdf";
   }
 
-  function download(params, filled) {
-    PDF.save(build(params, filled), name(params));
+  function download(params, filled, opts) {
+    PDF.save(build(params, filled, opts), name(params));
   }
 
-  window.CAP_PRINT = { build: build, download: download };
+  window.CAP_PRINT = { build: build, download: download, poses: poses, draw: player };
 
 })();

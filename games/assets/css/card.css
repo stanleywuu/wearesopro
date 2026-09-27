@@ -157,3 +157,30 @@
   border: 1px solid var(--rule); border-radius: 8px; resize: vertical; }
 
 .card-fill-actions { display: flex; gap: .5rem; margin-top: .7rem; }
+
+/* ---- pose picker ------------------------------------------------------
+   Three frames of their own Highlight. Whichever is chosen is what prints. */
+.card-poses { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px dashed var(--rule); }
+.card-poses h2 { margin: 0 0 .7rem; font-size: 1rem; }
+
+.card-pose-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+.card-pose {
+  flex: 1 1 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+  padding: .4rem .3rem .5rem;
+  background: var(--surface);
+  border: 2px solid var(--rule);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.card-pose canvas { width: 100%; height: auto; background: #EEF6FF; border-radius: 6px; }
+.card-pose-label { font-size: .7rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.card-pose.chosen { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(22,104,196,.18); }
+.card-pose.chosen .card-pose-label { color: var(--accent); font-weight: 700; }
+
+.card-pose-all { display: flex; align-items: center; gap: .45rem; margin-top: .7rem;
+  font-size: .85rem; color: var(--muted); }
+.card-pose-all input { width: auto; }

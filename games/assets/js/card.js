@@ -28,6 +28,7 @@
 
     fillPlate();
     buildBack();
+    buildPoses();
     buildFill();
     // Both optional. The reel loops on its own, so a replay button is a nicety
     // and the card must not die without one - it threw on a missing element and
@@ -50,7 +51,7 @@
     wire("card-print", function (el) {
       if (!PRINT) return el.remove();
       el.addEventListener("click", function () {
-        PRINT.download(params, filled);
+        PRINT.download(params, filled, printing);
         note("Printable card saved - front and back, ready to cut out");
       });
     });
@@ -163,6 +164,58 @@
   // for numbers: the boxes start empty and stay empty unless they fill them.
   function labels() {
     return STATS ? STATS.forPlayer(params, "").map(function (row) { return row[0]; }) : [];
+  }
+
+  // ---- which picture gets printed ----------------------------------------
+
+  // The card on screen keeps playing its Highlight - that is the point of it.
+  // This is only about the still that goes on paper, so it is a row of frames
+  // to choose from rather than anything that interrupts the loop.
+  const printing = { pose: 1, allPoses: false };
+
+  function buildPoses() {
+    const panel = document.getElementById("card-poses");
+    const row = document.getElementById("card-pose-row");
+    if (!panel || !row || !PRINT || !PRINT.poses) return;
+    const shots = PRINT.poses(params);
+    const labels = params.position === "Goalie"
+      ? ["In the crease", "Down and across", "Glove"]
+      : ["Standing", "Into it", "Through it"];
+
+    shots.forEach(function (shot, i) {
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = "card-pose";
+      tile.setAttribute("role", "radio");
+      tile.appendChild(thumb(shot));
+      tile.appendChild(text("span", "card-pose-label", labels[i] || ""));
+      tile.addEventListener("click", function () { choose(i); });
+      row.appendChild(tile);
+    });
+    wire("card-pose-all", function (el) {
+      el.addEventListener("change", function () { printing.allPoses = el.checked; });
+    });
+    panel.hidden = false;
+    choose(printing.pose);
+  }
+
+  function thumb(shot) {
+    const canvas = document.createElement("canvas");
+    canvas.width = DRAW.LW * DRAW.S / 2;
+    canvas.height = DRAW.LH * DRAW.S / 2;
+    const ctx2 = canvas.getContext("2d");
+    ctx2.scale(0.5, 0.5);
+    DRAW.render(ctx2, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null);
+    return canvas;
+  }
+
+  function choose(i) {
+    printing.pose = i;
+    const tiles = document.querySelectorAll(".card-pose");
+    tiles.forEach(function (tile, at) {
+      tile.classList.toggle("chosen", at === i);
+      tile.setAttribute("aria-checked", String(at === i));
+    });
   }
 
   // ---- filling it in -----------------------------------------------------
