@@ -6,6 +6,7 @@ set -e
 out=$(mktemp -d)
 for who in ${*:-team stanley tommy stephanie dale ricky}; do
   google-chrome --headless=new --disable-gpu --no-sandbox --hide-scrollbars \
+    --password-store=basic --use-mock-keychain \
     --window-size=1200,630 --virtual-time-budget=4000 \
     --screenshot="$out/$who.png" "http://localhost:8899/tools/ogcards/card.html?who=$who" 2>/dev/null
   python3 -c "

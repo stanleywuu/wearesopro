@@ -84,6 +84,7 @@ Character profiles. See `docs/team.md`.
 - `tools/templates/site-link.html` — Markup template for one nav link (`{{href}}`, `{{label}}`).
 - `tools/templates/nav-item.html` — Markup template for one dropdown/drawer `<li>`; used for both the desktop menu and the mobile drawer.
 - `tools/ogcards/card.html` + `card.css` + `card.js` + `shoot.sh` — Share-card generator (1200x630). Reads the look from `TEAM_CODES` and the words from the page the card is for, so nothing is duplicated; `shoot.sh` screenshots each card and writes `assets/img/og-<slug>.jpg`. Dev only - it is served like any other file, but nothing links to it. Recipe: `docs/page-metadata.md`.
+- `tools/shot.sh` — Screenshot a local page with headless Chrome: `sh tools/shot.sh /team.html out.png [w] [h]`. Carries the flags that matter - `--password-store=basic --use-mock-keychain` (otherwise Chrome asks the desktop to unlock its keyring and a dialog pops up on whoever's screen), a throwaway profile, and `--disable-dev-shm-usage`. Dev only.
 - `tools/hooks/pre-commit` — Runs `make site` and the link check before every commit; blocks the commit if generated output is stale or a link is broken. Install with `make hooks`.
 
 ## widgets/

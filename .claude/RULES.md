@@ -134,6 +134,14 @@ stores read it as empty and an imported backup is refused with a message. An old
 cleaner silently dropping fields it has never heard of is how a backup gets
 quietly emptied.
 
+## Screenshots
+
+Use `sh tools/shot.sh <path> <out.png> [width] [height]` rather than calling
+Chrome by hand. Headless Chrome otherwise reaches for the system keyring on
+launch and pops an "unlock your keyring" dialog on the desktop of whoever is
+sitting there - `--password-store=basic --use-mock-keychain` stops that, and the
+script also gives each run a throwaway profile so nothing touches the real one.
+
 ## Previewing locally
 
 There is no build step, so a plain static server over the repo root is the whole
