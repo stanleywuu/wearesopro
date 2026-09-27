@@ -115,14 +115,17 @@
     // "follow the jersey" has to be a thing you can pick - and go back to.
     // Word, not a colour: it is the absence of a choice, and a swatch showing
     // the shade it currently works out to would read as one more colour.
+    //
+    // The word is "Jersey", which is the answer to "what colour is this then".
+    // It said "Kit" first and nobody could tell what that meant.
     function addAutoSwatch(box, key) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "cap-swatch cap-swatch-auto" + (params[key] ? "" : " active");
       btn.dataset.color = "";
-      btn.textContent = "Kit";
-      btn.title = "Follow the jersey";
-      btn.setAttribute("aria-label", key + ", follow the jersey");
+      btn.textContent = "Jersey";
+      btn.title = "Match the jersey";
+      btn.setAttribute("aria-label", key + ", match the jersey");
       btn.addEventListener("click", () => selectSwatch(box, key, ""));
       box.appendChild(btn);
     }

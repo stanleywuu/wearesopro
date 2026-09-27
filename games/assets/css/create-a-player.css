@@ -160,9 +160,9 @@
   transform: scale(1.12);
 }
 
-/* "Kit" - follow the jersey - at the HEAD of the pants and gloves rows. A word
-   in a pill rather than a circle: it is the absence of a colour choice, so a
-   coloured dot would read as one more colour. */
+/* "Jersey" - match the jersey - at the HEAD of the pants and gloves rows. A
+   word in a pill rather than a circle: it is the absence of a colour choice,
+   so a coloured dot would read as one more colour. */
 .cap-swatch-auto {
   width: auto;
   height: 22px;
@@ -171,7 +171,7 @@
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: .62rem;
+  font-size: .58rem;
   font-weight: 700;
   line-height: 1;
   text-transform: uppercase;
