@@ -310,16 +310,18 @@
   }
 
   // Sits just above its own leg in the sort, so each cuff covers its own thigh
-  // whichever way the player is facing.
+  // whichever way the player is facing. It reaches UP into the hip band rather
+  // than starting below it: with a gap, the band and the cuffs read as two
+  // separate dark lumps with sock showing between them, not as trousers.
   function pantsCuff(ctx, dims, params, yaw, side, legDepth) {
     const r = rotY(side * (dims.legX + 0.5), 3, yaw);
-    const c = project(r.x, dims.hipY - 10, r.z);
+    const c = project(r.x, dims.hipY - 8.5, r.z);
     return {
       d: Math.max(legDepth, 0) + 0.3,
       draw: () => drawSlab(ctx, {
         cx: c.sx, cy: c.sy,
-        hw: silWidth(9, 8, yaw, 0) * c.k,
-        hh: 9.5 * c.k,
+        hw: silWidth(9.5, 8.5, yaw, 0) * c.k,
+        hh: 11 * c.k,
         shape: "capsule", taper: 0.95, round: 1,
         color: shade(params.jerseyColor, -0.2), yaw: yaw
       })
@@ -340,15 +342,15 @@
     };
   }
 
-  // A boot that climbs the ankle, not a shoe. The blade stays on the ice and
-  // the height is added upwards, which is the only direction there is room in:
-  // at the old height the skate read as a dark smudge under the sock, and on a
-  // printed card it barely registered at all.
+  // A boot that covers the ankle and no more. Taller than this and it eats the
+  // shin - in a crouch the leg all but disappeared between pants and skate.
   const SKATE_HH = 5.2;                       // half-height of the boot
   const BLADE_DROP = 0.8;                     // the boot sits down on the blade
   const BLADE_HH = 1.15;                      // half-thickness of the blade
-  // The blade ends up on the ice, so the boot is lifted by everything under it.
-  const SKATE_MID = SKATE_HH - 4 + BLADE_DROP + BLADE_HH * 2;
+  // Stacked from the ice upwards: blade on the ice, holder, then the boot on
+  // top of that. Worked out any other way the whole skate floats, and rides up
+  // the leg with nothing of the shin left between pants and boot.
+  const SKATE_MID = BLADE_HH * 2 + BLADE_DROP + SKATE_HH - SKATE_Y;
 
   function skatePart(ctx, yaw, x, legDepth) {
     const r = rotY(x, 2, yaw);
