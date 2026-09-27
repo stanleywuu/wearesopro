@@ -16,7 +16,7 @@ Source: original project brief (`Prompt`), `README.md`, and accumulated feedback
   `innerHTML` is for markup this repo authors, and only that. `make check` enforces that
   every page carries its CSP meta, but CSP is the seatbelt, not the brakes.
 - External links use `rel="noopener noreferrer"`.
-- Netlify Forms: every form needs a honeypot field.
+- Every form that posts needs a honeypot field (checked in the page before sending). Forms go to a Google Apps Script endpoint; nothing here uses Netlify Forms.
 - Follow standard web security best practices when applicable (sanitize/escape any user-influenced content, avoid `eval`/`innerHTML` with untrusted input, etc.).
 
 ## JS gotchas
@@ -133,6 +133,14 @@ Data from a **newer** version than the code reading it is never rewritten: the
 stores read it as empty and an imported backup is refused with a message. An old
 cleaner silently dropping fields it has never heard of is how a backup gets
 quietly emptied.
+
+## Screenshots
+
+Use `sh tools/shot.sh <path> <out.png> [width] [height]` rather than calling
+Chrome by hand. Headless Chrome otherwise reaches for the system keyring on
+launch and pops an "unlock your keyring" dialog on the desktop of whoever is
+sitting there - `--password-store=basic --use-mock-keychain` stops that, and the
+script also gives each run a throwaway profile so nothing touches the real one.
 
 ## Previewing locally
 

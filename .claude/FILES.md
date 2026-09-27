@@ -6,11 +6,11 @@ One-line purpose for every file/directory in the repo. Update this when you add,
 - `index.html` — Landing page (book cover image, intro).
 - `notes.html` — Editor's notes hub: Acknowledgements, Pipeline, Random Thoughts. **Not in the menus** (build notes don't sell the book); reached from the footer site map. `notes/faqs.html` is in The Team menu instead.
 - `games.html` — Games & Quizzes hub, links out to each game in `games/`.
-- `experiments.html` — "Under construction" page with an email-capture Netlify Form.
+- `experiments.html` — "Under construction" page with an email-capture form (posts JSON to a Google Apps Script endpoint, then redirects to `thanks.html`).
 - `links.html` — Amazon / Lulu (self-publish) purchase links.
-- `feedback.html` — Reader feedback form (Netlify Forms).
+- `feedback.html` — Reader feedback page; links out to a Google Form.
 - `team.html` — **The Team** hub: a picture button per character (drawn live from `team/assets/js/team.data.js`), with the name and that profile's own one-line description. The description is repeated here on purpose (crawlers do not run the includes); `make check` fails if a tile's line stops matching its profile.
-- `thanks.html` — Netlify Forms success/redirect page.
+- `thanks.html` — Success page a form sends you to once it has posted.
 - `404.html` — Custom 404 page.
 - `robots.txt` — Crawler rules.
 - `llms.txt` — LLM/GEO discovery file describing the site for AI crawlers.
@@ -87,6 +87,7 @@ Character profiles. See `docs/team.md`.
 - `tools/templates/site-link.html` — Markup template for one nav link (`{{href}}`, `{{label}}`).
 - `tools/templates/nav-item.html` — Markup template for one dropdown/drawer `<li>`; used for both the desktop menu and the mobile drawer.
 - `tools/ogcards/card.html` + `card.css` + `card.js` + `shoot.sh` — Share-card generator (1200x630). Reads the look from `TEAM_CODES` and the words from the page the card is for, so nothing is duplicated; `shoot.sh` screenshots each card and writes `assets/img/og-<slug>.jpg`. Dev only - it is served like any other file, but nothing links to it. Recipe: `docs/page-metadata.md`.
+- `tools/shot.sh` — Screenshot a local page with headless Chrome: `sh tools/shot.sh /team.html out.png [w] [h]`. Carries the flags that matter - `--password-store=basic --use-mock-keychain` (otherwise Chrome asks the desktop to unlock its keyring and a dialog pops up on whoever's screen), a throwaway profile, and `--disable-dev-shm-usage`. Dev only.
 - `tools/hooks/pre-commit` — Runs `make site` and the link check before every commit; blocks the commit if generated output is stale or a link is broken. Install with `make hooks`.
 
 ## widgets/
