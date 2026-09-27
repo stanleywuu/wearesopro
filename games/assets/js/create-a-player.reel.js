@@ -342,6 +342,7 @@
 
   function wipeoutFrame(reel, ms, anim) {
     anim.net = 0;                // no net in this one: nothing is going in
+    anim.boards = true;          // the dasher instead, or he falls over in a void
     anim.arc = 0;                // the puck skitters flat along the ice
     anim.shift = wipeoutShift(reel, ms);
     if (ms >= reel.catch) {

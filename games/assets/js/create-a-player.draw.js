@@ -1535,6 +1535,35 @@
     L(ctx, left, top, right, top, "#E53935", 2.4);
   }
 
+  // The boards, for a highlight with no net in it. A fall on a blank sheet of
+  // ice is a man falling over in a void; put the dasher behind him and it is a
+  // man falling over at the rink. Drawn flat across the frame, low enough that
+  // the player still stands clear of it.
+  const BOARDS = { h: 66, cap: 3.2, kick: 7, post: 26, bay: 26 };
+
+  function drawBoards(ctx) {
+    const h = BOARDS.h * FIT, base = GROUND - 1, top = base - h;
+    ctx.fillStyle = "#E4EEF9";        // a shade off the ice, or it is not there
+    ctx.fillRect(0, p(top), p(LW), p(h));
+    // The glass above: posts only, so it reads as glass without hiding anything.
+    for (let x = BOARDS.bay / 2; x < LW; x += BOARDS.bay) {
+      L(ctx, x, top, x, top - BOARDS.post * FIT, "rgba(90,104,117,.22)", 0.9);
+    }
+    for (let x = 0; x <= LW; x += BOARDS.bay) {
+      L(ctx, x, top, x, base, "rgba(90,104,117,.26)", 0.6);
+    }
+    ctx.fillStyle = "#C8DCF0";                       // kick plate along the foot
+    ctx.fillRect(0, p(base - BOARDS.kick * FIT), p(LW), p(BOARDS.kick * FIT));
+    // The cap rail, drawn last and inked top and bottom: it is the line that
+    // says where the ice stops, so it has to read at a glance.
+    const cap = BOARDS.cap * FIT;
+    ctx.fillStyle = "#F2C94C";
+    ctx.fillRect(0, p(top), p(LW), p(cap));
+    L(ctx, 0, top, LW, top, OUTLINE, 1.1);
+    L(ctx, 0, top + cap, LW, top + cap, OUTLINE, 1.1);
+    L(ctx, 0, base, LW, base, "rgba(90,104,117,.25)", 0.5);   // where it meets the ice
+  }
+
   // Where the puck is sitting before the shot, and therefore where it sets off
   // from. It tracks the blade while he skates in - he is carrying it - and
   // freezes the moment he starts his backswing, so the puck stays on the ice
@@ -1711,6 +1740,7 @@
     // No shadow during a highlight: the camera travels, and a shadow is one
     // more thing that has to travel convincingly with it for no gain.
     if (shadow && !ANIM) drawShadow(ctx, dims);
+    if (ANIM && ANIM.boards) drawBoards(ctx);
     if (ANIM && ANIM.net !== 0) drawNet(ctx, ANIM.net);
 
     // A wipeout turns the whole figure about the point under the skates, so the
