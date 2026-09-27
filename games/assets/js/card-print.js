@@ -11,7 +11,7 @@
 (function () {
 
   const PDF = window.CAP_PDF, DRAW = window.CAP_DRAW, STATS = window.CAP_STATS;
-  const REEL = window.CAP_REEL;
+  const REEL = window.CAP_REEL, SURFACE = window.CAP_SURFACE;
 
   const PAGE = { w: 612, h: 792 };          // US Letter, points
   const CARD = { w: 180, h: 252 };          // 2.5 x 3.5 inches, a hockey card
@@ -201,32 +201,40 @@
     PDF.save(build(params, filled, opts), name(params));
   }
 
-  // ---- the picture on its own --------------------------------------------
+  // ---- the same card, as an image ----------------------------------------
 
-  // A PNG of the player with nothing behind them - no ice, no shadow, no card.
-  // This is the one people can actually work with: drop it into a poster, a
-  // team sheet, a slide, whatever, and put their own words round it.
-  function picture(params, poseIndex, scale) {
-    const shot = poses(params)[Math.min(Math.max(0, poseIndex || 0), 2)];
-    const size = scale || 3;
+  // Front and back side by side on one PNG, laid out by the same code that
+  // writes the PDF - one layout, two surfaces, so they cannot drift apart.
+  // This is the file to hand someone who wants to edit it: already formatted,
+  // and every piece of it is where the printed card has it.
+  function sheet(params, filled, opts) {
+    const typed = filled || { stats: {}, bio: "" };
+    const o = opts || {};
+    const scale = o.scale || 4;            // 2.5in card at ~288dpi
+    const pad = 12;
+    const w = CARD.w * 2 + GAP + pad * 2;
+    const h = CARD.h + pad * 2;
+
     const canvas = document.createElement("canvas");
-    canvas.width = DRAW.LW * DRAW.S * size;
-    canvas.height = DRAW.LH * DRAW.S * size;
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
     const ctx = canvas.getContext("2d");
-    ctx.scale(size, size);
-    DRAW.render(ctx, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null,
-                { background: false, shadow: false });
+    const surface = SURFACE.canvas(ctx, w, h, scale);
+
+    const chosen = poses(params)[Math.min(Math.max(0, o.pose || 0), 2)];
+    front(surface, pad, pad, params, chosen);
+    back(surface, pad + CARD.w + GAP, pad, params, typed);
     return canvas;
   }
 
-  function savePicture(params, poseIndex) {
-    const file = name(params).replace(/^hockey-card-/, "player-").replace(/\.pdf$/, ".png");
-    picture(params, poseIndex).toBlob(function (blob) {
+  function savePng(params, filled, opts) {
+    const file = name(params).replace(/\.pdf$/, ".png");
+    sheet(params, filled, opts).toBlob(function (blob) {
       if (blob) PDF.save(blob, file);
     }, "image/png");
   }
 
   window.CAP_PRINT = { build: build, download: download, poses: poses, kind: kind,
-                       picture: picture, savePicture: savePicture };
+                       sheet: sheet, savePng: savePng };
 
 })();

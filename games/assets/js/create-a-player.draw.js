@@ -337,18 +337,28 @@
     };
   }
 
+  // A boot that climbs the ankle, not a shoe. The blade stays on the ice and
+  // the height is added upwards, which is the only direction there is room in:
+  // at the old height the skate read as a dark smudge under the sock, and on a
+  // printed card it barely registered at all.
+  const SKATE_HH = 6.5;                       // half-height of the boot
+  const SKATE_MID = SKATE_HH - 4;             // keeps the blade where it was
+
   function skatePart(ctx, yaw, x) {
     const r = rotY(x, 2, yaw);
-    const c = project(r.x, SKATE_Y, r.z);
+    const c = project(r.x, SKATE_Y + SKATE_MID, r.z);
     return {
       d: r.z,
       draw: () => {
         const hw = silWidth(7, 5, yaw, 0) * c.k;
         drawSlab(ctx, {
-          cx: c.sx, cy: c.sy, hw: hw, hh: 4.5 * c.k,
+          cx: c.sx, cy: c.sy, hw: hw, hh: SKATE_HH * c.k,
           shape: "capsule", taper: 0.8, round: 1, color: "#2B2B2B", yaw: yaw
         });
-        L(ctx, c.sx - hw, c.sy + 4.5 * c.k, c.sx + hw, c.sy + 4.5 * c.k, "#9AA7B4", 1.6);
+        L(ctx, c.sx - hw, c.sy + SKATE_HH * c.k, c.sx + hw, c.sy + SKATE_HH * c.k, "#9AA7B4", 1.6);
+        // The collar, so a black boot under a black sock is still a boot.
+        L(ctx, c.sx - hw * 0.9, c.sy - SKATE_HH * c.k * 0.82,
+               c.sx + hw * 0.9, c.sy - SKATE_HH * c.k * 0.82, "#7C8895", 1.4);
       }
     };
   }

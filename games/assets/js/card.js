@@ -60,8 +60,8 @@
     });
     wire("card-print-png", function (el) {
       el.addEventListener("click", function () {
-        PRINT.savePicture(params, printing.pose);
-        note("Saved as a PNG with a see-through background - drop them into anything.");
+        PRINT.savePng(params, filled, printing);
+        note("Saved as a PNG - front and back, laid out and ready to edit.");
       });
     });
     wire("card-print-close", function (el) {
