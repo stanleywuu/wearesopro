@@ -21,9 +21,18 @@
   function canvas(ctx, width, height, scale) {
     const k = scale || 1;
     const up = function (y) { return (height - y) * k; };   // y counts the other way
+    // Same two ways of naming a colour the PDF surface takes: "#RRGGBB", or a
+    // grey from 0 (black) to 1 (white).
     const grey = function (g) {
+      if (typeof g === "string" && g.charAt(0) === "#") return g;
       const v = Math.round((g == null ? 0 : g) * 255);
       return "rgb(" + v + "," + v + "," + v + ")";
+    };
+    const round = function (x, y, w, h, r) {
+      const top = up(y + h);
+      ctx.beginPath();
+      if (ctx.roundRect) return ctx.roundRect(x * k, top, w * k, h * k, r * k);
+      ctx.rect(x * k, top, w * k, h * k);
     };
     const font = function (name, size) {
       return (FACE[name] || FACE.normal).replace("%d", size * k);
@@ -70,16 +79,34 @@
         ctx.save();
         // PDF gives the bottom edge; canvas wants the top one.
         const top = up(y + h);
-        if (o.fill != null) {
-          ctx.fillStyle = grey(o.fill);
-          ctx.fillRect(x * k, top, w * k, h * k);
+        if (o.dash) ctx.setLineDash(o.dash.split(" ").map(function (n) { return Number(n) * k; }));
+        if (o.radius) {
+          round(x, y, w, h, o.radius);
+          if (o.fill != null) { ctx.fillStyle = grey(o.fill); ctx.fill(); }
+          if (o.stroke != null) {
+            ctx.strokeStyle = grey(o.stroke);
+            ctx.lineWidth = (o.width || 1) * k;
+            ctx.stroke();
+          }
+        } else {
+          if (o.fill != null) {
+            ctx.fillStyle = grey(o.fill);
+            ctx.fillRect(x * k, top, w * k, h * k);
+          }
+          if (o.stroke != null) {
+            ctx.strokeStyle = grey(o.stroke);
+            ctx.lineWidth = (o.width || 1) * k;
+            ctx.strokeRect(x * k, top, w * k, h * k);
+          }
         }
-        if (o.stroke != null) {
-          ctx.strokeStyle = grey(o.stroke);
-          ctx.lineWidth = (o.width || 1) * k;
-          if (o.dash) ctx.setLineDash(o.dash.split(" ").map(function (n) { return Number(n) * k; }));
-          ctx.strokeRect(x * k, top, w * k, h * k);
-        }
+        ctx.restore();
+        return api;
+      },
+      clip: function (x, y, w, h, r, inside) {
+        ctx.save();
+        round(x, y, w, h, r);
+        ctx.clip();
+        inside();
         ctx.restore();
         return api;
       },

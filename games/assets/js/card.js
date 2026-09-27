@@ -141,7 +141,12 @@
     const debug = new URLSearchParams(location.search).get("debug");
     if (debug === "back") card.classList.add("flipped");
     // ?debug=print opens the print panel, for the same reason.
-    if (debug === "print") setTimeout(openPrint, 0);
+    if (debug === "print" || debug === "poseback") setTimeout(openPrint, 0);
+    // ?debug=poseback turns every picture over at once, which is the only way
+    // to see the tile backs in a screenshot.
+    if (debug === "poseback") setTimeout(function () {
+      document.querySelectorAll(".card-mini").forEach(function (t) { t.classList.add("flipped"); t.style.transform = "rotateY(180deg)"; });
+    }, 30);
   }
 
   // The back as an element rather than markup in a page: six pages carry this
@@ -217,20 +222,78 @@
     const shots = PRINT.poses(params);
     const labels = LABELS[PRINT.kind ? PRINT.kind(params) : "skater"] || LABELS.skater;
 
+    // Each picture IS the card, small: same markup, same styles, front and
+    // back, so what a tile shows is what the sheet prints.
     shots.forEach(function (shot, i) {
-      const tile = document.createElement("button");
-      tile.type = "button";
+      const tile = document.createElement("div");
       tile.className = "card-pose";
       tile.setAttribute("role", "radio");
-      tile.appendChild(thumb(shot));
+      tile.setAttribute("tabindex", "0");
+
+      const mini = document.createElement("div");
+      mini.className = "card card-mini has-back";
+      mini.appendChild(miniFront(shot));
+      mini.appendChild(makeBack());          // kept in step by showFilled()
+      tile.appendChild(mini);
+
+      tile.appendChild(poseFlip(mini));
       tile.appendChild(text("span", "card-pose-label", labels[i] || ""));
       tile.addEventListener("click", function () { choose(i); });
+      tile.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          choose(i);
+        }
+      });
       row.appendChild(tile);
     });
     wire("card-pose-all", function (el) {
       el.addEventListener("change", function () { printing.allPoses = el.checked; });
     });
     choose(printing.pose);
+  }
+
+  // The front of a small card: the picture, the name plate, their phrase.
+  function miniFront(shot) {
+    const frame = document.createElement("div");
+    frame.className = "card-frame";
+    const photo = document.createElement("div");
+    photo.className = "card-photo";
+    photo.appendChild(thumb(shot));
+    frame.appendChild(photo);
+
+    const plate = document.createElement("div");
+    plate.className = "card-plate";
+    plate.appendChild(text("p", "card-number", params.number ? "#" + params.number : ""));
+    const id = document.createElement("div");
+    id.className = "card-id";
+    id.appendChild(text("h3", "card-name", params.name || "Unnamed"));
+    id.appendChild(text("p", "card-pos", params.position));
+    plate.appendChild(id);
+    frame.appendChild(plate);
+
+    if (params.phrase) {
+      frame.appendChild(text("p", "card-quote", "\u201c" + params.phrase + "\u201d"));
+    }
+    return frame;
+  }
+
+  // Turns one small card over, and nothing else on the page.
+  function poseFlip(mini) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "card-pose-flip-btn";
+    button.setAttribute("aria-label", "Flip this picture");
+    const glyph = document.createElement("span");
+    glyph.setAttribute("aria-hidden", "true");
+    glyph.textContent = "\u21BB";
+    button.appendChild(glyph);
+    button.addEventListener("click", function (e) {
+      e.stopPropagation();       // choosing the picture is the tile's job
+      const on = mini.classList.toggle("flipped");
+      button.setAttribute("aria-label", on ? "Show the front" : "Flip this picture");
+    });
+    return button;
   }
 
   function thumb(shot) {
@@ -290,7 +353,6 @@
         const made = STATS.forPlayer(params, code());
         made.forEach(function (pair) { setStat(pair[0], String(pair[1])); });
         showFilled();
-        note("A season, invented. Change anything you like.");
       });
     });
     wire("card-fill-clear", function (el) {
@@ -346,8 +408,7 @@
       });
     };
 
-    [document.querySelector(".card-actions"),
-     document.getElementById("card-pose-flip")].forEach(function (host) {
+    [document.querySelector(".card-actions")].forEach(function (host) {
       if (!host) return;
       const button = document.createElement("button");
       button.type = "button";

@@ -14,6 +14,35 @@
 
   const FONTS = { normal: "F1", bold: "F2", italic: "F3" };
 
+  // Colours come in as "#RRGGBB" or as a grey 0-1, because most of this card
+  // is black, white and paper and a number is easier to read than a hex.
+  function paint(value, stroke) {
+    if (typeof value === "string" && value.charAt(0) === "#") {
+      const n = parseInt(value.slice(1), 16);
+      const rgb = [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+      return rgb.map(function (c) { return c.toFixed(3); }).join(" ") + (stroke ? " RG " : " rg ");
+    }
+    return (value == null ? 0 : value) + (stroke ? " G " : " g ");
+  }
+
+  // Rounded rectangle as four beziers. PDF has no such primitive, and a card
+  // with square corners does not look like a card.
+  function roundPath(x, y, w, h, r) {
+    const c = r * 0.5523;
+    return [
+      (x + r).toFixed(2) + " " + y.toFixed(2) + " m",
+      (x + w - r).toFixed(2) + " " + y.toFixed(2) + " l",
+      (x + w - r + c).toFixed(2) + " " + y.toFixed(2) + " " + (x + w).toFixed(2) + " " + (y + r - c).toFixed(2) + " " + (x + w).toFixed(2) + " " + (y + r).toFixed(2) + " c",
+      (x + w).toFixed(2) + " " + (y + h - r).toFixed(2) + " l",
+      (x + w).toFixed(2) + " " + (y + h - r + c).toFixed(2) + " " + (x + w - r + c).toFixed(2) + " " + (y + h).toFixed(2) + " " + (x + w - r).toFixed(2) + " " + (y + h).toFixed(2) + " c",
+      (x + r).toFixed(2) + " " + (y + h).toFixed(2) + " l",
+      (x + r - c).toFixed(2) + " " + (y + h).toFixed(2) + " " + x.toFixed(2) + " " + (y + h - r + c).toFixed(2) + " " + x.toFixed(2) + " " + (y + h - r).toFixed(2) + " c",
+      x.toFixed(2) + " " + (y + r).toFixed(2) + " l",
+      x.toFixed(2) + " " + (y + r - c).toFixed(2) + " " + (x + r - c).toFixed(2) + " " + y.toFixed(2) + " " + (x + r).toFixed(2) + " " + y.toFixed(2) + " c",
+      "h"
+    ].join(" ") + " ";
+  }
+
   function doc(width, height) {
     const ops = [];      // the page's content stream, built as we go
     const images = [];   // { name, jpeg, w, h }
@@ -37,8 +66,7 @@
         const o = opts || {};
         const font = FONTS[o.font || "normal"];
         const size = o.size || 10;
-        const grey = o.grey == null ? 0 : o.grey;
-        ops.push("BT /" + font + " " + size + " Tf " + grey + " g " +
+        ops.push("BT /" + font + " " + size + " Tf " + paint(o.grey) +
                  x.toFixed(2) + " " + y.toFixed(2) + " Td (" + esc(latin(value)) + ") Tj ET");
         return api;
       },
@@ -51,7 +79,7 @@
       },
       line: function (x1, y1, x2, y2, opts) {
         const o = opts || {};
-        ops.push((o.grey == null ? 0 : o.grey) + " G " + (o.width || 0.5) + " w " +
+        ops.push(paint(o.grey, true) + (o.width || 0.5) + " w " +
                  (o.dash ? "[" + o.dash + "] 0 d " : "[] 0 d ") +
                  x1.toFixed(2) + " " + y1.toFixed(2) + " m " +
                  x2.toFixed(2) + " " + y2.toFixed(2) + " l S");
@@ -59,12 +87,22 @@
       },
       rect: function (x, y, w, h, opts) {
         const o = opts || {};
-        const path = x.toFixed(2) + " " + y.toFixed(2) + " " + w.toFixed(2) + " " + h.toFixed(2) + " re ";
-        if (o.fill != null) ops.push(o.fill + " g " + path + "f");
+        const path = o.radius
+          ? roundPath(x, y, w, h, o.radius)
+          : x.toFixed(2) + " " + y.toFixed(2) + " " + w.toFixed(2) + " " + h.toFixed(2) + " re ";
+        if (o.fill != null) ops.push(paint(o.fill) + path + "f");
         if (o.stroke != null) {
-          ops.push(o.stroke + " G " + (o.width || 1) + " w " +
+          ops.push(paint(o.stroke, true) + (o.width || 1) + " w " +
                    (o.dash ? "[" + o.dash + "] 0 d " : "[] 0 d ") + path + "S");
         }
+        return api;
+      },
+      // Everything drawn inside the callback is clipped to a rounded box, which
+      // is how the photo and the plate keep the card's corners.
+      clip: function (x, y, w, h, r, inside) {
+        ops.push("q " + roundPath(x, y, w, h, r) + "W n");
+        inside();
+        ops.push("Q");
         return api;
       },
       // A canvas, pasted in as JPEG. Canvases here are drawn by CAP_DRAW.

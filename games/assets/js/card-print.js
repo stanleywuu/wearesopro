@@ -16,7 +16,15 @@
   const PAGE = { w: 612, h: 792 };          // US Letter, points
   const CARD = { w: 180, h: 252 };          // 2.5 x 3.5 inches, a hockey card
   const GAP = 36;
-  const INK = 0.12, MID = 0.45, PALE = 0.75;
+  // Straight off the page's own stylesheet: the printed card is meant to be the
+  // card you were just looking at, not a black-and-white version of it.
+  const INK = "#16222E", MID = "#516273", PALE = "#C8D3DE";
+  const GOLD = ["#FDD835", "#F8A41B", "#E8890B"];   // the border, top to bottom
+  const ICE = "#EEF6FF", PAPER = "#FFFDF6", WHITE = "#FFFFFF";
+  const PLATE_SUB = "#9FB4C7";
+  const PAD = 7;                 // the card's gold margin
+  const R = 7;                   // corner radius, card
+  const RI = 4;                  // corner radius, inner frame
 
   // Four cards on one page, two ways round.
   //
@@ -82,26 +90,71 @@
 
   // ---- front -------------------------------------------------------------
 
+  // The card as the page draws it: a gold border, an inked frame, the picture
+  // on ice, a dark name plate and their phrase on paper.
+  function body(doc, x, y) {
+    // A stack of thin bands rather than a gradient: a PDF gradient is a whole
+    // shading dictionary, and twenty slices of it are smooth at this size.
+    doc.rect(x, y, CARD.w, CARD.h, { fill: GOLD[2], radius: R });
+    doc.clip(x, y, CARD.w, CARD.h, R, function () {
+      const bands = 20;
+      for (let i = 0; i < bands; i++) {
+        const t = i / (bands - 1);            // 0 at the bottom, 1 at the top
+        doc.rect(x, y + CARD.h * t, CARD.w, CARD.h / bands + 0.6,
+                 { fill: blend(GOLD, t) });
+      }
+    });
+  }
+
+  // Two-stop interpolation across the gold, bottom colour first.
+  function blend(stops, t) {
+    const list = stops.slice().reverse();      // dark at 0, bright at 1
+    const at = Math.min(0.999, Math.max(0, t)) * (list.length - 1);
+    const i = Math.floor(at);
+    return mix(list[i], list[i + 1], at - i);
+  }
+
+  function mix(a, b, t) {
+    const A = parseInt(a.slice(1), 16), B = parseInt(b.slice(1), 16);
+    const out = [16, 8, 0].map(function (shift) {
+      const from = A >> shift & 255, to = B >> shift & 255;
+      return Math.round(from + (to - from) * t);
+    });
+    return "#" + out.map(function (c) { return ("0" + c.toString(16)).slice(-2); }).join("");
+  }
+
   function front(doc, x, y, params, shot) {
     cut(doc, x, y);
-    const photo = { x: x + 10, y: y + 78, w: CARD.w - 20, h: CARD.h - 96 };
-    doc.rect(photo.x, photo.y, photo.w, photo.h, { fill: 0.95, stroke: INK, width: 1 });
-    // Fitted, never stretched: the render is taller than it is wide (180x200)
-    // and the photo window is not, so filling the window made every player a
-    // stone heavier than they are on screen.
-    const box = fit(photo, DRAW.LW / DRAW.LH);
-    doc.image(player(params, shot), box.x, box.y, box.w, box.h);
+    body(doc, x, y);
 
-    // Name plate across the bottom, the way a card has always done it.
-    doc.rect(x + 10, y + 34, CARD.w - 20, 40, { fill: INK });
-    doc.text(x + 18, y + 55, params.number ? "#" + params.number : "", { font: "bold", size: 15, grey: 1 });
-    doc.text(x + 18 + (params.number ? 34 : 0), y + 56, params.name || "Unnamed",
-             { font: "bold", size: 12, grey: 1 });
-    doc.text(x + 18 + (params.number ? 34 : 0), y + 43,
-             params.position + " - shoots " + (params.handedness === "right" ? "right" : "left"),
-             { size: 7.5, grey: 0.85 });
+    const fx = x + PAD, fy = y + PAD, fw = CARD.w - PAD * 2, fh = CARD.h - PAD * 2;
+    doc.rect(fx, fy, fw, fh, { fill: WHITE, stroke: INK, width: 1.6, radius: RI });
+
+    const plateH = 34, quoteH = 18;
+    const photo = { x: fx, y: fy + quoteH + plateH, w: fw, h: fh - quoteH - plateH };
+    doc.clip(fx, fy, fw, fh, RI, function () {
+      doc.rect(photo.x, photo.y, photo.w, photo.h, { fill: ICE });
+      // Fitted, never stretched: the render is taller than it is wide (180x200),
+      // and filling the window made every player a stone heavier.
+      const box = fit(photo, DRAW.LW / DRAW.LH);
+      doc.image(player(params, shot), box.x, box.y, box.w, box.h);
+
+      // Name plate across the bottom, the way a card has always done it.
+      doc.rect(fx, fy + quoteH, fw, plateH, { fill: INK });
+      doc.rect(fx, fy, fw, quoteH, { fill: PAPER });
+    });
+    doc.line(photo.x, photo.y, photo.x + photo.w, photo.y, { grey: INK, width: 1.6 });
+    doc.line(fx, fy + quoteH, fx + fw, fy + quoteH, { grey: PALE, width: 0.8 });
+
+    const num = params.number ? "#" + params.number : "";
+    const textX = fx + 8 + (num ? 30 : 0);
+    if (num) doc.text(fx + 8, fy + quoteH + 11, num, { font: "bold", size: 15, grey: GOLD[0] });
+    doc.text(textX, fy + quoteH + 18, params.name || "Unnamed", { font: "bold", size: 11, grey: WHITE });
+    doc.text(textX, fy + quoteH + 8,
+             (params.position + " - shoots " + (params.handedness === "right" ? "right" : "left")).toUpperCase(),
+             { size: 6.5, grey: PLATE_SUB });
     if (params.phrase) {
-      doc.text(x + 12, y + 20, quote(params.phrase, 46), { font: "italic", size: 8, grey: MID });
+      doc.text(fx + 8, fy + 6.5, quote(params.phrase, 46), { font: "italic", size: 7.5, grey: MID });
     }
   }
 
@@ -109,9 +162,16 @@
 
   function back(doc, x, y, params, typed) {
     cut(doc, x, y);
-    let top = y + CARD.h - 24;
-    doc.text(x + 14, top, (params.number ? "#" + params.number + "  " : "") + (params.name || "Unnamed"),
-             { font: "bold", size: 12, grey: INK });
+    body(doc, x, y);
+    const fx = x + PAD, fy = y + PAD, fw = CARD.w - PAD * 2, fh = CARD.h - PAD * 2;
+    doc.rect(fx, fy, fw, fh, { fill: WHITE, stroke: INK, width: 1.6, radius: RI });
+    x = fx - 4;                  // the rest of this was written against the card edge
+    let top = fy + fh - 20;
+    if (params.number) {
+      doc.text(x + 14, top, "#" + params.number, { font: "bold", size: 13, grey: GOLD[2] });
+    }
+    doc.text(x + 14 + (params.number ? 30 : 0), top, params.name || "Unnamed",
+             { font: "bold", size: 11.5, grey: INK });
     top -= 13;
     doc.text(x + 14, top, params.position + " - shoots " + (params.handedness === "right" ? "right" : "left"),
              { size: 7.5, grey: MID });
@@ -124,7 +184,7 @@
     const cellW = (CARD.w - 28) / heads.length;
     heads.forEach(function (label, i) {
       const cx = x + 14 + i * cellW;
-      doc.rect(cx + 1, top, cellW - 2, 30, { stroke: PALE, width: 0.8 });
+      doc.rect(cx + 1, top, cellW - 2, 30, { fill: PAPER, stroke: PALE, width: 0.8, radius: 2 });
       doc.centre(cx + 1, cellW - 2, top + 22, label, { size: 6.5, grey: MID });
       // Printed only if they typed it. An empty box is the whole point.
       const value = (typed.stats && typed.stats[label]) || "";

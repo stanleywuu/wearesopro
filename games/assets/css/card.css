@@ -195,7 +195,49 @@
   border-radius: 10px;
   cursor: pointer;
 }
-.card-pose canvas { width: 100%; height: auto; background: #EEF6FF; border-radius: 6px; }
+/* A picture tile is the card itself, small: same markup, same rules, so the
+   only difference is the size of the type. */
+.card-pose { position: relative; }
+.card-mini { width: 100%; padding: 6px; border-radius: 9px; box-shadow: 0 4px 12px rgba(11,27,42,.18); }
+.card-mini .card-frame { border-width: 2px; border-radius: 5px; }
+.card-mini .card-photo { border-bottom-width: 2px; }
+.card-mini .card-plate { padding: .3rem .35rem; gap: .3rem; }
+.card-mini .card-number { font-size: .85rem; }
+.card-mini .card-name { font-size: .62rem; }
+.card-mini .card-pos { font-size: .4rem; letter-spacing: .04em; }
+.card-mini .card-quote { font-size: .42rem; padding: .2rem .35rem; }
+.card-mini .card-back { inset: 6px; padding: .4rem .45rem; gap: .3rem; border-width: 2px; border-radius: 5px; }
+.card-mini .card-back-number { font-size: .8rem; }
+.card-mini .card-back-name { font-size: .6rem; }
+.card-mini .card-back-pos { font-size: .4rem; }
+.card-mini .card-stats { gap: .12rem; }
+.card-mini .card-stat { padding: .12rem 0; border-radius: 3px; }
+.card-mini .card-stat-label { font-size: .33rem; letter-spacing: .02em; }
+.card-mini .card-stat-value { font-size: .5rem; }
+.card-mini .card-back-story { font-size: .37rem; line-height: 1.25; }
+.card-mini .card-back-quote { font-size: .4rem; }
+.card-mini .card-back-mark { font-size: .3rem; }
+
+/* The flip sits on the tile, above whichever face is showing. */
+.card-pose-flip-btn {
+  position: absolute;
+  top: .3rem;
+  right: .3rem;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: .8rem;
+  line-height: 1;
+  color: var(--ink);
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.card-pose-flip-btn:hover { background: #fff; border-color: var(--ink); }
 .card-pose-label { font-size: .7rem; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .card-pose.chosen { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(22,104,196,.18); }
 .card-pose.chosen .card-pose-label { color: var(--accent); font-weight: 700; }
@@ -216,5 +258,4 @@
 /* Flip reads as a control, not a decoration: icon plus words, in the row with
    the card and again beside the pictures in the print panel. */
 .card-flip-btn { display: inline-flex; align-items: center; gap: .35rem; }
-.card-pose-flip { margin: 0 0 1rem; }
-.card-print-sub { margin: 0 0 .5rem; font-size: .85rem; }
+

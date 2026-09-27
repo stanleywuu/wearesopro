@@ -348,7 +348,10 @@
     const r = rotY(x, 2, yaw);
     const c = project(r.x, SKATE_Y + SKATE_MID, r.z);
     return {
-      d: r.z,
+      // In FRONT of the leg it belongs to, always. Sorted on its own depth the
+      // boot ended up behind the sock at most angles, leaving a sliver of dark
+      // at the ankle and nothing that reads as a skate.
+      d: r.z + 3,
       draw: () => {
         const hw = silWidth(7, 5, yaw, 0) * c.k;
         drawSlab(ctx, {
