@@ -25,10 +25,23 @@
   const TAIL_PALETTES = [
     ["hairColor", D.hairColors],
     ["cardEdge", D.cardEdgeColors],
-    ["cardBack", D.cardBackColors]
+    ["cardBack", D.cardBackColors],
+    ["stickColor", D.stickColors]
   ];
 
-  const ALL_PALETTES = PALETTES.concat(TAIL_PALETTES);
+  // Pants and gloves, whose default is not a colour at all: it is "follow the
+  // jersey", and the renderer works out the shade. Empty means that, which is
+  // also what a code written before these existed has in these slots - so an
+  // old player draws exactly as he always did. Kept apart from TAIL_PALETTES
+  // because those default to the head of their list instead.
+  const AUTO_PALETTES = [
+    ["pantsColor", D.pantsColors],
+    ["gloveColor", D.gloveColors]
+  ];
+
+  const AUTO_KEYS = AUTO_PALETTES.map(entry => entry[0]);
+
+  const ALL_PALETTES = PALETTES.concat(TAIL_PALETTES, AUTO_PALETTES);
 
   // Enums added after v1, in the order they ride at the tail of the code. An
   // id of "none" is the default, which is what lets them encode empty and be
@@ -62,6 +75,9 @@
       trimColor: D.trimColors[0],
       sockColor: D.jerseyColors[0],
       helmetColor: D.helmetColors[0],
+      pantsColor: "",
+      gloveColor: "",
+      stickColor: D.stickColors[0],
       helmetStyle: "visor",
       hairStyle: "short",
       faceHair: "none",
@@ -92,6 +108,9 @@
     out.trimColor = pick(D.trimColors);
     out.sockColor = pick(D.jerseyColors);
     out.helmetColor = pick(D.helmetColors);
+    // Pants and gloves stay on the jersey - that is what a team looks like.
+    // The stick is the one bit of kit everybody buys for themselves.
+    out.stickColor = pick(D.stickColors);
     out.handedness = pick(D.handedness).id;
     out.name = pick(D.randomNames);
     out.number = String(Math.floor(Math.random() * 98) + 1);
@@ -158,6 +177,11 @@
     TAIL_PALETTES.forEach(entry => {
       fields.push(params[entry[0]] === entry[1][0] ? "" : encodeColor(params[entry[0]], entry[1]));
     });
+    // Empty already means "follow the jersey" here, so there is nothing to
+    // compare against - the value goes out as it is.
+    AUTO_PALETTES.forEach(entry => {
+      fields.push(params[entry[0]] ? encodeColor(params[entry[0]], entry[1]) : "");
+    });
     // Empty name/number/phrase at the end are just dead weight in the URL.
     while (fields.length && fields[fields.length - 1] === "") fields.pop();
     return SHARE_VERSION + "~" + fields.join("~");
@@ -195,6 +219,10 @@
       const field = next();
       raw[entry[0]] = field === "" ? entry[1][0] : decodeColor(field, entry[1]);
     });
+    AUTO_PALETTES.forEach(entry => {
+      const field = next();
+      raw[entry[0]] = field === "" ? "" : decodeColor(field, entry[1]);
+    });
     return raw;
   }
 
@@ -226,7 +254,10 @@
       if (Number.isFinite(value)) out[key] = Math.min(spec.max, Math.max(spec.min, Math.round(value)));
     });
     ALL_PALETTES.forEach(entry => {
-      if (isHexColor(raw[entry[0]])) out[entry[0]] = raw[entry[0]];
+      const value = raw[entry[0]];
+      if (isHexColor(value)) out[entry[0]] = value;
+      // An auto field is allowed to be empty, and only an auto field is.
+      else if (value === "" && AUTO_KEYS.indexOf(entry[0]) >= 0) out[entry[0]] = "";
     });
     if (D.positions.indexOf(raw.position) >= 0) out.position = raw.position;
     out.name = capText(raw.name, 14);
@@ -256,8 +287,14 @@
   // tail. defaults() still starts a NEW player on "short".
   const PRE_V2 = { hairStyle: "none", faceHair: "none" };
 
+  // Same reasoning for the kit colours added later: a player who never chose
+  // pants or gloves wears the jersey's shade, which is the only answer that
+  // leaves him looking the way he looked. defaults() says the same thing, so
+  // this is only here to survive a raw object with the fields missing.
+  const PRE_KIT = { pantsColor: "", gloveColor: "", stickColor: D.stickColors[0] };
+
   function merge(raw) {
-    return Object.assign(defaults(), PRE_V2, sanitize(raw));
+    return Object.assign(defaults(), PRE_V2, PRE_KIT, sanitize(raw));
   }
 
   // A whole player from a code. Throws on a code that will not parse at all -

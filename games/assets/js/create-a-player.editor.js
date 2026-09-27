@@ -96,6 +96,7 @@
     function buildSwatches() {
       root.querySelectorAll("[data-swatch]").forEach(box => {
         const key = box.dataset.swatch;
+        if (box.dataset.auto) addAutoSwatch(box, key);
         D[box.dataset.palette].forEach(color => {
           const btn = document.createElement("button");
           btn.type = "button";
@@ -110,6 +111,22 @@
       });
     }
 
+    // Pants and gloves follow the jersey unless somebody says otherwise, so
+    // "follow the jersey" has to be a thing you can pick - and go back to.
+    // Word, not a colour: it is the absence of a choice, and a swatch showing
+    // the shade it currently works out to would read as one more colour.
+    function addAutoSwatch(box, key) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "cap-swatch cap-swatch-auto" + (params[key] ? "" : " active");
+      btn.dataset.color = "";
+      btn.textContent = "Kit";
+      btn.title = "Follow the jersey";
+      btn.setAttribute("aria-label", key + ", follow the jersey");
+      btn.addEventListener("click", () => selectSwatch(box, key, ""));
+      box.appendChild(btn);
+    }
+
     // The presets are a starting point, not the whole range: every row ends with
     // a colour picker so any shade is reachable.
     function addCustomSwatch(box, key) {
@@ -118,7 +135,9 @@
       label.title = "Any other colour";
       const input = document.createElement("input");
       input.type = "color";
-      input.value = params[key];
+      // An auto row starts with no colour at all, which a colour input cannot
+      // hold - it would silently become black.
+      input.value = params[key] || D[box.dataset.palette][0];
       input.setAttribute("aria-label", key + ", custom colour");
       // Tap to wear it, tap again to change it.
       //
@@ -153,7 +172,7 @@
     // next player in the same kit needs it to still be there.
     function syncSwatchRow(box, color) {
       const custom = box.querySelector(".cap-swatch-custom");
-      const preset = D[box.dataset.palette].indexOf(color) >= 0;
+      const preset = !color || D[box.dataset.palette].indexOf(color) >= 0;
       if (custom && !preset) {
         custom.dataset.color = color;
         custom.style.background = color;

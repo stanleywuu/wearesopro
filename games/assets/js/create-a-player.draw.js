@@ -85,6 +85,25 @@
     return "rgb(" + r + "," + g + "," + b + ")";
   }
 
+  const STICK_WOOD = "#C9A227";   // what a stick was drawn in before it could be chosen
+
+  // The three bits of kit that can be chosen or left to follow the rest. Empty
+  // means follow, and what it follows is what these parts were always drawn in -
+  // so a player built before the choice existed looks unchanged.
+  function pantsOf(params) {
+    return params.pantsColor || shade(params.jerseyColor, -0.2);
+  }
+
+  function glovesOf(params) {
+    // A darker shade of the jersey rather than the lettering colour - white
+    // lettering is right on a jersey, wrong on a glove.
+    return params.gloveColor || shade(params.jerseyColor, -0.4);
+  }
+
+  function stickOf(params) {
+    return params.stickColor || STICK_WOOD;
+  }
+
   function depthSort(parts) {
     parts.sort((a, b) => a.d - b.d);
   }
@@ -304,7 +323,7 @@
         hw: silWidth(t.rx * 0.92, t.rz * 0.92, yaw, 0) * c.k,
         hh: 7.5 * c.k,
         shape: "capsule", taper: 0.9, round: 1,
-        color: shade(params.jerseyColor, -0.2), yaw: yaw
+        color: pantsOf(params), yaw: yaw
       })
     };
   }
@@ -331,7 +350,7 @@
         hw: silWidth(9.5, 8.5, yaw, 0) * c.k,
         hh: 11 * c.k,
         shape: "capsule", taper: 0.95, round: 1,
-        color: shade(params.jerseyColor, -0.2), yaw: yaw
+        color: pantsOf(params), yaw: yaw
       })
     };
   }
@@ -1235,9 +1254,7 @@
     const s = stickFor(dims, params);
     const grips = gripsFor(dims, s);
     const shoulderX = dims.torso.rx * 0.70;
-    // Gloves take a darker shade of the jersey rather than the lettering
-    // colour — white lettering is right on a jersey, wrong on a glove.
-    const gloveColor = shade(params.jerseyColor, -0.4);
+    const gloveColor = glovesOf(params);
     const shaft = stickDepth(s, yaw);
     // Which shoulder owns which hand. Both grips sit on the blade's side of the
     // body, so the shoulder on THAT side takes the top hand and stays tucked,
@@ -1311,16 +1328,17 @@
 
   function stickPart(ctx, dims, params, yaw) {
     const s = stickFor(dims, params);
-    if (dims.goalie) return goalieStickPart(ctx, s, yaw);
+    if (dims.goalie) return goalieStickPart(ctx, s, yaw, params);
     const b = proj3(s.butt, yaw);
     const h = proj3(s.heel, yaw);
     const t = proj3(s.toe, yaw);
+    const wood = stickOf(params);
     return {
       d: stickDepth(s, yaw),
       draw: () => {
         ctx.lineCap = "round";
         L(ctx, b.sx, b.sy, h.sx, h.sy, OUTLINE, 3.6);
-        L(ctx, b.sx, b.sy, h.sx, h.sy, "#C9A227", 2.2);
+        L(ctx, b.sx, b.sy, h.sx, h.sy, wood, 2.2);
         L(ctx, h.sx, h.sy, t.sx, t.sy, OUTLINE, 4.2);
         ctx.lineCap = "butt";
       }
@@ -1330,21 +1348,22 @@
   // Thin shaft down to the paddle, then a broad paddle and a broad blade. Drawn
   // as three strokes of increasing width rather than a filled outline - at this
   // size the widths are the whole read.
-  function goalieStickPart(ctx, s, yaw) {
+  function goalieStickPart(ctx, s, yaw, params) {
     const b = proj3(s.butt, yaw);
     const m = proj3(paddleTop(s), yaw);
     const h = proj3(s.heel, yaw);
     const t = proj3(s.toe, yaw);
+    const wood = stickOf(params);
     return {
       d: stickDepth(s, yaw),
       draw: () => {
         ctx.lineCap = "round";
         L(ctx, b.sx, b.sy, m.sx, m.sy, OUTLINE, 4.0);
-        L(ctx, b.sx, b.sy, m.sx, m.sy, "#C9A227", 2.4);
+        L(ctx, b.sx, b.sy, m.sx, m.sy, wood, 2.4);
         L(ctx, m.sx, m.sy, h.sx, h.sy, OUTLINE, 12.5);
-        L(ctx, m.sx, m.sy, h.sx, h.sy, "#C9A227", 10.0);
+        L(ctx, m.sx, m.sy, h.sx, h.sy, wood, 10.0);
         L(ctx, h.sx, h.sy, t.sx, t.sy, OUTLINE, 8.5);
-        L(ctx, h.sx, h.sy, t.sx, t.sy, "#C9A227", 6.2);
+        L(ctx, h.sx, h.sy, t.sx, t.sy, wood, 6.2);
         ctx.lineCap = "butt";
       }
     };

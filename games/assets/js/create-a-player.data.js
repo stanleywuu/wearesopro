@@ -70,6 +70,16 @@ window.CAP_DATA = {
 
   hairColors:   ["#2B1B12", "#5A3A21", "#8D5524", "#C68642", "#D9A441", "#8E8E8E", "#EDEDED"],
 
+  // Pants, gloves and stick. Six each, not seven: these rows carry an extra
+  // "Kit" swatch in front of the presets (pants and gloves follow the jersey
+  // until you say otherwise), and the row plus its picker still has to fit on
+  // one line. Appended after everything else - see "tail" in the codec.
+  pantsColors:  ["#2B2B2B", "#12213B", "#5A1B1B", "#1B3A24", "#6E6E6E", "#EDEDED"],
+  gloveColors:  ["#212121", "#0D47A1", "#E53935", "#1E88E5", "#43A047", "#FAFAFA"],
+  // Tan first, and it is the same tan the stick was always drawn in, so the
+  // head of this list IS the default rather than a new look for old players.
+  stickColors:  ["#C9A227", "#7B3F00", "#2B2B2B", "#E53935", "#1E88E5", "#FAFAFA"],
+
   randomNames: [
     "Tommy", "Stanley", "Dale", "Ricky", "Wheels", "Bucket", "Chief", "Turbo",
     "Moose", "Sniper", "Biscuit", "Twig", "Gordie", "Chachi", "Rocket", "Bruiser"

@@ -160,6 +160,25 @@
   transform: scale(1.12);
 }
 
+/* "Kit" - follow the jersey - at the HEAD of the pants and gloves rows. A word
+   in a pill rather than a circle: it is the absence of a colour choice, so a
+   coloured dot would read as one more colour. */
+.cap-swatch-auto {
+  width: auto;
+  height: 22px;
+  padding: 0 .4rem;
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: .62rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+.cap-swatch-auto.active { background: var(--text); color: var(--surface); }
+
 /* The "any other colour" picker at the end of each row. The native colour
    input is sized to fill the circle so the whole swatch is the hit target. */
 .cap-swatch-custom {
@@ -381,6 +400,7 @@
 
   /* Bigger tap targets on touch screens. */
   .cap-swatch { width: 32px; height: 32px; }
+  .cap-swatch-auto { width: auto; border-radius: 16px; font-size: .7rem; }
 
   /* A colour row cannot shrink below its swatches, so on a phone the one-row
      rule held the whole controls column wider than the screen and the page
