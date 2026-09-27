@@ -314,8 +314,16 @@
   // than starting below it: with a gap, the band and the cuffs read as two
   // separate dark lumps with sock showing between them, not as trousers.
   function pantsCuff(ctx, dims, params, yaw, side, legDepth) {
-    const r = rotY(side * (dims.legX + 0.5), 3, yaw);
-    const c = project(r.x, dims.hipY - 8.5, r.z);
+    // Rides the thigh itself - the same hip and knee legPart uses - so when a
+    // crouch swings the knee forward the pants go with it. Pinned to the hip
+    // instead, they stayed put while the leg moved out from under them.
+    const hip = { x: side * dims.legX, y: dims.hipY, z: 1 + dims.crouch * 5 };
+    const knee = { x: side * (dims.legX + 1.5), y: (dims.hipY + SKATE_Y) / 2 + 1,
+                   z: 7 + dims.crouch * 12 };
+    const mid = { x: (hip.x + knee.x) / 2, y: (hip.y + knee.y) / 2 + 3,
+                  z: (hip.z + knee.z) / 2 };
+    const r = rotY(mid.x, mid.z, yaw);
+    const c = project(r.x, mid.y, r.z);
     return {
       d: Math.max(legDepth, 0) + 0.3,
       draw: () => drawSlab(ctx, {

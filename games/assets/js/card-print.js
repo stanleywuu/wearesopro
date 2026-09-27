@@ -73,7 +73,7 @@
   // celebration after it. The goalie's three are three different saves and
   // need no help.
   const MOMENTS = {
-    skater:  [{ ms: 0, yaw: 0.5 }, { ms: 1950 }, { ms: 2900, yaw: 0.85 }],
+    skater:  [{ ms: 0, yaw: 0.5 }, { ms: 1950 }, { ms: 3400, yaw: 0.85 }],
     defence: [{ ms: 0, yaw: 0.5 }, { ms: 1200 }, { ms: 2450 }],
     goalie:  [{ ms: 0 }, { ms: 1150 }, { ms: 1780 }]
   };
@@ -263,8 +263,11 @@
     canvas.height = DRAW.LH * DRAW.S * 2;
     const ctx = canvas.getContext("2d");
     ctx.scale(2, 2);
+    // uniformFit, not the builder's auto zoom: auto leaves headroom for the
+    // tallest build there is, which on a card is a third of the picture spent
+    // on empty ice above the helmet.
     DRAW.render(ctx, params, shot ? shot.yaw : 0.5, shot ? shot.anim : null,
-                { background: false });
+                { background: false, fit: DRAW.uniformFit(params) });
     return canvas;
   }
 
