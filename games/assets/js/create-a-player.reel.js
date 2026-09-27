@@ -21,6 +21,16 @@
   const SKATER = ["shot", "wipeout", "spin"];
   const GOALIE = ["saves", "scramble"];
 
+  // Not in the pool, and not rolled: the one highlight you have to be somebody
+  // to get. Stanley shoots it between his own legs, from behind - name a player
+  // after him and it is yours too, which is the point of an easter egg.
+  const HIDDEN = { stanley: "cheeky" };
+
+  function hiddenFor(params) {
+    if (params.position === "Goalie") return null;
+    return HIDDEN[String(params.name || "").trim().toLowerCase()] || null;
+  }
+
   // A goalie does not take the highlight, he is the highlight: leaning on his
   // stick in front of the net, then three saves in a row with no warning.
   const SAVES = [
@@ -62,7 +72,8 @@
     if (params.position === "Goalie") {
       return goalieReel(kind || GOALIE[next(0, GOALIE.length - 1)]);
     }
-    const pick = kind || SKATER[next(0, SKATER.length - 1)];
+    const pick = kind || hiddenFor(params) || SKATER[next(0, SKATER.length - 1)];
+    if (pick === "cheeky") return cheekyReel(params);
     if (pick === "wipeout") return wipeoutReel(params);
     if (pick === "spin") return spinReel(params);
     return shotReel(params, next);
@@ -138,6 +149,25 @@
       land: 1450, end: 2600 };
   }
 
+  // The hidden one, and the real move rather than an impression of it:
+  //
+  //   he is skating with the puck out in front, then drags it back between his
+  //   own skates, the hands staying forward and dropping to the waist so the
+  //   shaft comes down almost upright and passes BETWEEN his legs; the blade
+  //   meets the puck behind his back skate, on the ice, and snaps it forward -
+  //   the puck goes out under him, between his legs, and away to the net.
+  //
+  // Nothing about the upper body is special: it is the ordinary shot he was
+  // going to take, played with the stick in an absurd place.
+  function cheekyReel(params) {
+    return { kind: "cheeky", slap: false, home: 6, yaw: SIDE_ON,
+      mirror: params.handedness === "right", label: "Nasty!",
+      glide: 900,                // carrying it, stick out in front
+      contact: 1620,             // the drag back takes a beat - it is the trick
+      snap: 200,                 // and the blade goes through it
+      land: 2120, end: 3000 };
+  }
+
   function goalieReel(kind) {
     // Face on, not side on: a goalie is looked at down the ice, with the net
     // behind him and the blocker and glove out to either side of frame.
@@ -172,7 +202,8 @@
     }
     if (reel.save) return goalieFrame(reel, ms, anim);
     if (reel.kind === "wipeout") return wipeoutFrame(reel, ms, anim);
-    if (reel.kind === "spin") spinAt(reel, ms, anim);
+    if (reel.kind === "cheeky") cheekyAt(reel, ms, anim);
+    else if (reel.kind === "spin") spinAt(reel, ms, anim);
     else if (reel.slap) slapAt(reel, ms, anim);
     else wristAt(reel, ms, anim);
     if (ms >= reel.contact) {
@@ -319,6 +350,38 @@
                           contact: reel.contact, crouch: 0.6 });
   }
 
+  // The shot he always takes, taken too far. The wrist shot's own pull-back
+  // already draws the stick back behind him; this one keeps pulling - past
+  // where anybody stops - with the hands coming in to the centre line, so the
+  // bottom of the shaft ends up behind his legs and the puck leaves from
+  // there. The recovery is the only ordinary part of it.
+  const CHEEKY_BACK = -0.5;      // a little across the body, no more
+  const CHEEKY_TILT = 0.92;      // the shaft swings back under him, hands staying put
+
+  function cheekyAt(reel, ms, anim) {
+    if (ms < reel.glide) return;
+    if (ms < reel.contact) {
+      // Dragging it back: hands in to the centre line and down to the waist,
+      // shaft swinging under him until the blade is behind his back skate.
+      const t = (ms - reel.glide) / (reel.contact - reel.glide);
+      const ease = t * t * (3 - 2 * t);
+      anim.crouch = 0.35 + 0.5 * ease;
+      anim.tuck = ease;
+      anim.swing = CHEEKY_BACK * ease;
+      anim.lift = CHEEKY_TILT * ease;
+      return;
+    }
+    // Through the puck, and that is where he stays: the blade carries a little
+    // way forward between his legs and stops there. Putting the stick back out
+    // in front afterwards reads as though he had not meant to do it.
+    const t = Math.min(1, (ms - reel.contact) / reel.snap);
+    const out = Math.min(1, (ms - reel.contact) / 700);
+    anim.tuck = 1;
+    anim.swing = CHEEKY_BACK;
+    anim.lift = CHEEKY_TILT * (1 - 0.3 * t);
+    anim.crouch = 0.85 - 0.3 * out;
+  }
+
   // The edge goes while he is still going. The turn accelerates the way a fall
   // does (t*t, not a constant rate) and lands with one small settle rather than
   // stopping dead. Flat is a bit short of a right angle, because a player on
@@ -366,6 +429,16 @@
     return reel.from + reel.speed * reel.down + slide * (1 - Math.pow(1 - t, 3));
   }
 
-  window.CAP_REEL = { build: build, at: at, KINDS: SKATER.concat(GOALIE) };
+  // Every kind by name (?debug=reel&kind=...), and the ones a given player can
+  // be shown in - his own hidden one included, so the card's print picker can
+  // offer it to whoever has it.
+  function kindsFor(params) {
+    if (params.position === "Goalie") return GOALIE.slice();
+    const hidden = hiddenFor(params);
+    return hidden ? SKATER.concat([hidden]) : SKATER.slice();
+  }
+
+  window.CAP_REEL = { build: build, at: at, kindsFor: kindsFor,
+                      KINDS: SKATER.concat(GOALIE, ["cheeky"]) };
 
 })();

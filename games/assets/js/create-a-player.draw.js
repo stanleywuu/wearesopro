@@ -1155,6 +1155,7 @@
     const toe = { x: heel.x - hand * 11, y: 2.5, z: heel.z + 4 };
 
     let s = { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
+    if (ANIM && ANIM.tuck) s = tuckStick(s, dims, ANIM.tuck);
     if (ANIM && ANIM.lift) s = liftStick(s, ANIM.lift);
     if (ANIM && ANIM.swing) s = swingStick(s, ANIM.swing * hand);
     return s;
@@ -1217,6 +1218,25 @@
   // above cannot do - it only ever moves the blade sideways. Positive angle
   // takes the blade up and back into the windup; negative finishes it high in
   // front on the follow-through.
+  // Between the legs: the top hand stays out IN FRONT of him, where it was. All
+  // this does is bring it in to the centre line, so the shaft hangs between his
+  // legs instead of outside one, and sink it to the waist - which is what puts
+  // the blade back down on the ice once the lift has swung it under him. What
+  // goes back is the bottom of the stick, and that is the lift, turning about
+  // this hand.
+  const TUCK_DROP = 15;          // how far the top hand sinks as the stick goes through
+
+  function tuckStick(s, dims, t) {
+    const x = s.topHand.x * (1 - 0.95 * t);
+    const by = { x: x - s.topHand.x, y: -TUCK_DROP * t };
+    const move = pt => ({ x: pt.x + by.x, y: pt.y + by.y, z: pt.z });
+    return {
+      hand: s.hand,
+      topHand: { x: x, y: s.topHand.y + by.y, z: s.topHand.z },
+      butt: move(s.butt), heel: move(s.heel), toe: move(s.toe), lowHand: move(s.lowHand)
+    };
+  }
+
   function liftStick(s, angle) {
     const pivot = s.topHand;
     const c = Math.cos(angle), sn = Math.sin(angle);
@@ -1602,7 +1622,10 @@
   let LAUNCH = null;
 
   function puckRest(ctx, dims, params, yaw) {
-    if (!ANIM.lift) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
+    // The freeze is for a WINDUP: the puck stays on the ice while the stick
+    // goes up over the shoulder. A stick pulled back THROUGH the legs still has
+    // the puck on it, so that one goes on tracking the blade.
+    if (!ANIM.lift || ANIM.tuck) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
     if (LAUNCH) puckAt(ctx, LAUNCH.sx, LAUNCH.sy, 1, 1);
   }
 
