@@ -938,7 +938,10 @@
     // forward far enough that a fixed depth stops being in front of anything.
     const hr = rotY(head.x, head.z, yaw);
     return {
-      d: params.helmetStyle === "mask" ? hr.z + 1.5 : head.rz,
+      // Behind the lid, in front of the hair: a helmet is a thing worn OVER a
+      // face, and sorting the face at the head's own front (head.rz) put the
+      // eyes on top of any lid that came down over the brow.
+      d: params.helmetStyle === "mask" ? hr.z + 1.5 : hr.z + 0.34,
       draw: () => {
         const facing = Math.cos(yaw);
         const mask = params.helmetStyle === "mask";
