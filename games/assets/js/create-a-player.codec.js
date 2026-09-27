@@ -56,7 +56,30 @@
   // Sliders added after v1. They ride at the END of the share code, so codes
   // already out in the world keep decoding; everything else keeps its v1 slot.
   const TAIL_SLIDERS = ["height"];
-  const CODE_SLIDERS = SLIDER_KEYS.filter(key => TAIL_SLIDERS.indexOf(key) < 0);
+
+  // Sliders added after the tail already had things behind it. TAIL_SLIDERS is
+  // encoded IN FRONT of the hair, the card colours and the kit, so a new slider
+  // cannot join that group without shifting all of those along and breaking
+  // every code already shared. It rides at the very end instead.
+  const LATE_SLIDERS = ["eyeSize", "eyeContour", "mouthLength", "mouthContour"];
+
+  const TAILED = TAIL_SLIDERS.concat(LATE_SLIDERS);
+  const CODE_SLIDERS = SLIDER_KEYS.filter(key => TAILED.indexOf(key) < 0);
+
+  // A tail slider left alone goes out empty, so a code that changed nothing
+  // here is no longer than it was before the slider existed. Shared by both
+  // tail groups.
+  function encodeSlider(params, key) {
+    const spec = D.sliders[key];
+    return params[key] === spec.value ? "" : params[key] - spec.min;
+  }
+
+  // Missing from an older code: that player was built before the slider, so
+  // the default stands rather than min.
+  function decodeSlider(field, key) {
+    const spec = D.sliders[key];
+    return field === "" ? spec.value : Number(field) + spec.min;
+  }
 
   // A fresh player every call - callers mutate what they get back.
   function defaults() {
@@ -70,6 +93,10 @@
       headHeight: D.sliders.headHeight.value,
       headContour: D.sliders.headContour.value,
       height: D.sliders.height.value,
+      eyeSize: D.sliders.eyeSize.value,
+      eyeContour: D.sliders.eyeContour.value,
+      mouthLength: D.sliders.mouthLength.value,
+      mouthContour: D.sliders.mouthContour.value,
       skinColor: D.skinColors[0],
       jerseyColor: D.jerseyColors[0],
       trimColor: D.trimColors[0],
@@ -162,12 +189,7 @@
       D.positions.indexOf(params.position),
       params.name, params.number, params.phrase
     );
-    // A tail slider left at its default goes out empty, so the trim below can
-    // still drop empty text fields sitting in front of it.
-    TAIL_SLIDERS.forEach(key => {
-      const spec = D.sliders[key];
-      fields.push(params[key] === spec.value ? "" : params[key] - spec.min);
-    });
+    TAIL_SLIDERS.forEach(key => fields.push(encodeSlider(params, key)));
     // Same trick for the tail enums and colours: a player who changed nothing
     // here adds nothing to the code.
     TAIL_OPTIONS.forEach(entry => {
@@ -182,6 +204,7 @@
     AUTO_PALETTES.forEach(entry => {
       fields.push(params[entry[0]] ? encodeColor(params[entry[0]], entry[1]) : "");
     });
+    LATE_SLIDERS.forEach(key => fields.push(encodeSlider(params, key)));
     // Empty name/number/phrase at the end are just dead weight in the URL.
     while (fields.length && fields[fields.length - 1] === "") fields.pop();
     return SHARE_VERSION + "~" + fields.join("~");
@@ -204,12 +227,7 @@
     raw.name = next();
     raw.number = next();
     raw.phrase = next();
-    // Missing from an older code: that player was built before the slider, so
-    // the default stands rather than min.
-    TAIL_SLIDERS.forEach(key => {
-      const field = next();
-      raw[key] = field === "" ? D.sliders[key].value : Number(field) + D.sliders[key].min;
-    });
+    TAIL_SLIDERS.forEach(key => { raw[key] = decodeSlider(next(), key); });
     // Index 0 is "none" in both lists, so a code written before hair existed
     // comes back bald and clean shaven - which is exactly how that player
     // looked when the link was shared. A NEW player starts on "short" instead;
@@ -223,6 +241,7 @@
       const field = next();
       raw[entry[0]] = field === "" ? "" : decodeColor(field, entry[1]);
     });
+    LATE_SLIDERS.forEach(key => { raw[key] = decodeSlider(next(), key); });
     return raw;
   }
 

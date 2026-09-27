@@ -89,6 +89,16 @@
           <legend>Facial hair</legend>
           <div class="cap-opts" data-options="faceHair" data-list="faceHairs"></div>
         </fieldset>
+
+        <!-- Its own group: updateContourVisibility hides a Contour slider that
+             shares a group with a shape picker, and these are not that. -->
+        <fieldset class="cap-group">
+          <legend>Eyes and mouth</legend>
+          <label class="cap-slot"><span>Eye size</span><input type="range" data-param="eyeSize"></label>
+          <label class="cap-slot"><span>Eye contour</span><input type="range" data-param="eyeContour"></label>
+          <label class="cap-slot"><span>Mouth length</span><input type="range" data-param="mouthLength"></label>
+          <label class="cap-slot"><span>Mouth contour</span><input type="range" data-param="mouthContour"></label>
+        </fieldset>
       </div>
 
       <div class="cap-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" data-panel="info">

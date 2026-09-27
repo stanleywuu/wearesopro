@@ -106,7 +106,11 @@ copies. Add a control once and both get it.
 - **A new player field goes in exactly three places:** `defaults()` in
   `create-a-player.codec.js`, the field order in `encode`/`decode`/`sanitize` there
   (**append to the end** so codes already shared keep decoding), and the control in the
-  partial. The renderer reads it off `params`; both pages and every saved team get it free.
+  partial. "The end" means the end of the WHOLE code, not the end of its own kind:
+  the tail is a run of groups (`TAIL_SLIDERS`, `TAIL_OPTIONS`, `TAIL_PALETTES`,
+  `AUTO_PALETTES`, `LATE_SLIDERS`) in the order they were added, and putting a new
+  slider in `TAIL_SLIDERS` would shift the hair, the card colours and the kit along
+  behind it. That is why a later slider gets a group of its own at the back. The renderer reads it off `params`; both pages and every saved team get it free.
 - Included markup arrives after deferred page scripts run, so anything that needs it
   listens for `partials:ready` (dispatched by `main.js` once the includes resolve).
 

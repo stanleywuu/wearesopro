@@ -942,12 +942,11 @@
         // of the head each is on) and only the rest of the face waits for him
         // to turn towards us.
         if (mask) return maskedFace(ctx, dims, params, yaw, facing);
-        if (facing < 0.3) return drawEyes(ctx, head, yaw, facing);
-        drawEyes(ctx, head, yaw, facing);
+        if (facing < 0.3) return drawEyes(ctx, head, yaw, facing, params);
+        drawEyes(ctx, head, yaw, facing, params);
         drawFaceHair(ctx, dims, params, yaw, facing, mask);
         const m = rotY(head.x, head.z + head.rz * 0.85, yaw);
-        const mc = project(m.x, head.y - head.ry * 0.56, m.z);
-        L(ctx, mc.sx - 3 * facing, mc.sy, mc.sx + 3 * facing, mc.sy, OUTLINE, 1.2);
+        drawMouth(ctx, project(m.x, head.y - head.ry * 0.56, m.z), facing, params);
       }
     };
   }
@@ -963,7 +962,7 @@
     ctx.beginPath();
     ctx.ellipse(p(hole.cx), p(hole.cy), p(hole.w), p(hole.h), 0, 0, Math.PI * 2);
     ctx.clip();
-    drawEyes(ctx, dims.head, yaw, facing);
+    drawEyes(ctx, dims.head, yaw, facing, params);
     if (facing >= 0.3) drawFaceHair(ctx, dims, params, yaw, facing, true);
     ctx.restore();
     drawCage(ctx, dims.head, yaw, hole);
@@ -973,15 +972,41 @@
   // the silhouette edge, reading as detached from the head, so each one is
   // tested on its own. Side-on that leaves exactly one. It narrows as it turns
   // away from us, so a profile eye is an eye seen from the side, not a dot.
-  function drawEyes(ctx, head, yaw, facing) {
+  function drawEyes(ctx, head, yaw, facing, params) {
     const eyeY = head.y - head.ry * 0.16;
     const narrow = 0.70 + 0.30 * Math.max(0, facing);
+    const eye = eyeShape(params);
     [-1, 1].forEach(s => {
       const r = rotY(head.x + s * head.rx * 0.36, head.z + head.rz * 0.8, yaw);
       if (r.z <= 0) return;
       const c = project(r.x, eyeY, r.z);
-      E(ctx, c.sx, c.sy, 1.7 * narrow * c.k, 2.1 * c.k, OUTLINE);
+      E(ctx, c.sx, c.sy, eye.rx * narrow * c.k, eye.ry * c.k, OUTLINE);
     });
+  }
+
+  // 1.7 wide by 2.1 tall is the eye as it always was, and that is where both
+  // sliders sit in the middle of their range. Size scales it. Contour is its
+  // SHAPE at that size - it trades width for height, so 0 is a sleepy slit and
+  // 100 is wide awake, and neither is bigger than the other.
+  function eyeShape(params) {
+    const k = params.eyeSize / 100;
+    const t = (params.eyeContour - 50) / 50;      // -1 wide and flat, +1 tall
+    return { rx: 1.7 * k * (1 - t * 0.4), ry: 2.1 * k * (1 + t * 0.4) };
+  }
+
+  // Straight at contour 50 - the control point lands on the line, so the mouth
+  // that was there before these sliders existed is the same stroke. Below 50 it
+  // turns down, above it turns up. Length is how far it reaches, and like the
+  // old line it is foreshortened by facing so it narrows as the head turns.
+  function drawMouth(ctx, c, facing, params) {
+    const half = 3 * (params.mouthLength / 100) * facing;
+    const sag = (params.mouthContour - 50) / 50 * 2.6;   // + is a grin
+    ctx.strokeStyle = OUTLINE;
+    ctx.lineWidth = p(1.2);
+    ctx.beginPath();
+    ctx.moveTo(p(c.sx - half), p(c.sy));
+    ctx.quadraticCurveTo(p(c.sx), p(c.sy + sag * 2), p(c.sx + half), p(c.sy));
+    ctx.stroke();
   }
 
   // The opening in the shell, in skin, hung off the front of the head the same

@@ -19,7 +19,15 @@ window.CAP_DATA = {
     // Overall stature: scales the whole figure about the ice, so a short player
     // keeps his proportions and his feet. Added after v1, so the codec carries
     // it at the END of the share code (see TAIL_SLIDERS).
-    height:       { min: 70, max: 130, value: 100 }
+    height:       { min: 70, max: 130, value: 100 },
+    // The face. Size scales the eye; contour is its shape at a constant size -
+    // 0 is a wide slit, 100 is tall and round, 50 is the eye as it always was.
+    eyeSize:      { min: 60, max: 170, value: 100 },
+    eyeContour:   { min: 0,  max: 100, value: 50 },
+    // Length is how far the mouth reaches; contour bends it - 0 is a frown,
+    // 100 is a grin, 50 is the straight line it always was.
+    mouthLength:  { min: 40, max: 180, value: 100 },
+    mouthContour: { min: 0,  max: 100, value: 50 }
   },
 
   // Appended, never reordered: a share code carries the INDEX of the choice.
