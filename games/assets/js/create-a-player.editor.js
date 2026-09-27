@@ -365,7 +365,7 @@
     // ?debug=reel lays the highlight out as a filmstrip. Trying to judge the
     // timing of a four-second animation by eye, one run at a time, is hopeless.
     function buildReelStrip() {
-      reel = REEL.build(params);
+      reel = REEL.build(params, null, forcedKind());
       const grid = document.createElement("div");
       grid.className = "cap-debug";
       const frames = 20;
@@ -373,8 +373,8 @@
         const thumb = document.createElement("canvas");
         thumb.width = DRAW.LW * DRAW.S;
         thumb.height = DRAW.LH * DRAW.S;
-        DRAW.render(thumb.getContext("2d"), params, reel.yaw,
-          REEL.at(reel, (reel.end - 1) * i / (frames - 1)));
+        const anim = REEL.at(reel, (reel.end - 1) * i / (frames - 1));
+        DRAW.render(thumb.getContext("2d"), params, anim ? anim.yaw : reel.yaw, anim);
         grid.appendChild(thumb);
       }
       root.appendChild(grid);
@@ -386,8 +386,15 @@
     // with the hockey card so the two can never play different highlights.
     let reel = null;               // the timeline for the shot being played
 
+    // ?debug=reel&kind=wipeout plays one highlight instead of the player's own,
+    // which is the only way to look at a reel a given code never rolls.
+    function forcedKind() {
+      const kind = new URLSearchParams(location.search).get("kind");
+      return REEL.KINDS.indexOf(kind) === -1 ? null : kind;
+    }
+
     function playHighlight() {
-      reel = REEL.build(params);
+      reel = REEL.build(params, null, forcedKind());
       highlightStart = performance.now();
       status("");
     }
@@ -397,7 +404,7 @@
       const anim = highlightStart ? REEL.at(reel, now - highlightStart) : null;
       if (highlightStart && !anim) highlightStart = 0;
       if (anim) {
-        yaw = reel.yaw;
+        yaw = anim.yaw;                  // the reel can turn the camera itself
       } else if (!dragging && now - lastInput > IDLE_DELAY) {
         yaw += SPIN_SPEED / 60;
       }

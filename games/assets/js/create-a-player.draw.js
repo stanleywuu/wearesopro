@@ -1713,7 +1713,21 @@
     if (shadow && !ANIM) drawShadow(ctx, dims);
     if (ANIM && ANIM.net !== 0) drawNet(ctx, ANIM.net);
 
-    drawFigure(ctx, dims, params, yaw);
+    // A wipeout turns the whole figure about the point under the skates, so the
+    // feet stay on the ice and everything else goes over - stick, arms and all,
+    // which is why it is one rotation here rather than a pose per part. Inside
+    // the mirror, so he falls the way he is travelling.
+    if (ANIM && ANIM.fall) {
+      const px = p(CX + SHIFT), py = p(GROUND);
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(-ANIM.fall);      // backwards: his head goes the way he came from
+      ctx.translate(-px, -py);
+      drawFigure(ctx, dims, params, yaw);
+      ctx.restore();
+    } else {
+      drawFigure(ctx, dims, params, yaw);
+    }
     if (ANIM) finishShot(ctx, dims, params, yaw);
     else LAUNCH = null;
     ctx.restore();

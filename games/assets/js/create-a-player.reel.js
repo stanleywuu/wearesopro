@@ -2,6 +2,11 @@
 // No DOM, no drawing - build(params) picks the shot, at(reel, ms) says where
 // everything is at that moment, and CAP_DRAW.render draws it. There is exactly
 // one copy on purpose: the card used to keep its own, and it drifted.
+//
+// Which highlight a player gets is rolled off their own share code, not off
+// Math.random: the reel a shared card plays is the reel the builder showed, and
+// a replay plays the same one. Change the player and you change the highlight,
+// which is fair - it is a different player.
 
 (function () {
 
@@ -13,6 +18,9 @@
   // The wrist shot every other position plays, unchanged.
   const CLASSIC = { glide: 1200, wind: 1800, contact: 2000, land: 2500, end: 3600 };
 
+  const SKATER = ["shot", "wipeout", "spin"];
+  const GOALIE = ["saves", "robbery"];
+
   // A goalie does not take the highlight, he is the highlight: leaning on his
   // stick in front of the net, then three saves in a row with no warning.
   const SAVES = [
@@ -20,27 +28,72 @@
     { at: 1620, kind: "blocker", hold: 260 },
     { at: 2240, kind: "glove",   hold: 520 }
   ];
-  const APPROACH = 300, DEFLECT = 260;   // puck in, puck away
+  // The other one: a single shot, and he holds the glove up afterwards.
+  const ROBBERY = [{ at: 1500, kind: "glove", hold: 1500 }];
+
+  // ---- the seed ---------------------------------------------------------
+
+  // Any string to a 32-bit number - the same small hash the card's stats use.
+  function hash(text) {
+    let h = 2166136261;
+    for (let i = 0; i < text.length; i++) {
+      h ^= text.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  // One seed, then a stream of whole numbers from it. The draws happen in a
+  // fixed order (kind first, then whatever that reel needs), so adding a roll
+  // to one reel cannot change another player's highlight.
+  function stream(seed) {
+    let s = seed || 1;
+    return function (min, max) {
+      s ^= s << 13; s >>>= 0;
+      s ^= s >> 17;
+      s ^= s << 5;  s >>>= 0;
+      return min + (s % (max - min + 1));
+    };
+  }
+
+  function seedText(params, code) {
+    if (code) return String(code);
+    try { return window.CAP_CODE.encode(params); } catch (e) { return "1"; }
+  }
+
+  // ---- which highlight -------------------------------------------------
+
+  // kind forces one, which is what ?debug=reel&kind=wipeout uses.
+  function build(params, code, kind) {
+    const next = stream(hash(seedText(params, code)));
+    if (params.position === "Goalie") {
+      return goalieReel(kind || GOALIE[next(0, GOALIE.length - 1)]);
+    }
+    const pick = kind || SKATER[next(0, SKATER.length - 1)];
+    if (pick === "wipeout") return wipeoutReel(params);
+    if (pick === "spin") return spinReel(params);
+    return shotReel(params, next);
+  }
 
   // A defenceman winds up and slaps it. The speed is rolled FIRST, because it
   // is what decides everything after contact: a harder shot is in the air for
   // less time, and the number on the end is the same number.
-  function build(params) {
-    if (params.position === "Goalie") return goalieReel();
+  function shotReel(params, next) {
     // A left-handed forward shoots across his body from the camera's side, and
     // the stick ends up behind him. Nothing in the pose is wrong - the view is.
     // Mirroring the scene puts the stick back out front, shooting the other way.
     if (params.position !== "Defence") {
-      return Object.assign({ slap: false, home: 0, yaw: SIDE_ON,
+      return Object.assign({ kind: "shot", slap: false, home: 0, yaw: SIDE_ON,
         mirror: params.handedness === "left" }, CLASSIC);
     }
     // Beer league. Nobody here is breaking 80.
-    const speed = 55 + Math.round(Math.random() * 25);
+    const speed = next(55, 80);
     const contact = 2300;
     // It is a long way from the point: 55mph spends over two seconds in the
     // air, 80mph about a second and a half.
     const flight = Math.round(120000 / speed);
     return {
+      kind: "shot",
       slap: true,
       yaw: SIDE_ON,
       label: speed + " mph!!",
@@ -58,19 +111,51 @@
     };
   }
 
-  function goalieReel() {
+  // Loses an edge. He is skating it out of the corner, the skate goes, and he
+  // is on his back with the puck skittering away without him - which is why
+  // there is no net in this one: nothing is going in.
+  function wipeoutReel(params) {
+    return {
+      kind: "wipeout",
+      yaw: SIDE_ON,
+      mirror: params.handedness === "left",
+      label: "Wipeout!",
+      home: 14,                  // still carrying it forward when the edge goes
+      glide: 900,
+      catch: 1150,               // the skate catches
+      down: 1850,                // flat on the ice
+      stop: 2750,                // done sliding
+      end: 3500                  // a beat lying there, and out - not a nap
+    };
+  }
+
+  // Spin-o-rama: he turns the whole way round coming in, then shoots out of it.
+  function spinReel(params) {
+    return Object.assign({ kind: "spin", slap: false, home: 0, yaw: SIDE_ON,
+      mirror: params.handedness === "left", label: "Filthy!",
+      glide: 1500, wind: 2000, contact: 2250, land: 2800, end: 3900 }, {});
+  }
+
+  function goalieReel(kind) {
     // Face on, not side on: a goalie is looked at down the ice, with the net
     // behind him and the blocker and glove out to either side of frame.
-    return { save: true, yaw: 0, label: "Robbed!", saves: SAVES, end: 4000, home: 0 };
+    if (kind === "robbery") {
+      return { kind: "robbery", save: true, yaw: 0, label: "What a grab!",
+        saves: ROBBERY, approach: 520, deflect: 300, end: 3600, home: 0 };
+    }
+    return { kind: "saves", save: true, yaw: 0, label: "Robbed!",
+      saves: SAVES, approach: 300, deflect: 260, end: 4000, home: 0 };
   }
+
+  // ---- the timeline ----------------------------------------------------
 
   // The whole reel as a function of elapsed time. Returns null once finished.
   function at(reel, ms) {
     if (!reel || ms >= reel.end) return null;
     const anim = {
-      shift: 0, crouch: 0, swing: 0, lift: 0,
+      shift: 0, crouch: 0, swing: 0, lift: 0, fall: 0,
       puckT: null, goal: false, pan: 0,
-      arc: 9, net: 1, label: reel.label,
+      arc: 9, net: 1, label: reel.label, yaw: reel.yaw,
       mirror: Boolean(reel.mirror),
       puckHold: Boolean(reel.slap), netClose: Boolean(reel.slap)
     };
@@ -83,7 +168,9 @@
       anim.crouch = 0.35;
     }
     if (reel.save) return goalieFrame(reel, ms, anim);
-    if (reel.slap) slapAt(reel, ms, anim);
+    if (reel.kind === "wipeout") return wipeoutFrame(reel, ms, anim);
+    if (reel.kind === "spin") spinAt(reel, ms, anim);
+    else if (reel.slap) slapAt(reel, ms, anim);
     else wristAt(reel, ms, anim);
     if (ms >= reel.contact) {
       anim.puckT = Math.min(1, (ms - reel.contact) / (reel.land - reel.contact));
@@ -109,9 +196,9 @@
 
   // Each save: snap into the pose, hold it, come back out. The snap is quick
   // on purpose - a goalie's reaction is the whole point of the shot.
-  function saveAt(ms) {
+  function saveAt(saves, ms) {
     const pose = { drop: 0, blocker: 0, glove: 0 };
-    SAVES.forEach(save => {
+    saves.forEach(save => {
       pose[save.kind] = Math.max(pose[save.kind], envelope(ms, save.at, save.hold));
     });
     return pose;
@@ -126,10 +213,10 @@
 
   // The puck for whichever save is currently happening, as 0..1 across its
   // approach and its deflection. Impact is where those two meet.
-  function shotAt(ms) {
+  function shotAt(reel, ms) {
     let out = null;
-    SAVES.forEach(save => {
-      const from = save.at - APPROACH, to = save.at + DEFLECT;
+    reel.saves.forEach(save => {
+      const from = save.at - reel.approach, to = save.at + reel.deflect;
       if (ms >= from && ms <= to) out = { kind: save.kind, t: (ms - from) / (to - from) };
     });
     return out;
@@ -138,16 +225,17 @@
   // He keeps his resting pose all the way through - the saves happen around
   // it - and the net sits behind him rather than off at the far end.
   function goalieFrame(reel, ms, anim) {
-    const pose = saveAt(ms);
+    const pose = saveAt(reel.saves, ms);
+    const last = reel.saves[reel.saves.length - 1];
     anim.save = true;          // without this the renderer never looks for a shot
     anim.rest = true;
     anim.netBehind = true;
     anim.drop = pose.drop;
     anim.blocker = pose.blocker;
     anim.glove = pose.glove;
-    anim.shot = shotAt(ms);
+    anim.shot = shotAt(reel, ms);
     anim.crouch = 0;
-    anim.goal = ms >= reel.saves[2].at + reel.saves[2].hold;
+    anim.goal = ms >= last.at + last.hold;
     return anim;
   }
 
@@ -192,6 +280,56 @@
     }
   }
 
-  window.CAP_REEL = { build: build, at: at };
+  // The same wrist shot, with a full turn on the way in. The spin is a whole
+  // circle back to the shooting angle - stopping anywhere else would leave him
+  // shooting sideways - and it eases out so the last quarter turn lands on the
+  // windup rather than fighting it.
+  function spinAt(reel, ms, anim) {
+    if (ms < reel.glide) {
+      const t = ms / reel.glide;
+      anim.yaw = reel.yaw + Math.PI * 2 * t * t * (3 - 2 * t);
+      anim.crouch = 0.35 * t;
+    }
+    wristAt(reel, ms, anim);
+  }
+
+  // The edge goes: he drops, the skates slide out ahead of him, and the fall
+  // accelerates the way a fall does - t*t, not a constant turn. Flat is a bit
+  // short of a right angle, because a player on the ice lands on a shoulder.
+  const FLAT = 1.38;             // radians, about 79 degrees
+
+  function wipeoutFrame(reel, ms, anim) {
+    anim.net = 0;                // no net in this one: nothing is going in
+    anim.arc = 0;                // the puck skitters flat along the ice
+    if (ms >= reel.catch) {
+      anim.puckT = Math.min(1, (ms - reel.catch) / (reel.stop - reel.catch));
+    }
+    if (ms < reel.catch) {
+      // The moment before: he is already off balance, arms coming up.
+      const t = Math.max(0, (ms - reel.glide) / (reel.catch - reel.glide));
+      anim.crouch = 0.35 + 0.35 * t;
+      anim.lift = -0.9 * t;              // stick flies up as the feet go
+      anim.swing = 0.4 * t;
+    } else if (ms < reel.down) {
+      const t = (ms - reel.catch) / (reel.down - reel.catch);
+      anim.fall = FLAT * t * t;
+      anim.crouch = 0.7 + 0.3 * t;
+      anim.lift = -0.9 - 1.1 * t;        // arms and stick over his head
+      anim.swing = 0.4 + 0.5 * t;
+      anim.shift = reel.home + 26 * t;   // skates out from under him
+    } else {
+      // Down, sliding to a stop on his back.
+      const t = Math.min(1, (ms - reel.down) / (reel.stop - reel.down));
+      anim.fall = FLAT;
+      anim.crouch = 1;
+      anim.lift = -2;
+      anim.swing = 0.9;
+      anim.shift = reel.home + 26 + 16 * t * (2 - t);
+      anim.goal = ms >= reel.down + 250;  // the label, such as it is
+    }
+    return anim;
+  }
+
+  window.CAP_REEL = { build: build, at: at, KINDS: SKATER.concat(GOALIE) };
 
 })();

@@ -531,7 +531,7 @@
     const anim = REEL.at(reel, ms) || lastFrame();
     if (ms > reel.end + REPLAY_GAP) return play(), requestAnimationFrame(frame);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    DRAW.render(ctx, params, anim ? reel.yaw : 0.5, anim,
+    DRAW.render(ctx, params, anim ? anim.yaw : 0.5, anim,
                 { background: false, fit: DRAW.portraitFit(params) });
     requestAnimationFrame(frame);
   }
