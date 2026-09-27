@@ -1,3 +1,13 @@
+/* The card's own display face. No web font: the page CSP allows styles and
+   fonts from this origin only, and shipping a font file for four lines of text
+   is not worth it. This stack lands on a tall condensed face nearly everywhere
+   (Haettenschweiler on Windows, Arial Narrow on macOS, Liberation/DejaVu on
+   Linux) and falls back to the page font. */
+:root {
+  --card-display: "Haettenschweiler", "Arial Narrow Bold", "Liberation Sans Narrow",
+                  "DejaVu Sans Condensed", "Arial Narrow", Impact, var(--font);
+}
+
 /* Hockey card. Plate text is selected by two classes on purpose: style.css
    has `.article p`, which outranks a single class and would otherwise repaint
    the name plate in body colour.
@@ -37,7 +47,9 @@
 
 .card-plate .card-number {
   margin: 0;
-  font-size: 1.6rem;
+  font-family: var(--card-display);
+  letter-spacing: .02em;
+  font-size: 1.9rem;
   font-weight: 800;
   color: #FDD835;
   line-height: 1;
@@ -47,7 +59,10 @@
 
 .card-plate .card-name {
   margin: 0;
-  font-size: 1.15rem;
+  font-family: var(--card-display);
+  letter-spacing: .01em;
+  text-transform: uppercase;
+  font-size: 1.35rem;
   line-height: 1.15;
   color: #fff;
   overflow: hidden;
@@ -104,8 +119,8 @@
 }
 
 .card-back-plate { border-bottom: 2px solid var(--ink); padding-bottom: .5rem; }
-.card-back .card-back-number { margin: 0; font-size: 1.5rem; font-weight: 800; line-height: 1; color: #E8890B; }
-.card-back .card-back-name { margin: .1rem 0 0; font-size: 1.05rem; font-weight: 800; line-height: 1.15; }
+.card-back .card-back-number { margin: 0; font-family: var(--card-display); font-size: 1.8rem; font-weight: 800; line-height: 1; color: #E8890B; }
+.card-back .card-back-name { margin: .1rem 0 0; font-family: var(--card-display); font-size: 1.25rem; font-weight: 800; text-transform: uppercase; letter-spacing: .01em; line-height: 1.15; }
 .card-back .card-back-pos { margin: .1rem 0 0; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 
 .card-stats { display: flex; gap: .35rem; }
@@ -118,7 +133,7 @@
   padding: .35rem .1rem;
 }
 .card-stat-label { display: block; font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-.card-stat-value { display: block; font-size: .95rem; font-weight: 800; }
+.card-stat-value { display: block; font-family: var(--card-display); font-size: 1.15rem; font-weight: 800; }
 
 .card-back .card-back-note { margin: 0; font-size: .7rem; font-style: italic; color: var(--muted); }
 .card-back .card-back-quote { margin: auto 0 0; font-size: .85rem; font-style: italic; color: var(--text); }
@@ -188,3 +203,37 @@
 .card-pose-all { display: flex; align-items: center; gap: .45rem; margin-top: .7rem;
   font-size: .85rem; color: var(--muted); }
 .card-pose-all input { width: auto; }
+
+/* ---- the buttons -----------------------------------------------------
+   Share is what the page is for, so it leads. Making another is a different
+   errand, so it sits on its own quieter row. */
+.card-actions .button { display: inline-flex; align-items: center; gap: .4rem; }
+.card-main { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.card-main:hover { background: #1157a6; border-color: #1157a6; }
+.card-actions-quiet { margin-top: .1rem; }
+.card-actions-quiet .button { font-size: .9rem; color: var(--muted); }
+
+/* The flip icon rides above the card, top right, on whichever face is showing. */
+.card-holder { position: relative; width: min(340px, 100%); }
+.card-holder .card { width: 100%; }
+.card-flip-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--ink);
+  background: rgba(255, 255, 255, .92);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  box-shadow: 0 1px 0 rgba(22, 34, 46, .2);
+  cursor: pointer;
+}
+.card-flip-btn:hover { background: #fff; }
+

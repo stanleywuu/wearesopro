@@ -330,23 +330,38 @@
     return el;
   }
 
-  // The card itself flips, and a button says so - a card that only turns over
-  // when you happen to click it is a card nobody turns over.
+  // A corner icon on the card itself, not a button in a row: the card turns
+  // over wherever it is - on a profile, or frozen inside the print panel - and
+  // clicking anywhere on the card does the same thing.
   function addFlip(card) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "button card-flip-btn";
-    button.textContent = "Flip the card";
+    button.className = "card-flip-btn";
+    button.setAttribute("aria-label", "Flip the card");
     button.setAttribute("aria-pressed", "false");
+    const glyph = document.createElement("span");
+    glyph.setAttribute("aria-hidden", "true");
+    glyph.textContent = "\u21BB";
+    button.appendChild(glyph);
+
     const turn = function () {
       const on = card.classList.toggle("flipped");
       button.setAttribute("aria-pressed", String(on));
-      button.textContent = on ? "Flip it back" : "Flip the card";
+      button.setAttribute("aria-label", on ? "Flip it back" : "Flip the card");
     };
-    button.addEventListener("click", turn);
+    button.addEventListener("click", function (e) {
+      e.stopPropagation();       // the card's own click would undo this one
+      turn();
+    });
     card.addEventListener("click", turn);
-    const actions = document.querySelector(".card-actions");
-    if (actions) actions.insertBefore(button, actions.firstChild);
+
+    // Outside the card, not in it: the card is what rotates, so an icon inside
+    // it ends up mirrored on the left and sitting on top of the number.
+    const holder = document.createElement("div");
+    holder.className = "card-holder";
+    card.parentNode.insertBefore(holder, card);
+    holder.appendChild(card);
+    holder.appendChild(button);
   }
 
   // The code as it is now - the same one the stats are hashed from.
