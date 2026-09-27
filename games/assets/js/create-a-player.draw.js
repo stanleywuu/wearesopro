@@ -77,12 +77,17 @@
     return boxy ? rx * c + rz * s : Math.hypot(rx * c, rz * s);
   }
 
+  // Returns HEX, not rgb(), because a shade gets shaded again: the pants take a
+  // shade of the jersey and then drawSlab shades that for its light. Given
+  // "rgb(...)" this reads a hex number off "gb(30,136,229)", gets NaN, and NaN
+  // through a bitwise op is 0 - so instead of failing it quietly painted every
+  // channel black. The pants were black whatever the jersey was.
   function shade(hex, t) {
     const n = parseInt(hex.slice(1), 16);
     const to = t > 0 ? 255 : 0, a = Math.abs(t);
     const mix = v => Math.round(v + (to - v) * a);
     const r = mix((n >> 16) & 255), g = mix((n >> 8) & 255), b = mix(n & 255);
-    return "rgb(" + r + "," + g + "," + b + ")";
+    return "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
   }
 
   const STICK_WOOD = "#C9A227";   // what a stick was drawn in before it could be chosen
