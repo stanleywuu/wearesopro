@@ -246,8 +246,9 @@
       goalie: params.position === "Goalie",
       rest: rest,
       flop: flop,
-      // Framing is measured standing, so crouching does not zoom the figure.
-      topY: head.y + head.ry * 1.12 + drop,
+      // Framing is measured standing, so neither crouching nor dropping into
+      // the butterfly zooms the figure - and with it, the net beside him.
+      topY: head.y + head.ry * 1.12 + drop + 15 * flop,
       shoulderY: shoulderY,
       legX: Math.max(7, torso.rx * 0.52),
       bodyStyle: shapeStyle(params.bodyShape, params.bodyContour / 100),
