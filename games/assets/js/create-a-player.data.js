@@ -70,9 +70,15 @@ window.CAP_DATA = {
   // labelled the other way round for a long time, which is all that was wrong.
   // The ORDER is frozen: a share code carries the index, so renaming these
   // renames the label on an existing player without moving him.
+  // The ORDER of this list is frozen - a share code carries the index - so the
+  // right-handed stance stays first even though the picker reads better the
+  // other way round. `slot` is the order to SHOW them in; the code's order is
+  // never touched. (Renaming an entry in place is safe, and that is all that
+  // was ever wrong here: the stance drawn first is a right-handed shot, since
+  // the bottom hand names the shot and that pose holds the knob in the left.)
   handedness: [
-    { id: "right", label: "Right" },
-    { id: "left",  label: "Left" }
+    { id: "right", label: "Right", slot: 1 },
+    { id: "left",  label: "Left",  slot: 0 }
   ],
 
   positions: ["Centre", "Left Wing", "Right Wing", "Defence", "Goalie"],

@@ -64,10 +64,18 @@
       name.select();
     }
 
+    // A list in the order to SHOW it. Its own order belongs to the share code
+    // (the index is what a code carries), so a list that wants to read
+    // differently gives each entry a `slot` instead of being rearranged.
+    function shown(list) {
+      if (!list.some(opt => opt.slot != null)) return list;
+      return list.slice().sort((a, b) => (a.slot || 0) - (b.slot || 0));
+    }
+
     function buildOptionPickers() {
       root.querySelectorAll("[data-options]").forEach(box => {
         const key = box.dataset.options;
-        D[box.dataset.list].forEach(opt => {
+        shown(D[box.dataset.list]).forEach(opt => {
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "cap-opt" + (params[key] === opt.id ? " active" : "");

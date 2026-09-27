@@ -40,9 +40,18 @@
 
   // ---- the seed ---------------------------------------------------------
 
+  // The seed is the player's code with his handedness taken out of it. A lefty
+  // and a righty of the same build are the same player facing the other way,
+  // and the highlight should mirror rather than turn into a different one -
+  // everything else about him still picks it, so a change of build or a change
+  // of name is a new player and gets a new highlight.
   function seedText(params, code) {
-    if (code) return String(code);
-    try { return window.CAP_CODE.encode(params); } catch (e) { return "1"; }
+    try {
+      const neutral = Object.assign({}, params, { handedness: window.CAP_DATA.handedness[0].id });
+      return window.CAP_CODE.encode(neutral);
+    } catch (e) {
+      return String(code || "1");
+    }
   }
 
   // ---- which highlight -------------------------------------------------
