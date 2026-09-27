@@ -344,8 +344,11 @@
   // the height is added upwards, which is the only direction there is room in:
   // at the old height the skate read as a dark smudge under the sock, and on a
   // printed card it barely registered at all.
-  const SKATE_HH = 6.5;                       // half-height of the boot
-  const SKATE_MID = SKATE_HH - 4;             // keeps the blade where it was
+  const SKATE_HH = 5.2;                       // half-height of the boot
+  const BLADE_DROP = 2.6;                     // holder height, boot to blade
+  const BLADE_HH = 1.15;                      // half-thickness of the blade
+  // The blade ends up on the ice, so the boot is lifted by everything under it.
+  const SKATE_MID = SKATE_HH - 4 + BLADE_DROP + BLADE_HH * 2;
 
   function skatePart(ctx, yaw, x, legDepth) {
     const r = rotY(x, 2, yaw);
@@ -359,12 +362,38 @@
           cx: c.sx, cy: c.sy, hw: hw, hh: SKATE_HH * c.k,
           shape: "capsule", taper: 0.8, round: 1, color: "#2B2B2B", yaw: yaw
         });
-        L(ctx, c.sx - hw, c.sy + SKATE_HH * c.k, c.sx + hw, c.sy + SKATE_HH * c.k, "#9AA7B4", 1.6);
         // The collar, so a black boot under a black sock is still a boot.
         L(ctx, c.sx - hw * 0.9, c.sy - SKATE_HH * c.k * 0.82,
                c.sx + hw * 0.9, c.sy - SKATE_HH * c.k * 0.82, "#7C8895", 1.4);
+        blade(ctx, c, hw, yaw);
       }
     };
+  }
+
+  // Holder and blade: two posts down from the boot and a steel runner under
+  // them, a touch longer than the boot the way a real one is.
+  function blade(ctx, c, hw, yaw) {
+    const bootY = c.sy + SKATE_HH * c.k;
+    const drop = BLADE_DROP * c.k;
+    // A blade runs front to back, not side to side: its own silhouette is long
+    // in z and narrow in x, so it stays long when the player turns side-on and
+    // shortens as they face us. Measured off the boot it just looked like a
+    // grey pebble under the foot.
+    const bw = silWidth(6.5, 11, yaw, 0) * c.k;
+    const postW = Math.max(hw * 0.2, 1.2 * c.k);
+    ctx.fillStyle = "#59636E";
+    [-0.5, 0.28].forEach(function (at) {
+      ctx.fillRect(c.sx + bw * at, bootY, postW, drop);
+    });
+    // Flat fill, not a shaded slab: steel catches the light rather than turning
+    // with the body, and the slab shading took the silver out of it entirely.
+    pathBox(ctx, c.sx, bootY + drop + BLADE_HH * c.k, bw, BLADE_HH * c.k, 0.95, 1);
+    ctx.fillStyle = "#D5DDE5";     // silver, and thick enough to show as silver
+    ctx.fill();
+    ctx.strokeStyle = "#6B7885";   // a full outline at this thickness eats the fill
+    ctx.lineWidth = p(0.7);
+    ctx.lineJoin = "round";
+    ctx.stroke();
   }
 
   // ---- head details -----------------------------------------------------
