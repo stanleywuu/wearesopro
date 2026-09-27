@@ -40,29 +40,6 @@
 
   // ---- the seed ---------------------------------------------------------
 
-  // Any string to a 32-bit number - the same small hash the card's stats use.
-  function hash(text) {
-    let h = 2166136261;
-    for (let i = 0; i < text.length; i++) {
-      h ^= text.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  }
-
-  // One seed, then a stream of whole numbers from it. The draws happen in a
-  // fixed order (kind first, then whatever that reel needs), so adding a roll
-  // to one reel cannot change another player's highlight.
-  function stream(seed) {
-    let s = seed || 1;
-    return function (min, max) {
-      s ^= s << 13; s >>>= 0;
-      s ^= s >> 17;
-      s ^= s << 5;  s >>>= 0;
-      return min + (s % (max - min + 1));
-    };
-  }
-
   function seedText(params, code) {
     if (code) return String(code);
     try { return window.CAP_CODE.encode(params); } catch (e) { return "1"; }
@@ -72,7 +49,7 @@
 
   // kind forces one, which is what ?debug=reel&kind=wipeout uses.
   function build(params, code, kind) {
-    const next = stream(hash(seedText(params, code)));
+    const next = window.CAP_SEED.stream(seedText(params, code));
     if (params.position === "Goalie") {
       return goalieReel(kind || GOALIE[next(0, GOALIE.length - 1)]);
     }
