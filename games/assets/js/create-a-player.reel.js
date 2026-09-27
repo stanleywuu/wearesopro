@@ -139,11 +139,16 @@
     };
   }
 
-  // Spin-o-rama: he turns the whole way round coming in, then shoots out of it.
+  // Spin-o-rama: he turns the whole way round coming in and shoots straight out
+  // of it. The pull-back rides the last of the turn rather than waiting for it -
+  // spin, stop, wait, shoot is four moves where there should be one.
   function spinReel(params) {
-    return Object.assign({ kind: "spin", slap: false, home: 0, yaw: SIDE_ON,
+    return { kind: "spin", slap: false, home: 0, yaw: SIDE_ON,
       mirror: params.handedness === "left", label: "Filthy!",
-      glide: 1500, wind: 2000, contact: 2250, land: 2800, end: 3900 }, {});
+      glide: 1000, spin: 1250,   // the turn
+      wind: 650,                 // the stick starts back while he is still turning
+      pull: 1250,                // fully loaded as the turn lands
+      contact: 1480, land: 2000, end: 3100 };
   }
 
   function goalieReel(kind) {
@@ -305,17 +310,28 @@
     }
   }
 
-  // The same wrist shot, with a full turn on the way in. The spin is a whole
-  // circle back to the shooting angle - stopping anywhere else would leave him
-  // shooting sideways - and it eases out so the last quarter turn lands on the
-  // windup rather than fighting it.
+  // The turn and the shot are one move. The rotation eases out cubically, so it
+  // is all but round by the time the stick starts back, and the two overlap
+  // from there: he is still turning through the pull-back and releases as the
+  // turn lands on the shooting angle.
   function spinAt(reel, ms, anim) {
-    if (ms < reel.glide) {
-      const t = ms / reel.glide;
-      anim.yaw = reel.yaw + Math.PI * 2 * t * t * (3 - 2 * t);
-      anim.crouch = 0.35 * t;
+    const t = Math.min(1, ms / reel.spin);
+    anim.yaw = reel.yaw + Math.PI * 2 * (1 - Math.pow(1 - t, 3));
+    if (ms < reel.wind) {
+      anim.crouch = 0.35 + 0.25 * (ms / reel.wind);
+    } else if (ms < reel.pull) {
+      const w = (ms - reel.wind) / (reel.pull - reel.wind);
+      anim.crouch = 0.6 + 0.4 * w;
+      anim.swing = -1.15 * w;            // loading up out of the turn
+    } else if (ms < reel.contact) {
+      const w = (ms - reel.pull) / (reel.contact - reel.pull);
+      anim.crouch = 1;
+      anim.swing = -1.15 + 2.5 * w;      // and through it
+    } else {
+      const w = Math.min(1, (ms - reel.contact) / 900);
+      anim.crouch = 1 - 0.8 * w;
+      anim.swing = 1.35;
     }
-    wristAt(reel, ms, anim);
   }
 
   // The edge goes while he is still going. The turn accelerates the way a fall
