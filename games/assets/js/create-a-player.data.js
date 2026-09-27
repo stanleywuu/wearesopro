@@ -62,6 +62,12 @@ window.CAP_DATA = {
   jerseyColors: ["#1E88E5", "#0D47A1", "#E53935", "#43A047", "#FDD835", "#212121", "#FAFAFA"],
   trimColors:   ["#FFFFFF", "#212121", "#FDD835", "#E53935", "#1E88E5", "#43A047", "#9E9E9E"],
   helmetColors: ["#212121", "#FFFFFF", "#0D47A1", "#E53935", "#1E88E5", "#43A047", "#9E9E9E"],
+  // The card itself, not the player: the border and the window behind them.
+  // Appended after everything else, so a share code that predates them still
+  // decodes - see "tail" in create-a-player.codec.js.
+  cardEdgeColors: ["#F8A41B", "#1E88E5", "#E53935", "#43A047", "#212121", "#FAFAFA", "#7E57C2"],
+  cardBackColors: ["#EEF6FF", "#FFFDF6", "#FFFFFF", "#E8F5E9", "#FDECEA", "#ECEFF1", "#1B2733"],
+
   hairColors:   ["#2B1B12", "#5A3A21", "#8D5524", "#C68642", "#D9A441", "#8E8E8E", "#EDEDED"],
 
   randomNames: [

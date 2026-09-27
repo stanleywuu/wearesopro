@@ -19,8 +19,7 @@
   // Straight off the page's own stylesheet: the printed card is meant to be the
   // card you were just looking at, not a black-and-white version of it.
   const INK = "#16222E", MID = "#516273", PALE = "#C8D3DE";
-  const GOLD = ["#FDD835", "#F8A41B", "#E8890B"];   // the border, top to bottom
-  const ICE = "#EEF6FF", PAPER = "#FFFDF6", WHITE = "#FFFFFF";
+  const PAPER = "#FFFDF6", WHITE = "#FFFFFF";
   const PLATE_SUB = "#9FB4C7";
   const PAD = 7;                 // the card's gold margin
   const R = 7;                   // corner radius, card
@@ -92,16 +91,24 @@
 
   // The card as the page draws it: a gold border, an inked frame, the picture
   // on ice, a dark name plate and their phrase on paper.
-  function body(doc, x, y) {
+  // The border, light at the top and dark at the foot, worked out from the one
+  // colour the player carries. Same idea as the sheen the page paints over it.
+  function edgeStops(params) {
+    const base = params.cardEdge || "#F8A41B";
+    return [mix(base, "#FFFFFF", 0.45), base, mix(base, "#000000", 0.22)];
+  }
+
+  function body(doc, x, y, params) {
     // A stack of thin bands rather than a gradient: a PDF gradient is a whole
     // shading dictionary, and twenty slices of it are smooth at this size.
-    doc.rect(x, y, CARD.w, CARD.h, { fill: GOLD[2], radius: R });
+    const stops = edgeStops(params);
+    doc.rect(x, y, CARD.w, CARD.h, { fill: stops[2], radius: R });
     doc.clip(x, y, CARD.w, CARD.h, R, function () {
       const bands = 20;
       for (let i = 0; i < bands; i++) {
         const t = i / (bands - 1);            // 0 at the bottom, 1 at the top
         doc.rect(x, y + CARD.h * t, CARD.w, CARD.h / bands + 0.6,
-                 { fill: blend(GOLD, t) });
+                 { fill: blend(stops, t) });
       }
     });
   }
@@ -125,7 +132,7 @@
 
   function front(doc, x, y, params, shot) {
     cut(doc, x, y);
-    body(doc, x, y);
+    body(doc, x, y, params);
 
     const fx = x + PAD, fy = y + PAD, fw = CARD.w - PAD * 2, fh = CARD.h - PAD * 2;
     doc.rect(fx, fy, fw, fh, { fill: WHITE, stroke: INK, width: 1.6, radius: RI });
@@ -133,7 +140,7 @@
     const plateH = 34, quoteH = 18;
     const photo = { x: fx, y: fy + quoteH + plateH, w: fw, h: fh - quoteH - plateH };
     doc.clip(fx, fy, fw, fh, RI, function () {
-      doc.rect(photo.x, photo.y, photo.w, photo.h, { fill: ICE });
+      doc.rect(photo.x, photo.y, photo.w, photo.h, { fill: params.cardBack || "#EEF6FF" });
       // Fitted, never stretched: the render is taller than it is wide (180x200),
       // and filling the window made every player a stone heavier.
       const box = fit(photo, DRAW.LW / DRAW.LH);
@@ -148,7 +155,7 @@
 
     const num = params.number ? "#" + params.number : "";
     const textX = fx + 8 + (num ? 30 : 0);
-    if (num) doc.text(fx + 8, fy + quoteH + 11, num, { font: "bold", size: 15, grey: GOLD[0] });
+    if (num) doc.text(fx + 8, fy + quoteH + 11, num, { font: "bold", size: 15, grey: edgeStops(params)[0] });
     doc.text(textX, fy + quoteH + 18, params.name || "Unnamed", { font: "bold", size: 11, grey: WHITE });
     doc.text(textX, fy + quoteH + 8,
              (params.position + " - shoots " + (params.handedness === "right" ? "right" : "left")).toUpperCase(),
@@ -162,13 +169,13 @@
 
   function back(doc, x, y, params, typed) {
     cut(doc, x, y);
-    body(doc, x, y);
+    body(doc, x, y, params);
     const fx = x + PAD, fy = y + PAD, fw = CARD.w - PAD * 2, fh = CARD.h - PAD * 2;
     doc.rect(fx, fy, fw, fh, { fill: WHITE, stroke: INK, width: 1.6, radius: RI });
     x = fx - 4;                  // the rest of this was written against the card edge
     let top = fy + fh - 20;
     if (params.number) {
-      doc.text(x + 14, top, "#" + params.number, { font: "bold", size: 13, grey: GOLD[2] });
+      doc.text(x + 14, top, "#" + params.number, { font: "bold", size: 13, grey: edgeStops(params)[2] });
     }
     doc.text(x + 14 + (params.number ? 30 : 0), top, params.name || "Unnamed",
              { font: "bold", size: 11.5, grey: INK });
@@ -248,7 +255,8 @@
     canvas.height = DRAW.LH * DRAW.S * 2;
     const ctx = canvas.getContext("2d");
     ctx.scale(2, 2);
-    DRAW.render(ctx, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null);
+    DRAW.render(ctx, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null,
+                { background: false });
     return canvas;
   }
 

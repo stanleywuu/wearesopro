@@ -29,6 +29,7 @@
     fillPlate();
     buildBack();
     buildPoses();
+    buildColours();
     buildFill();
     // Both optional. The reel loops on its own, so a replay button is a nicety
     // and the card must not die without one - it threw on a missing element and
@@ -183,6 +184,60 @@
     return back;
   }
 
+  // ---- the card's own colours --------------------------------------------
+
+  // Set on every card on the page - the big one and the three pictures - so a
+  // colour change shows everywhere at once, and goes into the share code.
+  function paintCards() {
+    document.querySelectorAll(".card").forEach(function (el) {
+      el.style.setProperty("--card-edge", params.cardEdge);
+      el.style.setProperty("--card-back", params.cardBack);
+    });
+  }
+
+  // The colours are part of the player, so the address bar follows them: share
+  // after recolouring and the card arrives the colour you made it.
+  function keepUrl() {
+    const query = new URLSearchParams(location.search);
+    if (!query.has(SHARE_KEY)) return;          // a profile card has no ?p= to keep
+    query.set(SHARE_KEY, CODE.encode(params));
+    history.replaceState(null, "", location.pathname + "?" + query.toString());
+    wire("card-edit", function (el) {
+      el.href = "/games/create-a-player.html?" + SHARE_KEY + "=" + shareCode() +
+        (el.dataset.new ? "&new=1" : "");
+    });
+  }
+
+  function buildColours() {
+    const host = document.getElementById("card-colours");
+    if (!host || !window.CAP_DATA) return;
+    row(host, "Border", window.CAP_DATA.cardEdgeColors, "cardEdge");
+    row(host, "Background", window.CAP_DATA.cardBackColors, "cardBack");
+    paintCards();
+  }
+
+  function row(host, label, colours, key) {
+    const wrap = document.createElement("div");
+    wrap.className = "card-colour-row";
+    wrap.appendChild(text("span", "card-colour-label", label));
+    colours.forEach(function (colour) {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "card-colour" + (params[key] === colour ? " chosen" : "");
+      dot.style.background = colour;
+      dot.setAttribute("aria-label", label + " " + colour);
+      dot.addEventListener("click", function () {
+        params[key] = colour;
+        wrap.querySelectorAll(".card-colour").forEach(function (d) { d.classList.remove("chosen"); });
+        dot.classList.add("chosen");
+        paintCards();
+        keepUrl();
+      });
+      wrap.appendChild(dot);
+    });
+    host.appendChild(wrap);
+  }
+
   // The column headings, which is all CAP_STATS is used for until someone asks
   // for numbers: the boxes start empty and stay empty unless they fill them.
   function labels() {
@@ -200,6 +255,7 @@
     const panel = document.getElementById("card-print-panel");
     if (!panel) return;
     panel.hidden = false;
+    sizePoses();
     note("");
     panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
@@ -230,11 +286,19 @@
       tile.setAttribute("role", "radio");
       tile.setAttribute("tabindex", "0");
 
+      // A full-size card, shrunk by transform rather than by a pile of smaller
+      // font sizes. Anything else is an imitation of the card, and it shows.
+      const box = document.createElement("div");
+      box.className = "card-pose-box";
+      const scale = document.createElement("div");
+      scale.className = "card-pose-scale";
       const mini = document.createElement("div");
       mini.className = "card card-mini has-back";
       mini.appendChild(miniFront(shot));
       mini.appendChild(makeBack());          // kept in step by showFilled()
-      tile.appendChild(mini);
+      scale.appendChild(mini);
+      box.appendChild(scale);
+      tile.appendChild(box);
 
       tile.appendChild(poseFlip(mini));
       tile.appendChild(text("span", "card-pose-label", labels[i] || ""));
@@ -278,6 +342,25 @@
     return frame;
   }
 
+  // The tiles hold a full-size card each, scaled down to whatever room the row
+  // gives them. Done here rather than in CSS because the height the scaled card
+  // leaves behind has to be measured, and nothing can be measured while the
+  // panel is hidden.
+  const CARD_W = 340;          // the card's own width, from card.css
+
+  function sizePoses() {
+    document.querySelectorAll(".card-pose-box").forEach(function (box) {
+      const scale = box.querySelector(".card-pose-scale");
+      const card = scale && scale.firstChild;
+      if (!card) return;
+      // The scaled card is taken out of the flow, so the box it sits in has to
+      // be given the height the card ends up occupying.
+      const k = box.clientWidth / CARD_W;
+      scale.style.transform = "scale(" + k + ")";
+      box.style.height = (card.offsetHeight * k) + "px";
+    });
+  }
+
   // Turns one small card over, and nothing else on the page.
   function poseFlip(mini) {
     const button = document.createElement("button");
@@ -302,7 +385,8 @@
     canvas.height = DRAW.LH * DRAW.S / 2;
     const ctx2 = canvas.getContext("2d");
     ctx2.scale(0.5, 0.5);
-    DRAW.render(ctx2, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null);
+    DRAW.render(ctx2, params, shot ? shot.reel.yaw : 0.5, shot ? shot.anim : null,
+                { background: false });
     return canvas;
   }
 
@@ -446,7 +530,8 @@
     const ms = now - start;
     const anim = REEL.at(reel, ms) || lastFrame();
     if (ms > reel.end + REPLAY_GAP) return play(), requestAnimationFrame(frame);
-    DRAW.render(ctx, params, anim ? reel.yaw : 0.5, anim);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    DRAW.render(ctx, params, anim ? reel.yaw : 0.5, anim, { background: false });
     requestAnimationFrame(frame);
   }
 
