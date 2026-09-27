@@ -269,12 +269,14 @@
 
     function randomize() {
       // A roll of the dice is a different person, not an edit of this one, so
-      // the host gets told before the change lands.
+      // the host gets told before the change lands - and the change itself is
+      // flagged, because nobody meant to keep the twelve players they flicked
+      // past on the way to one they liked.
       if (options.onNew) options.onNew();
       Object.assign(params, window.CAP_CODE.random());
       syncControls();
       status("");
-      touch();
+      touch({ rolled: true });
     }
 
     // Push the whole params object back onto the controls after a load or randomize.
@@ -310,9 +312,9 @@
 
     // Every change runs through here: it holds off the idle spin and tells the
     // host the player moved, which is how the builder page autosaves.
-    function touch() {
+    function touch(how) {
       lastInput = performance.now();
-      if (options.onChange) options.onChange(params);
+      if (options.onChange) options.onChange(params, how || null);
     }
 
     function startDrag(e) {

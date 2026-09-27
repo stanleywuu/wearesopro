@@ -31,6 +31,7 @@
   let playerId = null;       // which gallery entry this player is
   let started = false;       // the mount fires one change of its own; ignore it
   let keeping = true;        // false while looking at somebody else's player
+  let rolled = false;        // true after Randomize, until something is changed
 
   function init() {
     const root = document.querySelector(".cap-wrap");
@@ -65,17 +66,37 @@
 
   // ---- save -------------------------------------------------------------
 
-  // Everything you build is kept, without a Save button. Two things stop the
+  // Everything you build is kept, without a Save button. Three things stop the
   // gallery filling with noise: the mount's own opening change does not count,
-  // and neither does a shared player you have only looked at.
-  function onChange(params) {
+  // neither does a shared player you have only looked at, and a player who has
+  // only been rolled is not kept until you change something about him - press
+  // Randomize eight times and you wanted the eighth, not all eight.
+  //
+  // He is still on screen and still in the autosave, so a reload has him back;
+  // it is the gallery entry that waits.
+  function onChange(params, how) {
     queueSave(params);
     refreshCardLink();
     if (!started) {
       started = true;
       return;
     }
-    if (keeping) PLAYERS.remember(playerId, CODE.encode(params));
+    if (how && how.rolled) {
+      rolled = true;
+      return;
+    }
+    rolled = false;
+    keep();
+  }
+
+  // Into the gallery - the one place that writes an entry for the player on
+  // screen, so "not yet" only has to be decided once.
+  // force is "he is wanted" said out loud - putting him on the team - which
+  // settles a player who has only been rolled.
+  function keep(force) {
+    if (!keeping || (rolled && !force)) return;
+    rolled = false;
+    PLAYERS.remember(playerId, CODE.encode(editor.params));
   }
 
   function newPlayer() {
@@ -264,6 +285,7 @@
     }
     if (spot < 0) return editor.status("Your team is full - open the team photo to edit");
     TEAM.save(team);
+    keep(true);                // putting him on the team is wanting him kept
     const filled = team.players.filter(Boolean).length;
     editor.status("Added to the current team");
     showTeamLink();
