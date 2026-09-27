@@ -85,9 +85,11 @@
     return params.position === "Defence" ? "defence" : "skater";
   }
 
+  // Always the shot reel, never the player's own: MOMENTS are moments in THAT
+  // timeline, and 1950ms into a wipeout is a man lying on the ice.
   function poses(params) {
     if (!REEL) return [null, null, null];
-    const reel = REEL.build(params);
+    const reel = REEL.build(params, null, kind(params) === "goalie" ? "saves" : "shot");
     return MOMENTS[kind(params)].map(function (at) {
       const anim = at.ms ? REEL.at(reel, at.ms) : null;
       // A shot frame puts the player mid-frame with the net beside them and a
