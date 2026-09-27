@@ -145,10 +145,11 @@
   function spinReel(params) {
     return { kind: "spin", slap: false, home: 0, yaw: SIDE_ON,
       mirror: params.handedness === "left", label: "Filthy!",
-      glide: 1000, spin: 1250,   // the turn
-      wind: 650,                 // the stick starts back while he is still turning
-      pull: 1250,                // fully loaded as the turn lands
-      contact: 1480, land: 2000, end: 3100 };
+      glide: 900, spin: 1150,    // the turn
+      wind: 300,                 // the stick starts back a quarter of the way round
+      pull: 750,                 // loaded, and still turning
+      contact: 950,              // gone with a quarter of the turn still to come
+      land: 1450, end: 2600 };
   }
 
   function goalieReel(kind) {
@@ -310,13 +311,13 @@
     }
   }
 
-  // The turn and the shot are one move. The rotation eases out cubically, so it
-  // is all but round by the time the stick starts back, and the two overlap
-  // from there: he is still turning through the pull-back and releases as the
-  // turn lands on the shooting angle.
+  // The turn and the shot are one move. The rotation carries its speed all the
+  // way round - ease it out and it is visibly finished long before the stick
+  // comes through, which is the pause this used to have - and the release comes
+  // BEFORE the turn does: puck gone and flying as he squares up.
   function spinAt(reel, ms, anim) {
     const t = Math.min(1, ms / reel.spin);
-    anim.yaw = reel.yaw + Math.PI * 2 * (1 - Math.pow(1 - t, 3));
+    anim.yaw = reel.yaw + Math.PI * 2 * t * t * (3 - 2 * t);
     if (ms < reel.wind) {
       anim.crouch = 0.35 + 0.25 * (ms / reel.wind);
     } else if (ms < reel.pull) {
