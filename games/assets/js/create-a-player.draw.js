@@ -1254,7 +1254,6 @@
     const s = stickFor(dims, params);
     const grips = gripsFor(dims, s);
     const shoulderX = dims.torso.rx * 0.70;
-    const gloveColor = glovesOf(params);
     const shaft = stickDepth(s, yaw);
     // Which shoulder owns which hand. Both grips sit on the blade's side of the
     // body, so the shoulder on THAT side takes the top hand and stays tucked,
@@ -1264,37 +1263,53 @@
     // Pairing them the other way round sends both arms to the far side and
     // they cross each other - the far one reaching up to the high hand, the
     // near one down to the low hand.
-    return [
+    const arms = [
       { shoulder: { x: s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[0], blocker: true },
       { shoulder: { x: -s.hand * shoulderX, y: dims.shoulderY, z: 1 }, grip: grips[1], blocker: false }
-    ].map(pair => {
-      const a = proj3(pair.shoulder, yaw);
-      const e = proj3(elbowFor(pair.shoulder, pair.grip), yaw);
-      const b = proj3(pair.grip, yaw);
-      // The bias is what makes the near glove read as gripping the shaft rather
-      // than the shaft crossing it. Applied to BOTH arms it also dragged the
-      // far arm in front of the torso, so side on you saw two arms where a
-      // body only shows one. The far arm now keeps its own negative depth and
-      // the torso covers it.
-      const depth = (a.d + b.d) / 2;
-      return [
-        {
-          d: depth >= 0 ? depth + 3 : depth,
-          draw: () => drawArm(ctx, a, e, b, 8, params.jerseyColor)
-        },
-        {
-          // The hand is its own part so it can sort onto the shaft while the
-          // arm keeps its own depth - the arm averages the shoulder, which is
-          // behind, and that average was dragging the glove under the stick.
-          d: Math.max(b.d, shaft) + 2,
-          draw: () => {
-            if (!dims.goalie) return drawGlove(ctx, b, gloveColor);
-            if (pair.blocker) drawBlocker(ctx, b, gloveColor, params.trimColor);
-            else drawTrapper(ctx, b, gloveColor, params.trimColor);
-          }
-        }
-      ];
-    }).reduce((all, pair) => all.concat(pair), []);
+    ].map(pair => armAt(pair, yaw));
+
+    // The deepest arm, worked out before any hand is placed. A glove has to
+    // beat the arm CROSSING THE CHEST as well as the one it is on the end of -
+    // side on, that far forearm ran straight over the top glove and left a
+    // yellow sliver sticking out from behind a blue sleeve.
+    const front = Math.max(arms[0].d, arms[1].d);
+
+    return arms.map(arm => [
+      { d: arm.d, draw: () => drawArm(ctx, arm.a, arm.e, arm.b, 8, params.jerseyColor) },
+      handPart(ctx, dims, params, arm, shaft, front)
+    ]).reduce((all, pair) => all.concat(pair), []);
+  }
+
+  // The bias is what makes the near glove read as gripping the shaft rather
+  // than the shaft crossing it. Applied to BOTH arms it also dragged the far
+  // arm in front of the torso, so side on you saw two arms where a body only
+  // shows one. The far arm keeps its own negative depth and the torso covers it.
+  function armAt(pair, yaw) {
+    const a = proj3(pair.shoulder, yaw);
+    const e = proj3(elbowFor(pair.shoulder, pair.grip), yaw);
+    const b = proj3(pair.grip, yaw);
+    const depth = (a.d + b.d) / 2;
+    return { a: a, e: e, b: b, d: depth >= 0 ? depth + 3 : depth, blocker: pair.blocker };
+  }
+
+  // The hand is its own part so it can sort onto the shaft while the arm keeps
+  // its own depth - the arm averages the shoulder, which is behind, and that
+  // average was dragging the glove under the stick.
+  //
+  // A hand that is out in front goes above BOTH arms: a glove is on the end of
+  // an arm and on top of the shaft, never buried in a sleeve. One that is
+  // behind is left where it is, or the far glove would climb out from behind
+  // the body when the player turns away.
+  function handPart(ctx, dims, params, arm, shaft, front) {
+    const gloveColor = glovesOf(params);
+    return {
+      d: Math.max(arm.b.d, shaft, arm.b.d >= 0 ? front : arm.d) + 2,
+      draw: () => {
+        if (!dims.goalie) return drawGlove(ctx, arm.b, gloveColor);
+        if (arm.blocker) drawBlocker(ctx, arm.b, gloveColor, params.trimColor);
+        else drawTrapper(ctx, arm.b, gloveColor, params.trimColor);
+      }
+    };
   }
 
   // A slab of a blocker on the stick hand and a fat round trapper on the other:
