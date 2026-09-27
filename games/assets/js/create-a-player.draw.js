@@ -375,12 +375,9 @@
   function blade(ctx, c, hw, yaw) {
     const bootY = c.sy + SKATE_HH * c.k;
     const drop = BLADE_DROP * c.k;
-    // A blade runs front to back, not side to side: its own silhouette is long
-    // in z and narrow in x, so it stays long when the player turns side-on and
-    // shortens as they face us. Hockey length, not speed-skating length, and
-    // the boot sits straight down on it - any daylight between the two shows
-    // the leg through the gap.
-    const bw = silWidth(5.5, 8.5, yaw, 0) * c.k;
+    // As long as the boot above it, and no longer: it therefore turns with the
+    // boot, and the two read as one skate rather than a shoe parked on a rail.
+    const bw = hw;
     const postW = Math.max(hw * 0.2, 1.2 * c.k);
     ctx.fillStyle = "#59636E";
     [-0.5, 0.28].forEach(function (at) {
