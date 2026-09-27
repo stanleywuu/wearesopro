@@ -1505,7 +1505,7 @@
 
   // ---- highlight scenery ------------------------------------------------
 
-  const NET = { x: LW - 44, w: 54, h: 42 };
+  const NET = { x: LW - 44, w: 65, h: 50 };
 
   // Where the net comes to rest when the camera is riding along with the puck:
   // out at the middle of the frame, so it closes on a puck sitting there.
@@ -1547,7 +1547,7 @@
   // ice is a man falling over in a void; put the dasher behind him and it is a
   // man falling over at the rink. Drawn flat across the frame, low enough that
   // the player still stands clear of it.
-  const BOARDS = { h: 66, cap: 2.8, kick: 6, post: 26, bay: 26 };
+  const BOARDS = { h: 82, cap: 2.8, kick: 6, post: 30, bay: 26 };
 
   function drawBoards(ctx) {
     const h = BOARDS.h * FIT, base = GROUND - 1, top = base - h;
