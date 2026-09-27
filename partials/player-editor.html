@@ -31,24 +31,36 @@
       </div>
 
       <div class="cap-panel" id="panel-shape" role="tabpanel" aria-labelledby="tab-shape" data-panel="shape">
-        <fieldset class="cap-group">
-          <legend>Stature</legend>
-          <label class="cap-slot"><span>Height</span><input type="range" data-param="height"></label>
-        </fieldset>
-
+        <!-- Stature scales the whole figure, so it led its own card. One
+             slider is not a card: it is the first row of the body, where it is
+             read as "how big is he" rather than as a fourth subject. The word
+             is Stature, not Height, because Height is the row below it. -->
         <fieldset class="cap-group">
           <legend>Body</legend>
+          <label class="cap-slot"><span>Stature</span><input type="range" data-param="height"></label>
           <div class="cap-opts" data-options="bodyShape" data-list="shapes"></div>
-          <label class="cap-slot"><span>Width</span><input type="range" data-param="bodyWidth"></label>
-          <label class="cap-slot"><span>Height</span><input type="range" data-param="bodyHeight"></label>
+          <!-- Width and height are one decision - how squat is he - so they sit
+               on one row. Contour keeps its own: it is hidden on Blocky. -->
+          <div class="cap-slot cap-slot-duo">
+            <span>Size</span>
+            <div class="cap-duo">
+              <label><span>Width</span><input type="range" data-param="bodyWidth"></label>
+              <label><span>Height</span><input type="range" data-param="bodyHeight"></label>
+            </div>
+          </div>
           <label class="cap-slot"><span>Contour</span><input type="range" data-param="bodyContour"></label>
         </fieldset>
 
         <fieldset class="cap-group">
           <legend>Head</legend>
           <div class="cap-opts" data-options="headShape" data-list="shapes"></div>
-          <label class="cap-slot"><span>Width</span><input type="range" data-param="headWidth"></label>
-          <label class="cap-slot"><span>Height</span><input type="range" data-param="headHeight"></label>
+          <div class="cap-slot cap-slot-duo">
+            <span>Size</span>
+            <div class="cap-duo">
+              <label><span>Width</span><input type="range" data-param="headWidth"></label>
+              <label><span>Height</span><input type="range" data-param="headHeight"></label>
+            </div>
+          </div>
           <label class="cap-slot"><span>Contour</span><input type="range" data-param="headContour"></label>
         </fieldset>
       </div>
@@ -62,18 +74,16 @@
           <div class="cap-slot cap-slot-wide"><span>Skin</span><div class="cap-swatches" data-swatch="skinColor" data-palette="skinColors"></div></div>
         </fieldset>
 
-        <!-- data-auto: the row leads with a "Kit" swatch meaning "follow the
+        <!-- The helmet used to be a card of its own. It is gear like the rest,
+             and a card per body part is how four colour rows became eight.
+             data-auto: the row leads with a "Jersey" swatch meaning "follow the
              jersey", which is what these two did before they could be chosen. -->
         <fieldset class="cap-group">
           <legend>Gear</legend>
           <div class="cap-slot cap-slot-wide"><span>Pants</span><div class="cap-swatches" data-swatch="pantsColor" data-palette="pantsColors" data-auto="1"></div></div>
           <div class="cap-slot cap-slot-wide"><span>Gloves</span><div class="cap-swatches" data-swatch="gloveColor" data-palette="gloveColors" data-auto="1"></div></div>
           <div class="cap-slot cap-slot-wide"><span>Stick</span><div class="cap-swatches" data-swatch="stickColor" data-palette="stickColors"></div></div>
-        </fieldset>
-
-        <fieldset class="cap-group">
-          <legend>Helmet</legend>
-          <div class="cap-slot cap-slot-wide"><span>Colour</span><div class="cap-swatches" data-swatch="helmetColor" data-palette="helmetColors"></div></div>
+          <div class="cap-slot cap-slot-wide"><span>Helmet</span><div class="cap-swatches" data-swatch="helmetColor" data-palette="helmetColors"></div></div>
           <div class="cap-slot"><span>Face</span><div class="cap-opts" data-options="helmetStyle" data-list="helmets"></div></div>
         </fieldset>
       </div>
@@ -91,13 +101,26 @@
         </fieldset>
 
         <!-- Its own group: updateContourVisibility hides a Contour slider that
-             shares a group with a shape picker, and these are not that. -->
+             shares a group with a shape picker, and these are not that.
+             One row per feature - "Eye contour" and "Mouth length" wrapped onto
+             two lines in the label column, which is most of what made four
+             sliders look like eight. -->
         <fieldset class="cap-group">
           <legend>Eyes and mouth</legend>
-          <label class="cap-slot"><span>Eye size</span><input type="range" data-param="eyeSize"></label>
-          <label class="cap-slot"><span>Eye contour</span><input type="range" data-param="eyeContour"></label>
-          <label class="cap-slot"><span>Mouth length</span><input type="range" data-param="mouthLength"></label>
-          <label class="cap-slot"><span>Mouth contour</span><input type="range" data-param="mouthContour"></label>
+          <div class="cap-slot cap-slot-duo">
+            <span>Eyes</span>
+            <div class="cap-duo">
+              <label><span>Size</span><input type="range" data-param="eyeSize"></label>
+              <label><span>Contour</span><input type="range" data-param="eyeContour"></label>
+            </div>
+          </div>
+          <div class="cap-slot cap-slot-duo">
+            <span>Mouth</span>
+            <div class="cap-duo">
+              <label><span>Length</span><input type="range" data-param="mouthLength"></label>
+              <label><span>Contour</span><input type="range" data-param="mouthContour"></label>
+            </div>
+          </div>
         </fieldset>
       </div>
 

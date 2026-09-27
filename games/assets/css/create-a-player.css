@@ -120,6 +120,9 @@
 }
 
 .cap-group > .cap-opts { margin-bottom: .8rem; }
+/* A picker that follows a slider rather than opening the group needs the gap
+   on its own side too - Stature sat right on top of the body shapes. */
+.cap-slot + .cap-opts { margin-top: .9rem; }
 
 /* Six hair styles will not fit on one phone row the way three body shapes do,
    so an option keeps a readable minimum and the row wraps under it. */
@@ -351,6 +354,18 @@
 
 .cap-slot[hidden] { display: none; }
 
+/* Two sliders that answer one question - how wide and how tall, how big an eye
+   and what shape - on one row under one label. Stacked, each needed its own
+   label in a 4.5rem column, and "Mouth contour" wrapped onto two lines. */
+.cap-slot-duo { align-items: start; }
+.cap-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem .8rem;
+}
+.cap-duo label { display: grid; gap: .1rem; }
+.cap-duo label > span { font-size: .72rem; color: var(--muted); }
+
 .cap-slot input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -408,6 +423,11 @@
      label goes above the colours and the row is allowed to wrap. */
   .cap-slot-wide { grid-template-columns: 1fr; }
   .cap-slot-wide .cap-swatches { flex-wrap: wrap; gap: .4rem; }
+
+  /* Same move for a paired row: two sliders sharing what is left of a phone
+     next to a 4.5rem label are two sliders nobody can drag. The label goes
+     above and they get the whole width. */
+  .cap-slot-duo { grid-template-columns: 1fr; }
   .cap-opt, .cap-tab { padding: .55rem .2rem; }
   .cap-actions .button { padding: .5rem .9rem; }
   .cap-slot input[type="range"] { height: 10px; }
