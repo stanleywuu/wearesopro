@@ -345,7 +345,7 @@
   // at the old height the skate read as a dark smudge under the sock, and on a
   // printed card it barely registered at all.
   const SKATE_HH = 5.2;                       // half-height of the boot
-  const BLADE_DROP = 2.6;                     // holder height, boot to blade
+  const BLADE_DROP = 0.8;                     // the boot sits down on the blade
   const BLADE_HH = 1.15;                      // half-thickness of the blade
   // The blade ends up on the ice, so the boot is lifted by everything under it.
   const SKATE_MID = SKATE_HH - 4 + BLADE_DROP + BLADE_HH * 2;
@@ -377,9 +377,10 @@
     const drop = BLADE_DROP * c.k;
     // A blade runs front to back, not side to side: its own silhouette is long
     // in z and narrow in x, so it stays long when the player turns side-on and
-    // shortens as they face us. Measured off the boot it just looked like a
-    // grey pebble under the foot.
-    const bw = silWidth(6.5, 11, yaw, 0) * c.k;
+    // shortens as they face us. Hockey length, not speed-skating length, and
+    // the boot sits straight down on it - any daylight between the two shows
+    // the leg through the gap.
+    const bw = silWidth(5.5, 8.5, yaw, 0) * c.k;
     const postW = Math.max(hw * 0.2, 1.2 * c.k);
     ctx.fillStyle = "#59636E";
     [-0.5, 0.28].forEach(function (at) {
