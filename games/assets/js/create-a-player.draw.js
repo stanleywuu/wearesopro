@@ -252,7 +252,10 @@
 
   function bodyParts(ctx, dims, params, yaw) {
     const legs = [-1, 1].map(s => legPart(ctx, dims, params, yaw, s));
-    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
+    // Each skate clears its own leg. A leg is sorted on its KNEE, which is
+    // pushed forward in a crouch, so a skate sorted on its own shallow depth
+    // loses to the shin every time and disappears behind it.
+    const skates = [-1, 1].map((s, i) => skatePart(ctx, yaw, s * dims.legX, legs[i].d));
     const cuffs = [-1, 1].map((s, i) => pantsCuff(ctx, dims, params, yaw, s, legs[i].d));
     const waist = pantsWaist(ctx, dims, params, yaw);
     const pads = dims.goalie ? [-1, 1].map(s => padPart(ctx, dims, params, yaw, s)) : [];
@@ -344,14 +347,12 @@
   const SKATE_HH = 6.5;                       // half-height of the boot
   const SKATE_MID = SKATE_HH - 4;             // keeps the blade where it was
 
-  function skatePart(ctx, yaw, x) {
+  function skatePart(ctx, yaw, x, legDepth) {
     const r = rotY(x, 2, yaw);
     const c = project(r.x, SKATE_Y + SKATE_MID, r.z);
     return {
-      // In FRONT of the leg it belongs to, always. Sorted on its own depth the
-      // boot ended up behind the sock at most angles, leaving a sliver of dark
-      // at the ankle and nothing that reads as a skate.
-      d: r.z + 3,
+      // In FRONT of the leg it belongs to, always.
+      d: Math.max(legDepth == null ? r.z : legDepth, r.z) + 0.4,
       draw: () => {
         const hw = silWidth(7, 5, yaw, 0) * c.k;
         drawSlab(ctx, {
