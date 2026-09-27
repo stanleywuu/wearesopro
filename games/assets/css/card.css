@@ -139,9 +139,8 @@
 /* ---- filling it in ----------------------------------------------------
    Optional and quiet: a panel that looks like a form would suggest the card
    is unfinished without it. */
-.card-fill { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px dashed var(--rule); }
-.card-fill h2 { margin: 0 0 .7rem; font-size: 1rem; }
-.card-fill h2 .muted { font-weight: 400; font-size: .85rem; }
+.card-fill { margin-top: 1.1rem; }
+.card-fill h3 .muted { font-weight: 400; font-size: .85rem; }
 
 .card-fill-stats { display: flex; flex-wrap: wrap; gap: .5rem; }
 .card-fill-stat { flex: 1 1 60px; display: flex; flex-direction: column; gap: .2rem;
@@ -160,8 +159,13 @@
 
 /* ---- pose picker ------------------------------------------------------
    Three frames of their own Highlight. Whichever is chosen is what prints. */
-.card-poses { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px dashed var(--rule); }
-.card-poses h2 { margin: 0 0 .7rem; font-size: 1rem; }
+.card-print-panel { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px dashed var(--rule); }
+.card-print-panel h2 { margin: 0 0 .2rem; font-size: 1rem; }
+.card-print-panel h3 { margin: 0 0 .6rem; font-size: .95rem; }
+.card-print-hint { margin: 0 0 .8rem; font-size: .85rem; }
+.card-print-actions { display: flex; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+.card-print-go { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 700; }
+.card-print-go:hover { background: #24384a; border-color: #24384a; }
 
 .card-pose-row { display: flex; gap: .6rem; flex-wrap: wrap; }
 .card-pose {

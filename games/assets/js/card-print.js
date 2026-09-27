@@ -56,15 +56,25 @@
   // into it, through it. Chosen so the player is in frame and the camera has
   // not travelled. A goalie gets his own, because his reel is three saves
   // rather than a shot.
+  // Picked by eye off the filmstrip, not by guessing at numbers. A defenceman
+  // is the fussy one: through the middle of his windup the stick is behind his
+  // body and he looks empty-handed, so his frames are the glide and the
+  // follow-through and nothing in between.
   const MOMENTS = {
-    skater: [0, 1550, 2150],
-    goalie: [0, 1150, 1780]
+    skater:  [0, 1350, 2250],
+    defence: [0, 1200, 2450],
+    goalie:  [0, 1150, 1780]
   };
+
+  function kind(params) {
+    if (params.position === "Goalie") return "goalie";
+    return params.position === "Defence" ? "defence" : "skater";
+  }
 
   function poses(params) {
     if (!REEL) return [null, null, null];
     const reel = REEL.build(params);
-    const ms = MOMENTS[params.position === "Goalie" ? "goalie" : "skater"];
+    const ms = MOMENTS[kind(params)];
     return ms.map(function (at) {
       return at ? { reel: reel, anim: REEL.at(reel, at) } : null;
     });
@@ -180,6 +190,6 @@
     PDF.save(build(params, filled, opts), name(params));
   }
 
-  window.CAP_PRINT = { build: build, download: download, poses: poses, draw: player };
+  window.CAP_PRINT = { build: build, download: download, poses: poses, kind: kind, draw: player };
 
 })();

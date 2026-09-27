@@ -50,10 +50,16 @@
     // Only where the page offers it: the team profiles do not.
     wire("card-print", function (el) {
       if (!PRINT) return el.remove();
+      el.addEventListener("click", openPrint);
+    });
+    wire("card-print-go", function (el) {
       el.addEventListener("click", function () {
         PRINT.download(params, filled, printing);
-        note("Printable card saved - front and back, ready to cut out");
+        note("Saved. Print it, cut along the lines, fill in the back.");
       });
+    });
+    wire("card-print-close", function (el) {
+      el.addEventListener("click", closePrint);
     });
     wire("card-edit", function (el) {
       el.href = "/games/create-a-player.html?" + SHARE_KEY + "=" + shareCode() +
@@ -157,7 +163,11 @@
     addFlip(card);
     // ?debug=back opens on the back: a flip cannot be judged from a screenshot,
     // and the print layout is drawn from what this shows.
-    if (new URLSearchParams(location.search).get("debug") === "back") card.classList.add("flipped");
+    const debug = new URLSearchParams(location.search).get("debug");
+    if (debug === "back") card.classList.add("flipped");
+    // ?debug=print opens the print panel: the flow cannot be judged from a
+    // screenshot otherwise, and the sheet is drawn from what it shows.
+    if (debug === "print") setTimeout(openPrint, 0);
   }
 
   // The column headings, which is all CAP_STATS is used for until someone asks
@@ -172,15 +182,41 @@
   // This is only about the still that goes on paper, so it is a row of frames
   // to choose from rather than anything that interrupts the loop.
   const printing = { pose: 1, allPoses: false };
+  let held = null;           // the frame the card is frozen on, or null
+
+  function openPrint() {
+    const panel = document.getElementById("card-print-panel");
+    if (!panel) return;
+    panel.hidden = false;
+    hold(printing.pose);
+    note("");
+    panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function closePrint() {
+    const panel = document.getElementById("card-print-panel");
+    if (panel) panel.hidden = true;
+    held = null;
+    play();                  // back to the Highlight
+    note("");
+  }
+
+  function hold(i) {
+    const shots = PRINT && PRINT.poses ? PRINT.poses(params) : [];
+    held = shots[i] || { reel: null, anim: null };
+  }
+
+  const LABELS = {
+    skater:  ["Standing", "Into it", "Through it"],
+    defence: ["Standing", "Carrying it", "Follow-through"],
+    goalie:  ["In the crease", "Down and across", "Glove"]
+  };
 
   function buildPoses() {
-    const panel = document.getElementById("card-poses");
     const row = document.getElementById("card-pose-row");
-    if (!panel || !row || !PRINT || !PRINT.poses) return;
+    if (!row || !PRINT || !PRINT.poses) return;
     const shots = PRINT.poses(params);
-    const labels = params.position === "Goalie"
-      ? ["In the crease", "Down and across", "Glove"]
-      : ["Standing", "Into it", "Through it"];
+    const labels = LABELS[PRINT.kind ? PRINT.kind(params) : "skater"] || LABELS.skater;
 
     shots.forEach(function (shot, i) {
       const tile = document.createElement("button");
@@ -195,7 +231,6 @@
     wire("card-pose-all", function (el) {
       el.addEventListener("change", function () { printing.allPoses = el.checked; });
     });
-    panel.hidden = false;
     choose(printing.pose);
   }
 
@@ -211,6 +246,7 @@
 
   function choose(i) {
     printing.pose = i;
+    if (held) hold(i);       // the card follows the choice while it is frozen
     const tiles = document.querySelectorAll(".card-pose");
     tiles.forEach(function (tile, at) {
       tile.classList.toggle("chosen", at === i);
@@ -225,10 +261,9 @@
   const filled = { stats: {}, bio: "" };
 
   function buildFill() {
-    const panel = document.getElementById("card-fill");
-    if (!panel || !STATS) return;
-    panel.hidden = false;
+    if (!STATS) return;
     const row = document.getElementById("card-fill-stats");
+    if (!row) return;
     labels().forEach(function (label) {
       const wrap = document.createElement("label");
       wrap.className = "card-fill-stat";
@@ -326,7 +361,13 @@
     start = performance.now();
   }
 
+  // While the print panel is open the card holds the picture that is about to
+  // be printed. Otherwise it plays its Highlight, which is the point of it.
   function frame(now) {
+    if (held) {
+      DRAW.render(ctx, params, held.reel ? held.reel.yaw : 0.5, held.anim || null);
+      return requestAnimationFrame(frame);
+    }
     const ms = now - start;
     const anim = REEL.at(reel, ms) || lastFrame();
     if (ms > reel.end + REPLAY_GAP) return play(), requestAnimationFrame(frame);
