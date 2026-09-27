@@ -30,7 +30,11 @@
   <script defer src="/games/assets/js/create-a-player.draw.js"></script>
   <script defer src="/games/assets/js/create-a-player.reel.js"></script>
   <script defer src="/games/assets/js/share.js"></script>
-  <script defer src="/games/assets/js/card.js?v=5"></script>
+  <script defer src="/games/assets/js/card-stats.js"></script>
+  <script defer src="/games/assets/js/pdf.js"></script>
+  <script defer src="/games/assets/js/card-surface.js"></script>
+  <script defer src="/games/assets/js/card-print.js"></script>
+  <script defer src="/games/assets/js/card.js?v=7"></script>
 </head>
 <body>
   <header class="site-header">
@@ -64,10 +68,58 @@
           </div>
         </div>
         <div class="card-actions">
-          <button type="button" class="button" id="card-share">Share this card</button>
-          <a class="button" id="card-edit" href="/games/create-a-player.html">Make your own</a>
+          <button type="button" class="button card-main" id="card-share">
+            <span aria-hidden="true">&#128279;</span> Share this card
+          </button>
+          <button type="button" class="button" id="card-print">
+            <span aria-hidden="true">&#128424;</span> Download the card
+          </button>
+        </div>
+        <div class="card-actions card-actions-quiet">
+          <a class="button" id="card-edit" href="/games/create-a-player.html">
+            <span aria-hidden="true">&#127912;</span> Make another card
+          </a>
         </div>
         <p class="muted card-note" id="card-note" aria-live="polite"></p>
+
+        <!-- Optional, and blank on purpose: type something and it shows on the
+             back and prints; leave it and the printed card has empty boxes and
+             ruled lines to fill in by hand. -->
+        <!-- Everything about printing lives behind the Download button: the
+             card above freezes on the chosen picture while this is open, so
+             what you are looking at is what you are about to get. -->
+        <section class="card-print-panel" id="card-print-panel" hidden>
+          <h2>Your card, as it will print</h2>
+          <p class="muted card-print-hint">Pick the picture. Flip any of them to see the back you are filling in.</p>
+          <div class="card-pose-row" id="card-pose-row" role="radiogroup" aria-label="Picture"></div>
+
+          <div class="card-colours" id="card-colours"></div>
+
+          <div class="card-fill" id="card-fill">
+            <h3>Fill in the back <span class="muted">(optional)</span></h3>
+          <div class="card-fill-stats" id="card-fill-stats"></div>
+          <label class="card-fill-bio">
+            <span>Their story</span>
+            <textarea id="card-fill-bio" rows="3" maxlength="240"
+                      placeholder="Beer league legend. Third line, first beer."></textarea>
+          </label>
+            <div class="card-fill-actions">
+              <button type="button" class="button" id="card-fill-roll">Make some up</button>
+              <button type="button" class="button" id="card-fill-clear">Clear</button>
+            </div>
+          </div>
+
+          <label class="card-pose-all">
+            <input type="checkbox" id="card-pose-all">
+            Print one of each picture instead of the same card twice
+          </label>
+
+          <div class="card-print-actions">
+            <button type="button" class="button card-print-go" id="card-print-go">Download PDF</button>
+            <button type="button" class="button" id="card-print-png">Download PNG</button>
+            <button type="button" class="button" id="card-print-close">Never mind</button>
+          </div>
+        </section>
       </section>
     </section>
   </main>

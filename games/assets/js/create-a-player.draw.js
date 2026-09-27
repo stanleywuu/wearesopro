@@ -252,7 +252,10 @@
 
   function bodyParts(ctx, dims, params, yaw) {
     const legs = [-1, 1].map(s => legPart(ctx, dims, params, yaw, s));
-    const skates = [-1, 1].map(s => skatePart(ctx, yaw, s * dims.legX));
+    // Each skate clears its own leg. A leg is sorted on its KNEE, which is
+    // pushed forward in a crouch, so a skate sorted on its own shallow depth
+    // loses to the shin every time and disappears behind it.
+    const skates = [-1, 1].map((s, i) => skatePart(ctx, yaw, s * dims.legX, legs[i].d));
     const cuffs = [-1, 1].map((s, i) => pantsCuff(ctx, dims, params, yaw, s, legs[i].d));
     const waist = pantsWaist(ctx, dims, params, yaw);
     const pads = dims.goalie ? [-1, 1].map(s => padPart(ctx, dims, params, yaw, s)) : [];
@@ -307,16 +310,26 @@
   }
 
   // Sits just above its own leg in the sort, so each cuff covers its own thigh
-  // whichever way the player is facing.
+  // whichever way the player is facing. It reaches UP into the hip band rather
+  // than starting below it: with a gap, the band and the cuffs read as two
+  // separate dark lumps with sock showing between them, not as trousers.
   function pantsCuff(ctx, dims, params, yaw, side, legDepth) {
-    const r = rotY(side * (dims.legX + 0.5), 3, yaw);
-    const c = project(r.x, dims.hipY - 10, r.z);
+    // Rides the thigh itself - the same hip and knee legPart uses - so when a
+    // crouch swings the knee forward the pants go with it. Pinned to the hip
+    // instead, they stayed put while the leg moved out from under them.
+    const hip = { x: side * dims.legX, y: dims.hipY, z: 1 + dims.crouch * 5 };
+    const knee = { x: side * (dims.legX + 1.5), y: (dims.hipY + SKATE_Y) / 2 + 1,
+                   z: 7 + dims.crouch * 12 };
+    const mid = { x: (hip.x + knee.x) / 2, y: (hip.y + knee.y) / 2 + 3,
+                  z: (hip.z + knee.z) / 2 };
+    const r = rotY(mid.x, mid.z, yaw);
+    const c = project(r.x, mid.y, r.z);
     return {
       d: Math.max(legDepth, 0) + 0.3,
       draw: () => drawSlab(ctx, {
         cx: c.sx, cy: c.sy,
-        hw: silWidth(9, 8, yaw, 0) * c.k,
-        hh: 9.5 * c.k,
+        hw: silWidth(9.5, 8.5, yaw, 0) * c.k,
+        hh: 11 * c.k,
         shape: "capsule", taper: 0.95, round: 1,
         color: shade(params.jerseyColor, -0.2), yaw: yaw
       })
@@ -337,20 +350,58 @@
     };
   }
 
-  function skatePart(ctx, yaw, x) {
+  // A boot that covers the ankle and no more. Taller than this and it eats the
+  // shin - in a crouch the leg all but disappeared between pants and skate.
+  const SKATE_HH = 5.2;                       // half-height of the boot
+  const BLADE_DROP = 0.8;                     // the boot sits down on the blade
+  const BLADE_HH = 1.15;                      // half-thickness of the blade
+  // Stacked from the ice upwards: blade on the ice, holder, then the boot on
+  // top of that. Worked out any other way the whole skate floats, and rides up
+  // the leg with nothing of the shin left between pants and boot.
+  const SKATE_MID = BLADE_HH * 2 + BLADE_DROP + SKATE_HH - SKATE_Y;
+
+  function skatePart(ctx, yaw, x, legDepth) {
     const r = rotY(x, 2, yaw);
-    const c = project(r.x, SKATE_Y, r.z);
+    const c = project(r.x, SKATE_Y + SKATE_MID, r.z);
     return {
-      d: r.z,
+      // In FRONT of the leg it belongs to, always.
+      d: Math.max(legDepth == null ? r.z : legDepth, r.z) + 0.4,
       draw: () => {
         const hw = silWidth(7, 5, yaw, 0) * c.k;
         drawSlab(ctx, {
-          cx: c.sx, cy: c.sy, hw: hw, hh: 4.5 * c.k,
+          cx: c.sx, cy: c.sy, hw: hw, hh: SKATE_HH * c.k,
           shape: "capsule", taper: 0.8, round: 1, color: "#2B2B2B", yaw: yaw
         });
-        L(ctx, c.sx - hw, c.sy + 4.5 * c.k, c.sx + hw, c.sy + 4.5 * c.k, "#9AA7B4", 1.6);
+        // The collar, so a black boot under a black sock is still a boot.
+        L(ctx, c.sx - hw * 0.9, c.sy - SKATE_HH * c.k * 0.82,
+               c.sx + hw * 0.9, c.sy - SKATE_HH * c.k * 0.82, "#7C8895", 1.4);
+        blade(ctx, c, hw, yaw);
       }
     };
+  }
+
+  // Holder and blade: two posts down from the boot and a steel runner under
+  // them, a touch longer than the boot the way a real one is.
+  function blade(ctx, c, hw, yaw) {
+    const bootY = c.sy + SKATE_HH * c.k;
+    const drop = BLADE_DROP * c.k;
+    // As long as the boot above it, and no longer: it therefore turns with the
+    // boot, and the two read as one skate rather than a shoe parked on a rail.
+    const bw = hw;
+    const postW = Math.max(hw * 0.2, 1.2 * c.k);
+    ctx.fillStyle = "#59636E";
+    [-0.5, 0.28].forEach(function (at) {
+      ctx.fillRect(c.sx + bw * at, bootY, postW, drop);
+    });
+    // Flat fill, not a shaded slab: steel catches the light rather than turning
+    // with the body, and the slab shading took the silver out of it entirely.
+    pathBox(ctx, c.sx, bootY + drop + BLADE_HH * c.k, bw, BLADE_HH * c.k, 0.95, 1);
+    ctx.fillStyle = "#D5DDE5";     // silver, and thick enough to show as silver
+    ctx.fill();
+    ctx.strokeStyle = "#6B7885";   // a full outline at this thickness eats the fill
+    ctx.lineWidth = p(0.7);
+    ctx.lineJoin = "round";
+    ctx.stroke();
   }
 
   // ---- head details -----------------------------------------------------

@@ -23,7 +23,9 @@
   // Colours added after v1. PALETTES fixes the v1 colour slots in the share
   // code, so a new colour cannot join it - it rides at the tail instead.
   const TAIL_PALETTES = [
-    ["hairColor", D.hairColors]
+    ["hairColor", D.hairColors],
+    ["cardEdge", D.cardEdgeColors],
+    ["cardBack", D.cardBackColors]
   ];
 
   const ALL_PALETTES = PALETTES.concat(TAIL_PALETTES);
@@ -64,6 +66,8 @@
       hairStyle: "short",
       faceHair: "none",
       hairColor: D.hairColors[0],
+      cardEdge: D.cardEdgeColors[0],
+      cardBack: D.cardBackColors[0],
       handedness: "left",
       name: "",
       number: "",
