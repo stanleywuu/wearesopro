@@ -83,7 +83,8 @@
     // the landing.
     wipeout: [{ ms: 400 }, { ms: 1150 }, { ms: 1950 }],
     spin:    [{ ms: 480 }, { ms: 880 }, { ms: 1250 }],
-    scramble:[{ ms: 560 }, { ms: 1360 }, { ms: 2300 }]
+    scramble:[{ ms: 560 }, { ms: 1360 }, { ms: 2300 }],
+    cheeky:  [{ ms: 700 }, { ms: 1500 }, { ms: 1900 }]
   };
 
   // Which reels a player can be printed from. Their own is the default; the
@@ -91,7 +92,7 @@
   // code - what someone else sees when they open the card is still whatever
   // that player rolled.
   function reels(params) {
-    return params.position === "Goalie" ? ["saves", "scramble"] : ["shot", "wipeout", "spin"];
+    return REEL && REEL.kindsFor ? REEL.kindsFor(params) : ["shot"];
   }
 
   // The moments key for a reel: only the shot has two of them, because a

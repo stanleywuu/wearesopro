@@ -1155,6 +1155,7 @@
     const toe = { x: heel.x - hand * 11, y: 2.5, z: heel.z + 4 };
 
     let s = { hand: hand, butt: butt, heel: heel, toe: toe, topHand: topHand, lowHand: lowHand };
+    if (ANIM && ANIM.tuck) s = tuckStick(s, dims, ANIM.tuck);
     if (ANIM && ANIM.lift) s = liftStick(s, ANIM.lift);
     if (ANIM && ANIM.swing) s = swingStick(s, ANIM.swing * hand);
     return s;
@@ -1217,6 +1218,22 @@
   // above cannot do - it only ever moves the blade sideways. Positive angle
   // takes the blade up and back into the windup; negative finishes it high in
   // front on the follow-through.
+  // Between the legs: the hands come down off the chest to the hips and in to
+  // the centre line. That is all this does - the shaft is swung back through
+  // the legs by the ordinary lift, which now turns about the dropped hand, so
+  // the blade ends up behind him at ice level.
+  function tuckStick(s, dims, t) {
+    const drop = { x: s.topHand.x * (1 - 0.8 * t),
+                   y: s.topHand.y - (s.topHand.y - (dims.hipY + 6)) * t,
+                   z: s.topHand.z - 22 * t };
+    const by = { x: drop.x - s.topHand.x, y: drop.y - s.topHand.y, z: drop.z - s.topHand.z };
+    const move = pt => ({ x: pt.x + by.x, y: pt.y + by.y, z: pt.z + by.z });
+    return {
+      hand: s.hand, topHand: drop,
+      butt: move(s.butt), heel: move(s.heel), toe: move(s.toe), lowHand: move(s.lowHand)
+    };
+  }
+
   function liftStick(s, angle) {
     const pivot = s.topHand;
     const c = Math.cos(angle), sn = Math.sin(angle);
@@ -1602,7 +1619,10 @@
   let LAUNCH = null;
 
   function puckRest(ctx, dims, params, yaw) {
-    if (!ANIM.lift) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
+    // The freeze is for a WINDUP: the puck stays on the ice while the stick
+    // goes up over the shoulder. A stick pulled back THROUGH the legs still has
+    // the puck on it, so that one goes on tracking the blade.
+    if (!ANIM.lift || ANIM.tuck) LAUNCH = proj3(stickPoints(dims, params).toe, yaw);
     if (LAUNCH) puckAt(ctx, LAUNCH.sx, LAUNCH.sy, 1, 1);
   }
 

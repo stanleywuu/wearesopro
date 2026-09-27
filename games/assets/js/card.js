@@ -281,13 +281,14 @@
     saves:   ["In the crease", "Down and across", "Glove"],
     wipeout: ["Skating it up", "Feet gone", "On the ice"],
     spin:    ["Into the turn", "Coming round", "Away it goes"],
-    scramble:["Blocker", "Across and glove", "Held up"]
+    scramble:["Blocker", "Across and glove", "Held up"],
+    cheeky:  ["Carrying it", "Through the legs", "Gone"]
   };
 
   // What each reel is called where someone has to choose between them.
   const REEL_NAMES = {
     shot: "The shot", wipeout: "The wipeout", spin: "Spin-o-rama",
-    saves: "Three saves", scramble: "The scramble"
+    saves: "Three saves", scramble: "The scramble", cheeky: "Between the legs"
   };
 
   // The row that picks WHICH highlight gets printed. Their own is selected to
