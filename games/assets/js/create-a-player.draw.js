@@ -1545,10 +1545,16 @@
     const h = BOARDS.h * FIT, base = GROUND - 1, top = base - h;
     ctx.fillStyle = "#E4EEF9";        // a shade off the ice, or it is not there
     ctx.fillRect(0, p(top), p(LW), p(h));
-    // The glass above: posts only, so it reads as glass without hiding anything.
+    // The glass above: posts and the rail across their top, because glass that
+    // stops in mid-air closes off nothing. Panels only tinted, so it still
+    // reads as something you can see through.
+    const glass = top - BOARDS.post * FIT;
+    ctx.fillStyle = "rgba(255,255,255,.45)";
+    ctx.fillRect(0, p(glass), p(LW), p(top - glass));
     for (let x = BOARDS.bay / 2; x < LW; x += BOARDS.bay) {
-      L(ctx, x, top, x, top - BOARDS.post * FIT, "rgba(90,104,117,.22)", 0.9);
+      L(ctx, x, top, x, glass, "rgba(90,104,117,.22)", 0.9);
     }
+    L(ctx, 0, glass, LW, glass, "rgba(90,104,117,.45)", 1.1);
     for (let x = 0; x <= LW; x += BOARDS.bay) {
       L(ctx, x, top, x, base, "rgba(90,104,117,.26)", 0.6);
     }
