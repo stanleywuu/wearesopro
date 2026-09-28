@@ -421,10 +421,15 @@
   bottom: .6rem;
   z-index: 60;
   padding: 0;
-  border: 1px solid rgba(30, 136, 229, .45);
+  /* Plain white behind a dark edge. The ice fill is the same pale blue as the
+     page and the cards it floats over are white, so a blue window with a blue
+     hairline melted into both - it has to read as something held up in FRONT of
+     the page. The border does that, so the canvas drops its own ice (see
+     background:false in the editor). */
+  border: 2px solid rgba(12, 27, 42, .8);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+  box-shadow: 0 8px 20px rgba(12, 27, 42, .32);
   cursor: pointer;
   line-height: 0;         /* a button's line box otherwise leaves a strip under the canvas */
   overflow: hidden;

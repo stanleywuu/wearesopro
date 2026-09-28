@@ -463,7 +463,13 @@
         yaw += SPIN_SPEED / 60;
       }
       DRAW.render(ctx, params, yaw, anim);
-      if (peekShown()) DRAW.render(peekCtx, params, yaw, anim);
+      if (peekShown()) {
+        // No ice in the window: it is a white chip with a dark edge, and the ice
+        // would put the page's own blue straight back inside it. Nothing paints
+        // a background now, so the frame has to be cleared by hand.
+        peekCtx.clearRect(0, 0, DRAW.LW * DRAW.S, DRAW.LH * DRAW.S);
+        DRAW.render(peekCtx, params, yaw, anim, { background: false });
+      }
       raf = requestAnimationFrame(frame);
     }
 
