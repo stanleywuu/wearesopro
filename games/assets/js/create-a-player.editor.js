@@ -11,7 +11,7 @@
 
   const D = window.CAP_DATA, DRAW = window.CAP_DRAW, REEL = window.CAP_REEL;
 
-  const SPIN_SPEED = 0.8;      // radians per second when idle - about 8s a turn
+  const SPIN_SPEED = 0.6;      // radians per second when idle - about 10s a turn
   const IDLE_DELAY = 2500;     // ms of no interaction before the idle spin resumes
 
   function mount(root, params, opts) {
