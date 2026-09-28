@@ -400,9 +400,10 @@
     // picture, small, fixed to the corner, drawn from the same loop - so a
     // change shows up somewhere you can see without scrolling back.
     //
-    // PEEK_SCALE is pixels, not layout: the window is ~96px wide, so drawing it
+    // PEEK_SCALE is pixels, not layout: the window is ~112px wide, so drawing it
     // at full canvas resolution would be most of a second render for nothing.
     const PEEK_SCALE = 0.45;
+    const PEEK_AT = 0.5;         // how much of the stage has to be left before it takes over
 
     function buildPeek() {
       const peek = el("peek"), canvasPeek = el("peek-canvas");
@@ -416,11 +417,15 @@
       peek.addEventListener("click", () => {
         canvas.scrollIntoView({ behavior: "smooth", block: "center" });
       });
-      // Shown exactly while the real picture is gone. The observer clips through
-      // scroll containers, so this is also right inside the team-photo modal.
+      // Not "the picture is gone" - by then you have been editing blind for a
+      // screenful. Half of it off the top is the point where the controls have
+      // taken over the screen and there is no longer enough player to watch, so
+      // that is where the window takes over. The observer clips through scroll
+      // containers, so this is also right inside the team-photo modal.
       peekWatch = new IntersectionObserver(entries => {
-        peek.classList.toggle("show", !entries[0].isIntersecting);
-      }, { threshold: 0.25 });
+        const seen = entries[0];
+        peek.classList.toggle("show", seen.intersectionRatio < PEEK_AT);
+      }, { threshold: [0, PEEK_AT, 1] });
       peekWatch.observe(canvas);
     }
 
