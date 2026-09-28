@@ -33,6 +33,8 @@
     let dragging = false;
     let dragX = 0;
     let alive = true;
+    let peekCtx = null;          // the corner copy of the picture, phone only
+    let peekWatch = null;
 
     // ---- controls -------------------------------------------------------
 
@@ -390,6 +392,43 @@
       root.appendChild(grid);
     }
 
+
+    // ---- peek window ----------------------------------------------------
+
+    // On a phone the controls are under the stage, so the player is off the top
+    // of the screen as soon as you touch a slider. The peek window is the same
+    // picture, small, fixed to the corner, drawn from the same loop - so a
+    // change shows up somewhere you can see without scrolling back.
+    //
+    // PEEK_SCALE is pixels, not layout: the window is ~96px wide, so drawing it
+    // at full canvas resolution would be most of a second render for nothing.
+    const PEEK_SCALE = 0.45;
+
+    function buildPeek() {
+      const peek = el("peek"), canvasPeek = el("peek-canvas");
+      if (!peek || !canvasPeek || !window.IntersectionObserver) return;
+      canvasPeek.width = Math.round(DRAW.LW * DRAW.S * PEEK_SCALE);
+      canvasPeek.height = Math.round(DRAW.LH * DRAW.S * PEEK_SCALE);
+      peekCtx = canvasPeek.getContext("2d");
+      // Set once and left alone: render() saves and restores around its own
+      // work, so it draws into whatever transform it is handed.
+      peekCtx.setTransform(PEEK_SCALE, 0, 0, PEEK_SCALE, 0, 0);
+      peek.addEventListener("click", () => {
+        canvas.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      // Shown exactly while the real picture is gone. The observer clips through
+      // scroll containers, so this is also right inside the team-photo modal.
+      peekWatch = new IntersectionObserver(entries => {
+        peek.classList.toggle("show", !entries[0].isIntersecting);
+      }, { threshold: 0.25 });
+      peekWatch.observe(canvas);
+    }
+
+    function peekShown() {
+      const peek = el("peek");
+      return Boolean(peekCtx && peek && peek.classList.contains("show"));
+    }
+
     // ---- highlight reel -------------------------------------------------
 
     // The timeline itself lives in create-a-player.reel.js (CAP_REEL), shared
@@ -419,6 +458,7 @@
         yaw += SPIN_SPEED / 60;
       }
       DRAW.render(ctx, params, yaw, anim);
+      if (peekShown()) DRAW.render(peekCtx, params, yaw, anim);
       raf = requestAnimationFrame(frame);
     }
 
@@ -439,6 +479,7 @@
     buildIdentity();
     syncControls();
     buildDebugGrid();
+    buildPeek();
     touch();
     raf = requestAnimationFrame(frame);
 
@@ -448,6 +489,7 @@
       alive = false;
       cancelAnimationFrame(raf);
       clearTimeout(statusTimer);
+      if (peekWatch) peekWatch.disconnect();
     }
 
     // The quiet row under the status line: controls that do something but are

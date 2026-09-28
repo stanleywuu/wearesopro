@@ -408,7 +408,38 @@
   border-radius: 8px;
 }
 
+/* ---- peek window ----
+   A small copy of the picture, fixed to the corner, for when the stage has
+   scrolled off the top - see the comment in partials/player-editor.html. Never
+   shown on a wide screen (the picture is beside the controls there), so the
+   default is display:none and the phone rule below is the only thing that turns
+   it on. The editor adds .show while the stage canvas is out of view. */
+.cap-peek {
+  display: none;
+  position: fixed;
+  right: .6rem;
+  bottom: .6rem;
+  z-index: 60;
+  padding: 0;
+  border: 1px solid rgba(30, 136, 229, .45);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+  cursor: pointer;
+  line-height: 0;         /* a button's line box otherwise leaves a strip under the canvas */
+  overflow: hidden;
+}
+.cap-peek canvas {
+  display: block;
+  width: 96px;
+  height: auto;
+}
+.cap-peek:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
 @media (max-width: 620px) {
+  /* Only ever visible here, and only once the real canvas has gone. */
+  .cap-peek.show { display: block; }
+
   .cap-wrap { gap: 1rem; }
   .cap-controls { max-width: 100%; }
   .cap-debug { grid-template-columns: repeat(2, 1fr); }
@@ -670,3 +701,8 @@
   font-size: .85rem;
 }
 .cap-paste .button { flex: 0 0 auto; margin-top: 0; }
+
+/* A shared link has no controls to scroll past, so the peek window is only in
+   the way there. Last in the file, and one class heavier than the phone rule
+   that turns it on. */
+.cap-shared .cap-wrap .cap-peek { display: none; }

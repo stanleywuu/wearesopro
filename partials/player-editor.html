@@ -141,4 +141,12 @@
       </div>
     </div>
   </div>
+
+  <!-- The peek window. On a phone the picture is off the top of the screen the
+       moment you reach for a slider, so a small copy of it follows you down the
+       controls - same player, same angle, same highlight. Phone only, and only
+       while the stage canvas is out of view. Tap it to go back to the stage. -->
+  <button type="button" data-el="peek" class="cap-peek" aria-label="Back to your player">
+    <canvas data-el="peek-canvas" aria-hidden="true"></canvas>
+  </button>
 </div>
