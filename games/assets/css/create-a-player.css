@@ -437,7 +437,10 @@
      out to nothing near the border, which is exactly where the window needs to
      separate from the white card behind it. */
   box-shadow: 0 16px 34px rgba(12, 27, 42, .5), 0 4px 10px rgba(12, 27, 42, .38);
-  cursor: pointer;
+  cursor: grab;
+  /* Same bargain as the stage canvas: a sideways drag spins him, an up-and-down
+     one still scrolls the page rather than being swallowed by the window. */
+  touch-action: pan-y;
   line-height: 0;         /* a button's line box otherwise leaves a strip under the canvas */
   overflow: hidden;
 }
@@ -446,6 +449,7 @@
   width: 112px;
   height: auto;
 }
+.cap-peek:active { cursor: grabbing; }
 .cap-peek:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
 @media (max-width: 620px) {

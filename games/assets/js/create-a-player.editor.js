@@ -11,7 +11,7 @@
 
   const D = window.CAP_DATA, DRAW = window.CAP_DRAW, REEL = window.CAP_REEL;
 
-  const SPIN_SPEED = 0.35;     // radians per second when idle
+  const SPIN_SPEED = 0.8;      // radians per second when idle - about 8s a turn
   const IDLE_DELAY = 2500;     // ms of no interaction before the idle spin resumes
 
   function mount(root, params, opts) {
@@ -32,6 +32,8 @@
     let raf = 0;
     let dragging = false;
     let dragX = 0;
+    let dragTravel = 0;          // how far this drag has gone: a spin, or a tap
+    let lastFrame = 0;
     let alive = true;
     let peekCtx = null;          // the corner copy of the picture, phone only
     let peekWatch = null;
@@ -327,16 +329,29 @@
       if (options.onChange) options.onChange(params, how || null);
     }
 
-    function startDrag(e) {
+    // Both pictures spin from the same finger: the stage canvas and the peek
+    // window each bind this, and the window's own tap has to tell a spin from a
+    // press, which is what dragTravel is for.
+    function bindSpin(target) {
+      target.addEventListener("pointerdown", e => startDrag(e, target));
+      target.addEventListener("pointermove", moveDrag);
+      target.addEventListener("pointerup", endDrag);
+      target.addEventListener("pointercancel", endDrag);
+    }
+
+    function startDrag(e, target) {
       dragging = true;
       dragX = e.clientX;
-      canvas.setPointerCapture(e.pointerId);
+      dragTravel = 0;
+      (target || canvas).setPointerCapture(e.pointerId);
       touch();
     }
 
     function moveDrag(e) {
       if (!dragging) return;
-      yaw += (e.clientX - dragX) * 0.012;
+      const dx = e.clientX - dragX;
+      dragTravel += Math.abs(dx);
+      yaw += dx * 0.012;
       dragX = e.clientX;
       touch();
     }
@@ -404,6 +419,7 @@
     // at full canvas resolution would be most of a second render for nothing.
     const PEEK_SCALE = 0.45;
     const PEEK_AT = 0.5;         // how much of the stage has to be left before it takes over
+    const TAP_SLOP = 8;          // px of travel still counted as a press, not a spin
 
     function buildPeek() {
       const peek = el("peek"), canvasPeek = el("peek-canvas");
@@ -414,7 +430,12 @@
       // Set once and left alone: render() saves and restores around its own
       // work, so it draws into whatever transform it is handed.
       peekCtx.setTransform(PEEK_SCALE, 0, 0, PEEK_SCALE, 0, 0);
+      // It spins under your finger like the big one, so the tap that takes you
+      // back to the stage has to be a tap: a drag that turned the player and
+      // ended where a button would fire is a spin, not a press.
+      bindSpin(peek);
       peek.addEventListener("click", () => {
+        if (dragTravel > TAP_SLOP) return;
         canvas.scrollIntoView({ behavior: "smooth", block: "center" });
       });
       // Not "the picture is gone" - by then you have been editing blind for a
@@ -455,12 +476,17 @@
 
     function frame(now) {
       if (!alive) return;
+      // Seconds since the last frame, not a 60th: a phone drawing at 120 turned
+      // the player twice as fast as a laptop, so the speed above meant nothing.
+      // Clamped, or coming back to a backgrounded tab spins him a whole lap.
+      const dt = lastFrame ? Math.min((now - lastFrame) / 1000, 0.1) : 0;
+      lastFrame = now;
       const anim = highlightStart ? REEL.at(reel, now - highlightStart) : null;
       if (highlightStart && !anim) highlightStart = 0;
       if (anim) {
         yaw = anim.yaw;                  // the reel can turn the camera itself
       } else if (!dragging && now - lastInput > IDLE_DELAY) {
-        yaw += SPIN_SPEED / 60;
+        yaw += SPIN_SPEED * dt;
       }
       DRAW.render(ctx, params, yaw, anim);
       if (peekShown()) {
@@ -475,10 +501,7 @@
 
     // ---- wiring ---------------------------------------------------------
 
-    canvas.addEventListener("pointerdown", startDrag);
-    canvas.addEventListener("pointermove", moveDrag);
-    canvas.addEventListener("pointerup", endDrag);
-    canvas.addEventListener("pointercancel", endDrag);
+    bindSpin(canvas);
     canvas.addEventListener("keydown", onKey);
     el("random").addEventListener("click", randomize);
     el("highlight").addEventListener("click", playHighlight);
