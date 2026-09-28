@@ -417,8 +417,11 @@
 .cap-peek {
   display: none;
   position: fixed;
-  right: .6rem;
-  bottom: .6rem;
+  /* Off the edge far enough that the shadow has somewhere to fall - pinned at
+     .6rem the screen clipped it on two sides, which is half of what made the
+     window look flat against the page. */
+  right: .9rem;
+  bottom: .9rem;
   z-index: 60;
   padding: 0;
   /* Plain white behind a dark edge. The ice fill is the same pale blue as the
@@ -429,7 +432,11 @@
   border: 2px solid rgba(12, 27, 42, .8);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: 0 8px 20px rgba(12, 27, 42, .32);
+  /* Two shadows, not one. The wide soft one is the drop onto the page and the
+     tight dark one sits right under the edge - a single blur that big washes
+     out to nothing near the border, which is exactly where the window needs to
+     separate from the white card behind it. */
+  box-shadow: 0 16px 34px rgba(12, 27, 42, .5), 0 4px 10px rgba(12, 27, 42, .38);
   cursor: pointer;
   line-height: 0;         /* a button's line box otherwise leaves a strip under the canvas */
   overflow: hidden;
