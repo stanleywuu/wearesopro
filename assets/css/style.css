@@ -316,7 +316,14 @@ input{width:100%;padding:.6rem;border-radius:10px;border:1px solid rgba(0,0,0,.1
 }
 .drawer-header{ display:flex; align-items:center; justify-content:space-between; padding:1rem; border-bottom:1px solid rgba(0,0,0,.08) }
 .drawer-close{ background:transparent; border:0; font-size:1rem; cursor:pointer; color:var(--text) }
-.drawer-nav{ padding:1rem 1.1rem 2rem; display:block }
+.drawer-nav{
+  padding:1rem 1.1rem 2rem; display:block;
+  /* The panel is a flex column, so this child has to be told it may shrink
+     (min-height:0) before overflow-y can scroll it - otherwise it grows past
+     the panel and the links below the fold are unreachable. */
+  flex:1; min-height:0; overflow-y:auto;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch
+}
 
 /* Group label — the drawer used to be one undifferentiated stack of boxes */
 .drawer-label{
