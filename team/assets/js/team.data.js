@@ -19,3 +19,6 @@ window.TEAM_CODES = {
 window.TEAM_STATS = {
   stanley: { GP: 24, G: 3, A: 0, PTS: 3, PIM: 0 }
 };
+
+
+// https://wearesopro.ca/games/card.html?p=2~0h1a0r0o190j0H0z0H0N0G30325352__m3_2__m3_420031__u~Breese~33~I%27m+a+wall
